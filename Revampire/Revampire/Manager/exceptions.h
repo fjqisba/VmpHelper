@@ -17,3 +17,16 @@ public:
     };
 };
 
+class DisasmException : public Exception
+{
+public:
+    DisasmException(const char* message):Exception(message){};
+    DisasmException(const std::string& message) :Exception(message) {};
+};
+
+class VmpTraceException :public Exception
+{
+public:
+    VmpTraceException(const char* message) :Exception(message) {};
+    VmpTraceException(const std::string& message) :Exception(message) {};
+};

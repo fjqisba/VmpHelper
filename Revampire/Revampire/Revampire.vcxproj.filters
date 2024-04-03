@@ -361,6 +361,9 @@
     <ClCompile Include="GhidraExtension\VmpInstruction.cpp">
       <Filter>GhidraExtension</Filter>
     </ClCompile>
+    <ClCompile Include="VmpCore\VmpUnicorn.cpp">
+      <Filter>VmpCore</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="IDAPlugin.h">
@@ -707,6 +710,9 @@
     </ClInclude>
     <ClInclude Include="GhidraExtension\VmpInstruction.h">
       <Filter>GhidraExtension</Filter>
+    </ClInclude>
+    <ClInclude Include="VmpCore\VmpUnicorn.h">
+      <Filter>VmpCore</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

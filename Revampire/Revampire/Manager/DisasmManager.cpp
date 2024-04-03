@@ -9,7 +9,7 @@ RawInstruction::RawInstruction()
 {
 	raw = cs_malloc(DisasmManager::handle);
 	if (raw == nullptr) {
-		throw Exception("cs_malloc error");
+		throw DisasmException("cs_malloc error");
 	}
 }
 
@@ -28,7 +28,7 @@ DisasmManager::DisasmManager()
 		err = cs_open(CS_ARCH_X86, CS_MODE_32, &handle);
 	}
 	if (err != CS_ERR_OK) {
-		throw Exception("cs_open error");
+		throw DisasmException("cs_open error");
 	}
 	cs_option(handle, CS_OPT_DETAIL, CS_OPT_ON);
 }

@@ -3,6 +3,7 @@
 #include "../Manager/exceptions.h"
 #include <graph.hpp>
 #include <sstream>
+#include "../VmpCore/VmpUnicorn.h"
 
 VmpControlFlow::VmpControlFlow() :graph(this)
 {
@@ -99,6 +100,11 @@ ptrdiff_t __stdcall VmpControlFlowShowGraph::graph_callback(void* ud, int code, 
 	return 0x0;
 }
 
+void VmpControlFlowBuilder::linkBlockEdge(VmAddress from, VmAddress to)
+{
+	fromEdges[from].insert(to);
+}
+
 VmpBasicBlock* VmpControlFlowBuilder::createNewBlock(size_t startAddr)
 {
 	VmpBasicBlock* newBlock = &flow.blocksMap[startAddr];
@@ -145,6 +151,10 @@ void VmpControlFlowBuilder::fallthruNormal(AnaTask& task)
 	VmpBasicBlock* curBasicBlock = nullptr;
 	while (true) {
 		if (isVmpEntry(curAddr)) {
+			if (curBasicBlock != nullptr) {
+				RawInstruction* rawIns = static_cast<RawInstruction*>(curBasicBlock->insList.back().get());
+				linkBlockEdge(rawIns->raw->address,curAddr);
+			}
 			auto newTask = std::make_unique<AnaTask>();
 			newTask->type = HANDLE_VM_ENTRY;
 			newTask->vmAddr = VmAddress(curAddr, 0x0);
@@ -159,7 +169,7 @@ void VmpControlFlowBuilder::fallthruNormal(AnaTask& task)
 		}
 		auto asmData = DisasmManager::Main().DecodeInstruction(curAddr);
 		if (asmData == nullptr) {
-			break;
+			throw DisasmException("DecodeInstruction error");
 		}
 		RawInstruction* curIns = asmData.get();
 		curBasicBlock->insList.push_back(std::move(asmData));
@@ -177,7 +187,19 @@ void VmpControlFlowBuilder::fallthruNormal(AnaTask& task)
 
 void VmpControlFlowBuilder::fallthruVmp(AnaTask& task)
 {
-	
+	VmpUnicorn unicornEngine;
+	if (task.ctx == nullptr) {
+		task.ctx = VmpUnicornContext::DefaultContext();
+		task.ctx->context.EIP = task.vmAddr.raw;
+	}
+	auto traceList = unicornEngine.StartVmpTrace(*task.ctx, 0x10000);
+	tfg.AddTraceFlow(traceList);
+	tfg.MergeAllNodes();
+	std::stringstream ss;
+	tfg.DumpGraph(ss, true);
+	std::string graphTxt = ss.str();
+
+	int a = 0;
 }
 
 bool VmpControlFlowBuilder::BuildCFG(size_t startAddr)

@@ -9,9 +9,15 @@
     <ClCompile Include="Utils\StringUtils.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
+    <ClCompile Include="Utils\Public.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Utils\StringUtils.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Utils\Public.h">
       <Filter>Utils</Filter>
     </ClInclude>
   </ItemGroup>

@@ -99,7 +99,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\MyLib\idasdk75\lib\x64_win_vc_32;../lib/Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ida.lib;capstone.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ida.lib;capstone.lib;arm-softmmu.lib;unicorn-common.lib;unicorn-static.lib;x86_64-softmmu.lib;Common.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='64Debug|x64'">
@@ -274,6 +274,7 @@
     <ClCompile Include="Manager\SectionManager.cpp" />
     <ClCompile Include="VmpCore\VmpReEngine.cpp" />
     <ClCompile Include="VmpCore\VmpTraceFlowGraph.cpp" />
+    <ClCompile Include="VmpCore\VmpUnicorn.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GhidraExtension\IDALoadImage.h" />
@@ -391,6 +392,7 @@
     <ClInclude Include="Manager\SectionManager.h" />
     <ClInclude Include="VmpCore\VmpReEngine.h" />
     <ClInclude Include="VmpCore\VmpTraceFlowGraph.h" />
+    <ClInclude Include="VmpCore\VmpUnicorn.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Ghidra\Doxyfile" />

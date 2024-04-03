@@ -1,5 +1,6 @@
 #include "VmpTraceFlowGraph.h"
 #include "../Manager/DisasmManager.h"
+#include "../Manager/exceptions.h"
 
 VmpTraceFlowGraph::VmpTraceFlowGraph()
 {
@@ -40,17 +41,17 @@ bool VmpTraceFlowGraph::checkMerge_Vmp300(size_t nodeAddr)
 {
     size_t fromAddr = *toEdges[nodeAddr].begin();
     VmpTraceFlowNode* fatherNode = instructionToNodeMap[fromAddr].vmNode;
-    //cs_insn* tmpIns = DisasmManager::Main().DecodeInstruction(fatherNode->EndAddr());
-    //if (!tmpIns) {
-    //    return false;
-    //}
+    std::unique_ptr<RawInstruction> tmpIns = DisasmManager::Main().DecodeInstruction(fatherNode->EndAddr());
+    if (!tmpIns) {
+        return false;
+    }
     //如果是jmp eax这种指令,不进行合并
-    //if (tmpIns->id == X86_INS_JMP && tmpIns->detail->x86.operands[0].type == X86_OP_REG) {
-    //    return false;
-    //}
-    //if (tmpIns->id == X86_INS_RET) {
-    //    return false;
-    //}
+    if (tmpIns->raw->id == X86_INS_JMP && tmpIns->raw->detail->x86.operands[0].type == X86_OP_REG) {
+        return false;
+    }
+    if (tmpIns->raw->id == X86_INS_RET) {
+        return false;
+    }
     return true;
 }
 
@@ -80,8 +81,7 @@ VmpTraceFlowNode* VmpTraceFlowGraph::splitBlock(VmpTraceFlowNode* toNode, size_t
     unsigned int index = 1;
     while (true) {
         if (index >= toNode->addrList.size()) {
-            //这一定是出问题了
-            throw "error";
+            throw VmpTraceException("splitBlock error");
         }
         if (toNode->addrList[index] == splitAddr) {
             linkEdge(toNode->addrList[index - 1], splitAddr);
@@ -200,16 +200,16 @@ bool VmpTraceFlowGraph::addNormalLink(size_t fromAddr, size_t toAddr)
 
 bool VmpTraceFlowGraph::addLink(size_t fromAddr, size_t toAddr)
 {
-    //cs_insn* tmpIns = DisasmManager::Main().DecodeInstruction(fromAddr);
-    //if (!tmpIns) {
-    //    return false;
-    //}
-    //if (isEndIns(tmpIns)) {
-    //    return addJmpLink(fromAddr, toAddr);
-    //}
-    //else {
-    //    return addNormalLink(fromAddr, toAddr);
-    //}
+    std::unique_ptr<RawInstruction> tmpIns = DisasmManager::Main().DecodeInstruction(fromAddr);
+    if (!tmpIns) {
+        return false;
+    }
+    if (isEndIns(tmpIns->raw)) {
+        return addJmpLink(fromAddr, toAddr);
+    }
+    else {
+        return addNormalLink(fromAddr, toAddr);
+    }
     return true;
 }
 
@@ -256,26 +256,23 @@ void VmpTraceFlowGraph::MergeAllNodes()
 void VmpTraceFlowGraph::DumpGraph(std::ostream& ss, bool bCompress)
 {
     ss << "strict digraph \"hello world\"{\n";
-    char addrBuffer[0x10];
     DisasmManager& disasmMgr = DisasmManager::Main();
     for (std::map<size_t, VmpTraceFlowNode>::iterator it = nodeMap.begin(); it != nodeMap.end(); ++it) {
         VmpTraceFlowNode& node = it->second;
-        sprintf_s(addrBuffer, sizeof(addrBuffer), "%08X", it->first);
-        ss << "\"" << addrBuffer << "\"[label=\"";
+        ss << "\"" << std::hex << it->first << "\"[label=\"";
         for (unsigned int n = 0; n < node.addrList.size(); ++n) {
             if (bCompress) {
                 if (n > 20 && (n != node.addrList.size() - 1)) {
                     continue;
                 }
             }
-            //cs_insn* tmpIns = disasmMgr.DecodeInstruction(node.addrList[n]);
-            sprintf_s(addrBuffer, sizeof(addrBuffer), "%08X", node.addrList[n]);
-            //if (tmpIns) {
-            //    ss << addrBuffer << "\t" << tmpIns->mnemonic << " " << tmpIns->op_str << "\\n";
-            //}
-            //else {
-            //    ss << addrBuffer << "\t" << "invalid instruction" << "\\n";
-            //}
+            std::unique_ptr<RawInstruction> tmpIns = disasmMgr.DecodeInstruction(node.addrList[n]);
+            if (tmpIns) {
+                ss << std::hex << node.addrList[n] << "\t" << tmpIns->raw->mnemonic << " " << tmpIns->raw->op_str << "\\n";
+            }
+            else {
+                ss << std::hex << node.addrList[n] << "\t" << "invalid instruction" << "\\n";
+            }
         }
         ss << "\"];\n";
     }
@@ -284,10 +281,8 @@ void VmpTraceFlowGraph::DumpGraph(std::ostream& ss, bool bCompress)
         std::unordered_set<size_t>& edgeList = it->second;
         for (std::unordered_set<size_t>::iterator edegIt = edgeList.begin(); edegIt != edgeList.end(); ++edegIt) {
             VmpTraceFlowNode* fromBlock = instructionToNodeMap[it->first].vmNode;
-            sprintf_s(addrBuffer, sizeof(addrBuffer), "%08X", fromBlock->nodeEntry);
-            ss << "\"" << addrBuffer << "\" -> ";
-            sprintf_s(addrBuffer, sizeof(addrBuffer), "%08X", *edegIt);
-            ss << "\"" << addrBuffer << "\";\n";
+            ss << "\"" << std::hex << fromBlock->nodeEntry << "\" -> ";
+            ss << "\"" << std::hex << *edegIt << "\";\n";
         }
     }
     ss << "\n}";

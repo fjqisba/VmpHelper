@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include "../Helper/UnicornHelper.h"
 #include "../Manager/DisasmManager.h"
+#include "../VmpCore/VmpTraceFlowGraph.h"
 
 class mutable_graph_t;
 
@@ -73,12 +74,14 @@ private:
 	void fallthruNormal(AnaTask& task);
 	bool isVmpEntry(size_t startAddr);
 	VmpBasicBlock* createNewBlock(size_t startAddr);
-public:
+	void linkBlockEdge(VmAddress from, VmAddress to);
+private:
 	std::queue<std::unique_ptr<AnaTask>> anaQueue;
 	std::set<VmAddress> visited;
 	std::map<VmAddress, VmpBasicBlock*> instructionMap;
-private:
+	std::map<VmAddress, std::set<VmAddress>> fromEdges;
 	VmpControlFlow& flow;
+	VmpTraceFlowGraph tfg;
 };
 
 //仅用于进行IDA展示
