@@ -272,6 +272,7 @@
     <ClCompile Include="Manager\DisasmManager.cpp" />
     <ClCompile Include="Manager\exceptions.cpp" />
     <ClCompile Include="Manager\SectionManager.cpp" />
+    <ClCompile Include="Manager\VmpVersionManager.cpp" />
     <ClCompile Include="VmpCore\VmpReEngine.cpp" />
     <ClCompile Include="VmpCore\VmpTraceFlowGraph.cpp" />
     <ClCompile Include="VmpCore\VmpUnicorn.cpp" />
@@ -390,6 +391,7 @@
     <ClInclude Include="Manager\DisasmManager.h" />
     <ClInclude Include="Manager\exceptions.h" />
     <ClInclude Include="Manager\SectionManager.h" />
+    <ClInclude Include="Manager\VmpVersionManager.h" />
     <ClInclude Include="VmpCore\VmpReEngine.h" />
     <ClInclude Include="VmpCore\VmpTraceFlowGraph.h" />
     <ClInclude Include="VmpCore\VmpUnicorn.h" />

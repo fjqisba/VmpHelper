@@ -364,6 +364,9 @@
     <ClCompile Include="VmpCore\VmpUnicorn.cpp">
       <Filter>VmpCore</Filter>
     </ClCompile>
+    <ClCompile Include="Manager\VmpVersionManager.cpp">
+      <Filter>Manager</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="IDAPlugin.h">
@@ -713,6 +716,9 @@
     </ClInclude>
     <ClInclude Include="VmpCore\VmpUnicorn.h">
       <Filter>VmpCore</Filter>
+    </ClInclude>
+    <ClInclude Include="Manager\VmpVersionManager.h">
+      <Filter>Manager</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

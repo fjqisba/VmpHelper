@@ -33,13 +33,22 @@ void VmpReEngine::MarkVmpEntry(size_t startAddr)
 	IDAWrapper::set_cmt(startAddr, "vmp entry", false);
 }
 
+void VmpReEngine::clearFunction(size_t startAddr)
+{
+	auto it = std::find_if(funcCache.begin(), funcCache.end(),
+		[startAddr](const std::unique_ptr<VmpFunction>& func) {
+			return func->startAddr == startAddr;
+	});
+	funcCache.erase(it);
+}
+
 VmpFunction* VmpReEngine::makeFunction(size_t startAddr)
 {
 	//≤È’“ª∫¥ÊœÓ
 	auto it = std::find_if(funcCache.begin(), funcCache.end(),
 		[startAddr](const std::unique_ptr<VmpFunction>& func) {
 			return func->startAddr == startAddr;
-		});
+	});
 	if (it != funcCache.end()) {
 		return it->get();
 	}
@@ -65,11 +74,11 @@ VmpFunction* VmpReEngine::makeFunction(size_t startAddr)
 void VmpReEngine::PrintGraph(size_t startAddr)
 {
 	try {
-		VmpFunction* fd =  makeFunction(startAddr);
+		VmpFunction* fd = makeFunction(startAddr);
 		fd->FollowVmp(startAddr);
 		fd->CreateGraph();
 	}
 	catch (...) {
-		
+		clearFunction(startAddr);
 	}
 }

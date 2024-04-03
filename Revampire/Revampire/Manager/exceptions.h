@@ -30,3 +30,12 @@ public:
     VmpTraceException(const char* message) :Exception(message) {};
     VmpTraceException(const std::string& message) :Exception(message) {};
 };
+
+//vmp°æ±¾´íÎó
+
+class VmpVersionException :public Exception
+{
+public:
+    VmpVersionException(const char* message) :Exception(message) {};
+    VmpVersionException(const std::string& message) :Exception(message) {};
+};

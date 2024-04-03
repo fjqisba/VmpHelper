@@ -1,5 +1,6 @@
 #include "VmpTraceFlowGraph.h"
 #include "../Manager/DisasmManager.h"
+#include "../Manager/VmpVersionManager.h"
 #include "../Manager/exceptions.h"
 
 VmpTraceFlowGraph::VmpTraceFlowGraph()
@@ -24,6 +25,9 @@ bool isEndIns(cs_insn* curIns)
     if (curIns->id >= x86_insn::X86_INS_JAE && curIns->id <= X86_INS_JS) {
         return true;
     }
+    if (curIns->id == x86_insn::X86_INS_JMP) {
+        return true;
+    }
     return false;
 }
 
@@ -37,23 +41,44 @@ void VmpTraceFlowGraph::executeMerge(VmpTraceFlowNode* fatherNode, VmpTraceFlowN
     }
 }
 
-bool VmpTraceFlowGraph::checkMerge_Vmp300(size_t nodeAddr)
+bool VmpTraceFlowGraph::checkCanMerge_Vmp(size_t nodeAddr)
 {
     size_t fromAddr = *toEdges[nodeAddr].begin();
     VmpTraceFlowNode* fatherNode = instructionToNodeMap[fromAddr].vmNode;
-    std::unique_ptr<RawInstruction> tmpIns = DisasmManager::Main().DecodeInstruction(fatherNode->EndAddr());
-    if (!tmpIns) {
+    std::unique_ptr<RawInstruction> endIns = DisasmManager::Main().DecodeInstruction(fatherNode->EndAddr());
+    if (!endIns) {
         return false;
     }
-    //如果是jmp eax这种指令,不进行合并
-    if (tmpIns->raw->id == X86_INS_JMP && tmpIns->raw->detail->x86.operands[0].type == X86_OP_REG) {
+    //ret指令一般是不进行合并的
+    if (endIns->raw->id == X86_INS_RET) {
         return false;
     }
-    if (tmpIns->raw->id == X86_INS_RET) {
-        return false;
+    if (VmpVersionManager::CurrentVmpVersion() == VmpVersionManager::VMP_350) {
+        //如果是jmp eax这种指令,不进行合并
+        if (endIns->raw->id == X86_INS_JMP && endIns->raw->detail->x86.operands[0].type == X86_OP_REG) {
+            return false;
+        }
+    }
+    else if (VmpVersionManager::CurrentVmpVersion() == VmpVersionManager::VMP_380) {
+        //jmp eax
+        if (endIns->raw->id == X86_INS_JMP && endIns->raw->detail->x86.operands[0].type == X86_OP_REG) {
+            if (fatherNode->addrList.size() > 2) {
+                x86_reg jmpReg = endIns->raw->detail->x86.operands[0].reg;
+                std::unique_ptr<RawInstruction> lastIns = DisasmManager::Main().DecodeInstruction(fatherNode->addrList[fatherNode->addrList.size() - 2]);
+                if (lastIns->raw->id == X86_INS_ADC || lastIns->raw->id == X86_INS_ADD) {
+                    cs_x86_op& op0 = lastIns->raw->detail->x86.operands[0];
+                    cs_x86_op& op1 = lastIns->raw->detail->x86.operands[1];
+                    if (op0.type == X86_OP_REG && op1.type == X86_OP_IMM && jmpReg == op0.reg) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        }
     }
     return true;
 }
+
 
 bool VmpTraceFlowGraph::checkCanMerge(size_t nodeAddr)
 {
@@ -173,30 +198,17 @@ bool VmpTraceFlowGraph::addNormalLink(size_t fromAddr, size_t toAddr)
         nextNodeIndex->vmNode = curNodeIndex->vmNode;
         nextNodeIndex->index = curNodeIndex->index + 1;
     }
-    //处于相同的区块且符合下一条指令
+    //处于相同的区块且符合跳转顺序
     if (curNodeIndex->vmNode == nextNodeIndex->vmNode) {
         if (curNodeIndex->index + 1 == nextNodeIndex->index) {
             return true;
         }
         //这个理论上是不可能的
-        return false;
+        throw VmpTraceException("addNormalLink error");
     }
     //说明有其它指令分割了A->B,忽略就行了
     return true;
 }
-
-
-
-//存在一条从地址A执行到地址B的指令
-//修正算法是什么样的?
-//1、存在两种情况,第一种是从A执行到B,第二种是从A跳到B,这两种逻辑是不一样的
-//2、如果是从A执行到B
-//先判断A和B的存在情况
-//如果A和B都存在,B已是A的下一条指令,则忽略
-//如果A和B都存在,B不是A的下一条指令,说明
-//To do...
-//3、如果是从A跳转到B
-
 
 bool VmpTraceFlowGraph::addLink(size_t fromAddr, size_t toAddr)
 {
@@ -204,6 +216,8 @@ bool VmpTraceFlowGraph::addLink(size_t fromAddr, size_t toAddr)
     if (!tmpIns) {
         return false;
     }
+    //将问题简化为两种情况
+    //第一种是从A执行到B,第二种是从A跳到B
     if (isEndIns(tmpIns->raw)) {
         return addJmpLink(fromAddr, toAddr);
     }
@@ -240,7 +254,7 @@ void VmpTraceFlowGraph::MergeAllNodes()
             if (checkCanMerge(nodeAddr)) {
                 size_t fromAddr = *toEdges[nodeAddr].begin();
                 VmpTraceFlowNode* fatherNode = instructionToNodeMap[fromAddr].vmNode;
-                if (checkMerge_Vmp300(nodeAddr)) {
+                if (checkCanMerge_Vmp(nodeAddr)) {
                     executeMerge(fatherNode, &it->second);
                     bUpdateNode = true;
                     it = nodeMap.erase(it);
@@ -256,7 +270,6 @@ void VmpTraceFlowGraph::MergeAllNodes()
 void VmpTraceFlowGraph::DumpGraph(std::ostream& ss, bool bCompress)
 {
     ss << "strict digraph \"hello world\"{\n";
-    DisasmManager& disasmMgr = DisasmManager::Main();
     for (std::map<size_t, VmpTraceFlowNode>::iterator it = nodeMap.begin(); it != nodeMap.end(); ++it) {
         VmpTraceFlowNode& node = it->second;
         ss << "\"" << std::hex << it->first << "\"[label=\"";
@@ -266,7 +279,7 @@ void VmpTraceFlowGraph::DumpGraph(std::ostream& ss, bool bCompress)
                     continue;
                 }
             }
-            std::unique_ptr<RawInstruction> tmpIns = disasmMgr.DecodeInstruction(node.addrList[n]);
+            std::unique_ptr<RawInstruction> tmpIns = DisasmManager::Main().DecodeInstruction(node.addrList[n]);
             if (tmpIns) {
                 ss << std::hex << node.addrList[n] << "\t" << tmpIns->raw->mnemonic << " " << tmpIns->raw->op_str << "\\n";
             }
@@ -276,7 +289,6 @@ void VmpTraceFlowGraph::DumpGraph(std::ostream& ss, bool bCompress)
         }
         ss << "\"];\n";
     }
-
     for (std::map<size_t, std::unordered_set<size_t>>::iterator it = fromEdges.begin(); it != fromEdges.end(); ++it) {
         std::unordered_set<size_t>& edgeList = it->second;
         for (std::unordered_set<size_t>::iterator edegIt = edgeList.begin(); edegIt != edgeList.end(); ++edegIt) {

@@ -14,6 +14,7 @@ public:
 	void MarkVmpEntry(size_t startAddr);
 private:
 	VmpFunction* makeFunction(size_t startAddr);
+	void clearFunction(size_t startAddr);
 private:
 	VmpArchitecture* arch = nullptr;
 	std::list<std::unique_ptr<VmpFunction>> funcCache;

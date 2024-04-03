@@ -17,12 +17,6 @@ public:
         nodeEntry = 0x0;
     }
 public:
-    size_t TryGetAddr(size_t index) {
-        if (index >= addrList.size()) {
-            return 0x0;
-        }
-        return addrList[index];
-    }
     size_t EndAddr() {
         return addrList[addrList.size() - 1];
     }
@@ -63,7 +57,7 @@ private:
     VmpTraceFlowNode* splitBlock(VmpTraceFlowNode* toNode, size_t splitAddr);
     //是否可以合并
     bool checkCanMerge(size_t nodeAddr);
-    bool checkMerge_Vmp300(size_t nodeAddr);
+    bool checkCanMerge_Vmp(size_t nodeAddr);
     //执行合并逻辑
     void executeMerge(VmpTraceFlowNode* fatherNode, VmpTraceFlowNode* childNode);
 public:

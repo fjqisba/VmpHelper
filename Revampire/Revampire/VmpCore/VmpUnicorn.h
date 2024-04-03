@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <memory>
+#include <sstream>
 #include <unicorn/unicorn.h>
 #include "../Helper/UnicornHelper.h"
 
@@ -20,6 +21,7 @@ public:
     std::vector<reg_context> StartVmpTrace(const VmpUnicornContext& ctx, size_t count);
     bool ContinueVmpTrace(const VmpUnicornContext& ctx, size_t count);
     std::unique_ptr<VmpUnicornContext> CopyCurrentUnicornContext();
+    void DumpTrace(std::ostream& ss);
 private:
     //≥¢ ‘–ﬁ∏¥∂—’ª
     bool fixStack();

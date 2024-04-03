@@ -139,6 +139,14 @@ bool VmpUnicorn::fillStack(const VmpUnicornContext& ctx)
     return true;
 }
 
+void VmpUnicorn::DumpTrace(std::ostream& ss)
+{
+    ss << std::hex;
+    for (unsigned int n = 0; n < traceList.size(); ++n) {
+        ss << "EIP=" << traceList[n].EIP << "\n";
+    }
+}
+
 std::unique_ptr<VmpUnicornContext> VmpUnicorn::CopyCurrentUnicornContext()
 {
     auto retContext = std::make_unique<VmpUnicornContext>();

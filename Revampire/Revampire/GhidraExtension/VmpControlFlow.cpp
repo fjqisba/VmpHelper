@@ -1,8 +1,9 @@
 #include "VmpControlFlow.h"
+#include <sstream>
+#include <fstream>
 #include "../Helper/IDAWrapper.h"
 #include "../Manager/exceptions.h"
 #include <graph.hpp>
-#include <sstream>
 #include "../VmpCore/VmpUnicorn.h"
 
 VmpControlFlow::VmpControlFlow() :graph(this)
@@ -196,9 +197,8 @@ void VmpControlFlowBuilder::fallthruVmp(AnaTask& task)
 	tfg.AddTraceFlow(traceList);
 	tfg.MergeAllNodes();
 	std::stringstream ss;
-	tfg.DumpGraph(ss, true);
+	tfg.DumpGraph(ss,true);
 	std::string graphTxt = ss.str();
-
 	int a = 0;
 }
 
