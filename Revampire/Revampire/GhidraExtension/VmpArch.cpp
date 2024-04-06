@@ -89,7 +89,7 @@ ghidra::Funcdata* VmpArchitecture::AnaVmpHandler(VmpNode* nodeInput)
     fd->actIdx = 0x0;
     fd->nodeInput = nullptr;
     fd->FollowVmpNode(nodeInput);
-    ghidra::Action* rootAction = allacts.setCurrent("decompile");
+    ghidra::Action* rootAction = allacts.setCurrent("vmphandler");
     rootAction->reset(*fd);
     auto res = rootAction->perform(*fd);
     if (res < 0) {

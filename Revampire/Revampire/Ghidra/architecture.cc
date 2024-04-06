@@ -589,6 +589,7 @@ void Architecture::buildAction(DocumentStorage &store)
   parseExtraRules(store);	// Look for any additional rules
   allacts.universalAction(this);
   allacts.resetDefaults();
+  allacts.buildVmpHandlerAction(this);
 }
 
 /// Create the database object, which currently doesn't not depend on any configuration

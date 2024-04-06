@@ -322,6 +322,13 @@ public:
   bool addToGroup(const string &grp,const string &basegroup);		///< Add a group to a \e root Action
   bool removeFromGroup(const string &grp,const string &basegroup);	///< Remove a group from a \e root Action
   void universalAction(Architecture *glb);		///< Build the universal action
+
+
+  //Ghidra Extension
+
+  //用于进行vmp handler基础分析
+  void buildVmpHandlerAction(Architecture* glb);
+
 };
 
 } // End ghidra namespace
