@@ -7,8 +7,13 @@
 #include "../Helper/UnicornHelper.h"
 #include "../Manager/DisasmManager.h"
 #include "../VmpCore/VmpTraceFlowGraph.h"
+#include "../VmpCore/VmpUnicorn.h"
+#include "../GhidraExtension/VmpNode.h"
 
 class mutable_graph_t;
+class VmpFunction;
+class VmpControlFlow;
+class VmpArchitecture;
 
 struct VmAddress
 {
@@ -32,6 +37,23 @@ struct VmAddress
 	}
 };
 
+class VmpBlockWalker
+{
+public:
+	VmpBlockWalker(VmpTraceFlowGraph& t) :tfg(t) {};
+	~VmpBlockWalker() {};
+public:
+	void StartWalk(VmpUnicornContext& startCtx, size_t walkSize);
+	const std::vector<reg_context>& GetTraceList();
+	bool IsWalkToEnd();
+	VmpNode GetNextNode();
+private:
+	VmpUnicorn unicorn;
+	VmpTraceFlowGraph& tfg;
+	//当前执行的指令顺序
+	size_t idx = 0x0;
+};
+
 class VmpBasicBlock
 {
 public:
@@ -49,7 +71,6 @@ private:
 	int graphIdx = 0x0;
 };
 
-class VmpControlFlow;
 
 class VmpControlFlowBuilder
 {
@@ -66,11 +87,12 @@ public:
 		std::unique_ptr<VmpUnicornContext> ctx;
 	};
 public:
-	VmpControlFlowBuilder(VmpControlFlow& flow);
+	VmpControlFlowBuilder(VmpFunction& fd);
 	~VmpControlFlowBuilder();
 	bool BuildCFG(size_t startAddr);
 private:
-	void fallthruVmp(AnaTask& task);
+	VmpArchitecture* Architecture();
+	bool fallthruVmp(AnaTask& task);
 	void fallthruNormal(AnaTask& task);
 	bool isVmpEntry(size_t startAddr);
 	VmpBasicBlock* createNewBlock(size_t startAddr);
@@ -80,7 +102,7 @@ private:
 	std::set<VmAddress> visited;
 	std::map<VmAddress, VmpBasicBlock*> instructionMap;
 	std::map<VmAddress, std::set<VmAddress>> fromEdges;
-	VmpControlFlow& flow;
+	VmpFunction& data;
 	VmpTraceFlowGraph tfg;
 };
 

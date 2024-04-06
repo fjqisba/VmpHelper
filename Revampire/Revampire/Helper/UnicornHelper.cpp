@@ -9,6 +9,60 @@ std::uint32_t reg_context::ReadMemReg(cs_x86_op& op)
     return retVal;
 }
 
+std::string GetX86RegName(x86_reg reg)
+{
+    switch (reg)
+    {
+    case X86_REG_AH:
+        return "AH";
+    case X86_REG_AL:
+        return "AL";
+    case X86_REG_AX:
+        return "AX";
+    case X86_REG_BH:
+        return "BH";
+    case X86_REG_BL:
+        return "BL";
+    case X86_REG_BP:
+        return "BP";
+    case X86_REG_BX:
+        return "BX";
+    case X86_REG_CH:
+        return "CH";
+    case X86_REG_CL:
+        return "CL";
+    case X86_REG_DH:
+        return "DH";
+    case X86_REG_DL:
+        return "DL";
+    case X86_REG_DX:
+        return "DX";
+    case X86_REG_EAX:
+        return "EAX";
+    case X86_REG_EBP:
+        return "EBP";
+    case X86_REG_EBX:
+        return "EBX";
+    case X86_REG_ECX:
+        return "ECX";
+    case X86_REG_EDI:
+        return "EDI";
+    case X86_REG_EDX:
+        return "EDX";
+    case X86_REG_EFLAGS:
+        return "EFLAGS";
+    case X86_REG_EIP:
+        return "EIP";
+    case X86_REG_ESI:
+        return "ESI";
+    case X86_REG_ESP:
+        return "ESP";
+    default:
+        break;
+    }
+    return "";
+}
+
 std::uint32_t reg_context::ReadReg(x86_reg reg)
 {
     switch (reg) {

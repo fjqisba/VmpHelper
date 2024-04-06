@@ -33,12 +33,13 @@ private:
 protected:
     static void cb_hook_code(uc_engine* uc, uint64_t address, uint32_t size, void* user_data);
     static void cb_hook_mem(uc_engine* uc, uc_mem_type type, uint64_t address, int size, int64_t value, void* user_data);
+public:
+    //跟踪结果
+    std::vector<reg_context> traceList;
 private:
     uc_struct* uc = nullptr;
     uc_hook hook_code = 0x0;
     uc_hook hook_mem = 0x0;
-    //跟踪结果
-    std::vector<reg_context> traceList;
     reg_context tmpContext;
     size_t stackCodeBase;
     std::vector<unsigned char> stackBuffer;

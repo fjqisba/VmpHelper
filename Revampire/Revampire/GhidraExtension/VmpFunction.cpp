@@ -1,7 +1,7 @@
 #include "VmpFunction.h"
 #include <graph.hpp>
 
-VmpFunction::VmpFunction()
+VmpFunction::VmpFunction(VmpArchitecture* glb):arch(glb)
 {
 	
 }
@@ -9,6 +9,11 @@ VmpFunction::VmpFunction()
 VmpFunction::~VmpFunction()
 {
 
+}
+
+VmpArchitecture* VmpFunction::Arch()
+{
+    return arch;
 }
 
 void VmpFunction::CreateGraph()
@@ -38,6 +43,6 @@ void VmpFunction::FollowVmp(size_t start)
     if (cfg.blocksMap.size()) {
         return;
     }
-	VmpControlFlowBuilder builder(cfg);
+	VmpControlFlowBuilder builder(*this);
 	builder.BuildCFG(startAddr);
 }

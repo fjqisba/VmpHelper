@@ -21,6 +21,8 @@
 
 #include "funcdata.hh"
 
+class VmpNode;
+
 namespace ghidra {
 
 /// \brief A class for generating the control-flow structure for a single function
@@ -139,6 +141,10 @@ private:
   void deleteCallSpec(FuncCallSpecs *fc);		///< Remove the given call site from the list for \b this function
   void truncateIndirectJump(PcodeOp *op,int4 failuremode);  	///< Treat indirect jump as indirect call that never returns
   static bool isInArray(vector<PcodeOp *> &array,PcodeOp *op);
+public:
+	//GhidraExtension
+	void generateVmpNodeOps(VmpNode* node);
+	void processVmpInstruction(Address& curaddr, bool& startbasic);
 public:
   FlowInfo(Funcdata &d,PcodeOpBank &o,BlockGraph &b,vector<FuncCallSpecs *> &q);	///< Constructor
   FlowInfo(Funcdata &d,PcodeOpBank &o,BlockGraph &b,vector<FuncCallSpecs *> &q,const FlowInfo *op2);	///< Cloning constructor

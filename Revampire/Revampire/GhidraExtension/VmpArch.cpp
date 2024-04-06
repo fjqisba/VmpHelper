@@ -2,10 +2,15 @@
 #include "IDALoadImage.h"
 #include "../Ghidra/libdecomp.hh"
 #include "../Helper/IDAWrapper.h"
+#include "../Manager/exceptions.h"
+#include "../GhidraExtension/VmpNode.h"
+#include "../Ghidra/funcdata.hh"
 
 VmpArchitecture::VmpArchitecture() :ghidra::SleighArchitecture("", "", 0x0)
 {
-
+    if (!initVmpArchitecture()) {
+        throw Exception("InitVmpArchitecture error.");
+    }
 }
 
 VmpArchitecture::~VmpArchitecture()
@@ -69,6 +74,31 @@ bool VmpArchitecture::initVmpArchitecture()
     if (iserror) {
         return false;
     }
-
     return true;
+}
+
+ghidra::Funcdata* VmpArchitecture::AnaVmpHandler(VmpNode* nodeInput)
+{
+    ghidra::Address startAddr(getDefaultCodeSpace(), nodeInput->addrList[0]);
+    ghidra::Funcdata* fd = symboltab->getGlobalScope()->findFunction(startAddr);
+    if (!fd) {
+        fd = symboltab->getGlobalScope()->addFunction(startAddr, "")->getFunction();
+    }
+    clearAnalysis(fd);
+    //clear extension data
+    fd->actIdx = 0x0;
+    fd->nodeInput = nullptr;
+    fd->FollowVmpNode(nodeInput);
+    ghidra::Action* rootAction = allacts.setCurrent("decompile");
+    rootAction->reset(*fd);
+    auto res = rootAction->perform(*fd);
+    if (res < 0) {
+        return nullptr;
+    }
+#ifdef _DEBUG
+    std::stringstream ss;
+    fd->printRaw(ss);
+    std::string rawResult = ss.str();
+#endif
+    return fd;
 }

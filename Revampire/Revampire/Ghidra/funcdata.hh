@@ -26,6 +26,9 @@
 #include "dynamic.hh"
 #include "unionresolve.hh"
 
+
+class VmpNode;
+
 namespace ghidra {
 
 class FlowInfo;
@@ -136,6 +139,12 @@ class Funcdata {
   static bool checkIndirectUse(Varnode *vn);
   static PcodeOp *findPrimaryBranch(PcodeOpTree::const_iterator iter,PcodeOpTree::const_iterator enditer,
 				    bool findbranch,bool findcall,bool findreturn);
+public:
+    //GhidraExtension
+    VmpNode* nodeInput = nullptr;
+    //用于记录被优化的索引次数
+    std::uint64_t actIdx = 0x0;
+    void FollowVmpNode(VmpNode* node);
 public:
   Funcdata(const string &nm,const string &disp,Scope *conf,const Address &addr,FunctionSymbol *sym,int4 sz=0);	///< Constructor
   ~Funcdata(void);							///< Destructor

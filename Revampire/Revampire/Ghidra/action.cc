@@ -316,7 +316,7 @@ int4 Action::perform(Funcdata &data)
 #ifdef OPACTION_DEBUG
       data.debugActivate();
 #endif
-      res = apply(data);	// Start or continue action
+      res = debugApply(data);	// Start or continue action
 #ifdef OPACTION_DEBUG
       data.debugModPrint(getName());
 #endif

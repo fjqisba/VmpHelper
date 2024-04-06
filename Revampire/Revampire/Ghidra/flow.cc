@@ -742,7 +742,6 @@ bool FlowInfo::isInArray(vector<PcodeOp *> &array,PcodeOp *op)
 }
 
 void FlowInfo::generateOps(void)
-
 {
   vector<PcodeOp *> notreached;	// indirect ops that are not reachable
   int4 notreachcnt = 0;

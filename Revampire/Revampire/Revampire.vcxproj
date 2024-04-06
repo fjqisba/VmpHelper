@@ -161,12 +161,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="GhidraExtension\FuncBuildHelper.cpp" />
     <ClCompile Include="GhidraExtension\IDALoadImage.cpp" />
     <ClCompile Include="GhidraExtension\PrintManager.cpp" />
     <ClCompile Include="GhidraExtension\VmpArch.cpp" />
     <ClCompile Include="GhidraExtension\VmpControlFlow.cpp" />
     <ClCompile Include="GhidraExtension\VmpFunction.cpp" />
     <ClCompile Include="GhidraExtension\VmpInstruction.cpp" />
+    <ClCompile Include="GhidraExtension\VmpNode.cpp" />
     <ClCompile Include="Ghidra\action.cc" />
     <ClCompile Include="Ghidra\address.cc" />
     <ClCompile Include="Ghidra\architecture.cc" />
@@ -205,8 +207,6 @@
     <ClCompile Include="Ghidra\grammar.cc" />
     <ClCompile Include="Ghidra\graph.cc" />
     <ClCompile Include="Ghidra\heritage.cc" />
-    <ClCompile Include="Ghidra\ifacedecomp.cc" />
-    <ClCompile Include="Ghidra\ifaceterm.cc" />
     <ClCompile Include="Ghidra\inject_ghidra.cc" />
     <ClCompile Include="Ghidra\inject_sleigh.cc" />
     <ClCompile Include="Ghidra\interface.cc" />
@@ -250,8 +250,6 @@
     <ClCompile Include="Ghidra\stringmanage.cc" />
     <ClCompile Include="Ghidra\string_ghidra.cc" />
     <ClCompile Include="Ghidra\subflow.cc" />
-    <ClCompile Include="Ghidra\test.cc" />
-    <ClCompile Include="Ghidra\testfunction.cc" />
     <ClCompile Include="Ghidra\transform.cc" />
     <ClCompile Include="Ghidra\translate.cc" />
     <ClCompile Include="Ghidra\type.cc" />
@@ -278,12 +276,14 @@
     <ClCompile Include="VmpCore\VmpUnicorn.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="GhidraExtension\FuncBuildHelper.h" />
     <ClInclude Include="GhidraExtension\IDALoadImage.h" />
     <ClInclude Include="GhidraExtension\PrintManager.h" />
     <ClInclude Include="GhidraExtension\VmpArch.h" />
     <ClInclude Include="GhidraExtension\VmpControlFlow.h" />
     <ClInclude Include="GhidraExtension\VmpFunction.h" />
     <ClInclude Include="GhidraExtension\VmpInstruction.h" />
+    <ClInclude Include="GhidraExtension\VmpNode.h" />
     <ClInclude Include="Ghidra\action.hh" />
     <ClInclude Include="Ghidra\address.hh" />
     <ClInclude Include="Ghidra\architecture.hh" />
@@ -322,8 +322,6 @@
     <ClInclude Include="Ghidra\grammar.hh" />
     <ClInclude Include="Ghidra\graph.hh" />
     <ClInclude Include="Ghidra\heritage.hh" />
-    <ClInclude Include="Ghidra\ifacedecomp.hh" />
-    <ClInclude Include="Ghidra\ifaceterm.hh" />
     <ClInclude Include="Ghidra\inject_ghidra.hh" />
     <ClInclude Include="Ghidra\inject_sleigh.hh" />
     <ClInclude Include="Ghidra\interface.hh" />
@@ -369,8 +367,6 @@
     <ClInclude Include="Ghidra\stringmanage.hh" />
     <ClInclude Include="Ghidra\string_ghidra.hh" />
     <ClInclude Include="Ghidra\subflow.hh" />
-    <ClInclude Include="Ghidra\test.hh" />
-    <ClInclude Include="Ghidra\testfunction.hh" />
     <ClInclude Include="Ghidra\transform.hh" />
     <ClInclude Include="Ghidra\translate.hh" />
     <ClInclude Include="Ghidra\type.hh" />

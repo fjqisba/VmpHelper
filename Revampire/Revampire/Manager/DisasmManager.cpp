@@ -64,3 +64,14 @@ bool DisasmManager::IsBranchInstruction(cs_insn* ins)
 	}
 	return false;
 }
+
+bool DisasmManager::IsE8Call(cs_insn* ins)
+{
+	if (ins->id != X86_INS_CALL) {
+		return false;
+	}
+	if (ins->detail->x86.opcode[0] != 0xE8) {
+		return false;
+	}
+	return true;
+}

@@ -22,7 +22,6 @@
 
 #include "architecture.hh"
 #include "sleigh_arch.hh"
-#include "ifacedecomp.hh"
 
 namespace ghidra {
 

@@ -12,9 +12,6 @@ VmpReEngine::VmpReEngine()
 	if (arch == nullptr) {
 		throw Exception("VmpReEngine::VmpReEngine(): Not enough memory.");
 	}
-	if (!arch->initVmpArchitecture()) {
-		throw Exception("VmpReEngine::VmpReEngine(): InitVmpArchitecture error.");
-	}
 }
 
 VmpReEngine::~VmpReEngine()
@@ -31,6 +28,10 @@ VmpReEngine& VmpReEngine::Instance()
 void VmpReEngine::MarkVmpEntry(size_t startAddr)
 {
 	IDAWrapper::set_cmt(startAddr, "vmp entry", false);
+	func_t* anyFunc = get_func(startAddr);
+	if (anyFunc) {
+		clearFunction(anyFunc->start_ea);
+	}
 }
 
 void VmpReEngine::clearFunction(size_t startAddr)
@@ -39,7 +40,9 @@ void VmpReEngine::clearFunction(size_t startAddr)
 		[startAddr](const std::unique_ptr<VmpFunction>& func) {
 			return func->startAddr == startAddr;
 	});
-	funcCache.erase(it);
+	if (it != funcCache.end()) {
+		funcCache.erase(it);
+	}
 }
 
 VmpFunction* VmpReEngine::makeFunction(size_t startAddr)
@@ -65,7 +68,7 @@ VmpFunction* VmpReEngine::makeFunction(size_t startAddr)
 			break;
 		}
 	}
-	std::unique_ptr<VmpFunction> retVmp = std::make_unique<VmpFunction>();
+	std::unique_ptr<VmpFunction> retVmp = std::make_unique<VmpFunction>(arch);
 	VmpFunction* retFunc = retVmp.get();
 	funcCache.push_back(std::move(retVmp));
 	return retFunc;

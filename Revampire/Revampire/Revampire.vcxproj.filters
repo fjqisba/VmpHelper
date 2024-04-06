@@ -11,14 +11,14 @@
     <Filter Include="Helper">
       <UniqueIdentifier>{485076a6-7873-445f-ae56-6a4e89933fb0}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Ghidra">
-      <UniqueIdentifier>{6d678a9a-b8e3-4b57-85f6-e8f59cb81a44}</UniqueIdentifier>
-    </Filter>
     <Filter Include="GhidraExtension">
       <UniqueIdentifier>{267dd598-d432-4285-84e8-79acee4a4c91}</UniqueIdentifier>
     </Filter>
     <Filter Include="Manager">
       <UniqueIdentifier>{fed5abcf-ab2e-4474-baba-d33dbb7149d0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Ghidra">
+      <UniqueIdentifier>{ad1e2970-504d-433b-94fe-8d1fddf964ac}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -30,6 +30,51 @@
     </ClCompile>
     <ClCompile Include="VmpCore\VmpReEngine.cpp">
       <Filter>VmpCore</Filter>
+    </ClCompile>
+    <ClCompile Include="GhidraExtension\IDALoadImage.cpp">
+      <Filter>GhidraExtension</Filter>
+    </ClCompile>
+    <ClCompile Include="Helper\IDAWrapper.cpp">
+      <Filter>Helper</Filter>
+    </ClCompile>
+    <ClCompile Include="GhidraExtension\VmpFunction.cpp">
+      <Filter>GhidraExtension</Filter>
+    </ClCompile>
+    <ClCompile Include="GhidraExtension\VmpArch.cpp">
+      <Filter>GhidraExtension</Filter>
+    </ClCompile>
+    <ClCompile Include="GhidraExtension\PrintManager.cpp">
+      <Filter>GhidraExtension</Filter>
+    </ClCompile>
+    <ClCompile Include="GhidraExtension\VmpControlFlow.cpp">
+      <Filter>GhidraExtension</Filter>
+    </ClCompile>
+    <ClCompile Include="Helper\UnicornHelper.cpp">
+      <Filter>Helper</Filter>
+    </ClCompile>
+    <ClCompile Include="VmpCore\VmpTraceFlowGraph.cpp">
+      <Filter>VmpCore</Filter>
+    </ClCompile>
+    <ClCompile Include="Manager\DisasmManager.cpp">
+      <Filter>Manager</Filter>
+    </ClCompile>
+    <ClCompile Include="Manager\SectionManager.cpp">
+      <Filter>Manager</Filter>
+    </ClCompile>
+    <ClCompile Include="Manager\exceptions.cpp">
+      <Filter>Manager</Filter>
+    </ClCompile>
+    <ClCompile Include="GhidraExtension\VmpInstruction.cpp">
+      <Filter>GhidraExtension</Filter>
+    </ClCompile>
+    <ClCompile Include="VmpCore\VmpUnicorn.cpp">
+      <Filter>VmpCore</Filter>
+    </ClCompile>
+    <ClCompile Include="Manager\VmpVersionManager.cpp">
+      <Filter>Manager</Filter>
+    </ClCompile>
+    <ClCompile Include="GhidraExtension\VmpNode.cpp">
+      <Filter>GhidraExtension</Filter>
     </ClCompile>
     <ClCompile Include="Ghidra\action.cc">
       <Filter>Ghidra</Filter>
@@ -143,12 +188,6 @@
       <Filter>Ghidra</Filter>
     </ClCompile>
     <ClCompile Include="Ghidra\heritage.cc">
-      <Filter>Ghidra</Filter>
-    </ClCompile>
-    <ClCompile Include="Ghidra\ifacedecomp.cc">
-      <Filter>Ghidra</Filter>
-    </ClCompile>
-    <ClCompile Include="Ghidra\ifaceterm.cc">
       <Filter>Ghidra</Filter>
     </ClCompile>
     <ClCompile Include="Ghidra\inject_ghidra.cc">
@@ -280,12 +319,6 @@
     <ClCompile Include="Ghidra\subflow.cc">
       <Filter>Ghidra</Filter>
     </ClCompile>
-    <ClCompile Include="Ghidra\test.cc">
-      <Filter>Ghidra</Filter>
-    </ClCompile>
-    <ClCompile Include="Ghidra\testfunction.cc">
-      <Filter>Ghidra</Filter>
-    </ClCompile>
     <ClCompile Include="Ghidra\transform.cc">
       <Filter>Ghidra</Filter>
     </ClCompile>
@@ -325,47 +358,8 @@
     <ClCompile Include="Ghidra\xml_arch.cc">
       <Filter>Ghidra</Filter>
     </ClCompile>
-    <ClCompile Include="GhidraExtension\IDALoadImage.cpp">
+    <ClCompile Include="GhidraExtension\FuncBuildHelper.cpp">
       <Filter>GhidraExtension</Filter>
-    </ClCompile>
-    <ClCompile Include="Helper\IDAWrapper.cpp">
-      <Filter>Helper</Filter>
-    </ClCompile>
-    <ClCompile Include="GhidraExtension\VmpFunction.cpp">
-      <Filter>GhidraExtension</Filter>
-    </ClCompile>
-    <ClCompile Include="GhidraExtension\VmpArch.cpp">
-      <Filter>GhidraExtension</Filter>
-    </ClCompile>
-    <ClCompile Include="GhidraExtension\PrintManager.cpp">
-      <Filter>GhidraExtension</Filter>
-    </ClCompile>
-    <ClCompile Include="GhidraExtension\VmpControlFlow.cpp">
-      <Filter>GhidraExtension</Filter>
-    </ClCompile>
-    <ClCompile Include="Helper\UnicornHelper.cpp">
-      <Filter>Helper</Filter>
-    </ClCompile>
-    <ClCompile Include="VmpCore\VmpTraceFlowGraph.cpp">
-      <Filter>VmpCore</Filter>
-    </ClCompile>
-    <ClCompile Include="Manager\DisasmManager.cpp">
-      <Filter>Manager</Filter>
-    </ClCompile>
-    <ClCompile Include="Manager\SectionManager.cpp">
-      <Filter>Manager</Filter>
-    </ClCompile>
-    <ClCompile Include="Manager\exceptions.cpp">
-      <Filter>Manager</Filter>
-    </ClCompile>
-    <ClCompile Include="GhidraExtension\VmpInstruction.cpp">
-      <Filter>GhidraExtension</Filter>
-    </ClCompile>
-    <ClCompile Include="VmpCore\VmpUnicorn.cpp">
-      <Filter>VmpCore</Filter>
-    </ClCompile>
-    <ClCompile Include="Manager\VmpVersionManager.cpp">
-      <Filter>Manager</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -374,6 +368,51 @@
     </ClInclude>
     <ClInclude Include="VmpCore\VmpReEngine.h">
       <Filter>VmpCore</Filter>
+    </ClInclude>
+    <ClInclude Include="GhidraExtension\IDALoadImage.h">
+      <Filter>GhidraExtension</Filter>
+    </ClInclude>
+    <ClInclude Include="Helper\IDAWrapper.h">
+      <Filter>Helper</Filter>
+    </ClInclude>
+    <ClInclude Include="GhidraExtension\VmpFunction.h">
+      <Filter>GhidraExtension</Filter>
+    </ClInclude>
+    <ClInclude Include="GhidraExtension\VmpArch.h">
+      <Filter>GhidraExtension</Filter>
+    </ClInclude>
+    <ClInclude Include="GhidraExtension\PrintManager.h">
+      <Filter>GhidraExtension</Filter>
+    </ClInclude>
+    <ClInclude Include="GhidraExtension\VmpControlFlow.h">
+      <Filter>GhidraExtension</Filter>
+    </ClInclude>
+    <ClInclude Include="Helper\UnicornHelper.h">
+      <Filter>Helper</Filter>
+    </ClInclude>
+    <ClInclude Include="VmpCore\VmpTraceFlowGraph.h">
+      <Filter>VmpCore</Filter>
+    </ClInclude>
+    <ClInclude Include="Manager\DisasmManager.h">
+      <Filter>Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="Manager\SectionManager.h">
+      <Filter>Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="Manager\exceptions.h">
+      <Filter>Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="GhidraExtension\VmpInstruction.h">
+      <Filter>GhidraExtension</Filter>
+    </ClInclude>
+    <ClInclude Include="VmpCore\VmpUnicorn.h">
+      <Filter>VmpCore</Filter>
+    </ClInclude>
+    <ClInclude Include="Manager\VmpVersionManager.h">
+      <Filter>Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="GhidraExtension\VmpNode.h">
+      <Filter>GhidraExtension</Filter>
     </ClInclude>
     <ClInclude Include="Ghidra\xml_arch.hh">
       <Filter>Ghidra</Filter>
@@ -490,12 +529,6 @@
       <Filter>Ghidra</Filter>
     </ClInclude>
     <ClInclude Include="Ghidra\heritage.hh">
-      <Filter>Ghidra</Filter>
-    </ClInclude>
-    <ClInclude Include="Ghidra\ifacedecomp.hh">
-      <Filter>Ghidra</Filter>
-    </ClInclude>
-    <ClInclude Include="Ghidra\ifaceterm.hh">
       <Filter>Ghidra</Filter>
     </ClInclude>
     <ClInclude Include="Ghidra\inject_ghidra.hh">
@@ -633,12 +666,6 @@
     <ClInclude Include="Ghidra\subflow.hh">
       <Filter>Ghidra</Filter>
     </ClInclude>
-    <ClInclude Include="Ghidra\test.hh">
-      <Filter>Ghidra</Filter>
-    </ClInclude>
-    <ClInclude Include="Ghidra\testfunction.hh">
-      <Filter>Ghidra</Filter>
-    </ClInclude>
     <ClInclude Include="Ghidra\transform.hh">
       <Filter>Ghidra</Filter>
     </ClInclude>
@@ -678,47 +705,8 @@
     <ClInclude Include="Ghidra\xml.hh">
       <Filter>Ghidra</Filter>
     </ClInclude>
-    <ClInclude Include="GhidraExtension\IDALoadImage.h">
+    <ClInclude Include="GhidraExtension\FuncBuildHelper.h">
       <Filter>GhidraExtension</Filter>
-    </ClInclude>
-    <ClInclude Include="Helper\IDAWrapper.h">
-      <Filter>Helper</Filter>
-    </ClInclude>
-    <ClInclude Include="GhidraExtension\VmpFunction.h">
-      <Filter>GhidraExtension</Filter>
-    </ClInclude>
-    <ClInclude Include="GhidraExtension\VmpArch.h">
-      <Filter>GhidraExtension</Filter>
-    </ClInclude>
-    <ClInclude Include="GhidraExtension\PrintManager.h">
-      <Filter>GhidraExtension</Filter>
-    </ClInclude>
-    <ClInclude Include="GhidraExtension\VmpControlFlow.h">
-      <Filter>GhidraExtension</Filter>
-    </ClInclude>
-    <ClInclude Include="Helper\UnicornHelper.h">
-      <Filter>Helper</Filter>
-    </ClInclude>
-    <ClInclude Include="VmpCore\VmpTraceFlowGraph.h">
-      <Filter>VmpCore</Filter>
-    </ClInclude>
-    <ClInclude Include="Manager\DisasmManager.h">
-      <Filter>Manager</Filter>
-    </ClInclude>
-    <ClInclude Include="Manager\SectionManager.h">
-      <Filter>Manager</Filter>
-    </ClInclude>
-    <ClInclude Include="Manager\exceptions.h">
-      <Filter>Manager</Filter>
-    </ClInclude>
-    <ClInclude Include="GhidraExtension\VmpInstruction.h">
-      <Filter>GhidraExtension</Filter>
-    </ClInclude>
-    <ClInclude Include="VmpCore\VmpUnicorn.h">
-      <Filter>VmpCore</Filter>
-    </ClInclude>
-    <ClInclude Include="Manager\VmpVersionManager.h">
-      <Filter>Manager</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

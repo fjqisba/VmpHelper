@@ -29,6 +29,7 @@ public:
 	~DisasmManager();
 public:
 	static bool IsBranchInstruction(cs_insn* ins);
+	static bool IsE8Call(cs_insn* ins);
 	std::unique_ptr<RawInstruction> DecodeInstruction(size_t addr);
 public:
 	static csh handle;

@@ -24,6 +24,8 @@ public:
     std::uint32_t ReadReg(const std::string& regName);
 };
 
+std::string GetX86RegName(x86_reg reg);
+
 class VmpUnicornContext
 {
 public:

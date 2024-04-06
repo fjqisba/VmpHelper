@@ -1,10 +1,12 @@
 #include "VmpControlFlow.h"
 #include <sstream>
 #include <fstream>
+#include <graph.hpp>
 #include "../Helper/IDAWrapper.h"
 #include "../Manager/exceptions.h"
-#include <graph.hpp>
-#include "../VmpCore/VmpUnicorn.h"
+#include "../GhidraExtension/VmpFunction.h"
+#include "../GhidraExtension/VmpArch.h"
+#include "../Helper/UnicornHelper.h"
 
 VmpControlFlow::VmpControlFlow() :graph(this)
 {
@@ -16,7 +18,7 @@ VmpControlFlow::~VmpControlFlow()
 
 }
 
-VmpControlFlowBuilder::VmpControlFlowBuilder(VmpControlFlow& f):flow(f)
+VmpControlFlowBuilder::VmpControlFlowBuilder(VmpFunction& fd):data(fd)
 {
 
 }
@@ -108,9 +110,9 @@ void VmpControlFlowBuilder::linkBlockEdge(VmAddress from, VmAddress to)
 
 VmpBasicBlock* VmpControlFlowBuilder::createNewBlock(size_t startAddr)
 {
-	VmpBasicBlock* newBlock = &flow.blocksMap[startAddr];
-	if (flow.blocksMap.size() == 1) {
-		flow.startBlock = newBlock;
+	VmpBasicBlock* newBlock = &data.cfg.blocksMap[startAddr];
+	if (data.cfg.blocksMap.size() == 1) {
+		data.cfg.startBlock = newBlock;
 	}
 	return newBlock;
 }
@@ -186,20 +188,57 @@ void VmpControlFlowBuilder::fallthruNormal(AnaTask& task)
 	}
 }
 
-void VmpControlFlowBuilder::fallthruVmp(AnaTask& task)
+void VmpBlockWalker::StartWalk(VmpUnicornContext& startCtx, size_t walkSize)
 {
-	VmpUnicorn unicornEngine;
+	unicorn.StartVmpTrace(startCtx, walkSize);
+}
+
+const std::vector<reg_context>& VmpBlockWalker::GetTraceList()
+{
+	return unicorn.traceList;
+}
+
+bool VmpBlockWalker::IsWalkToEnd()
+{
+	return idx >= unicorn.traceList.size();
+}
+
+VmpNode VmpBlockWalker::GetNextNode()
+{
+	VmpNode retNode;
+	size_t curAddr = unicorn.traceList[idx].EIP;
+	retNode.addrList = tfg.nodeMap[curAddr].addrList;
+	for (unsigned int n = 0; n < retNode.addrList.size(); ++n) {
+		retNode.contextList.push_back(unicorn.traceList[idx + n]);
+	}
+	return retNode;
+}
+
+
+bool VmpControlFlowBuilder::fallthruVmp(AnaTask& task)
+{
+	VmpBlockWalker walker(tfg);
 	if (task.ctx == nullptr) {
 		task.ctx = VmpUnicornContext::DefaultContext();
 		task.ctx->context.EIP = task.vmAddr.raw;
 	}
-	auto traceList = unicornEngine.StartVmpTrace(*task.ctx, 0x10000);
-	tfg.AddTraceFlow(traceList);
+	walker.StartWalk(*task.ctx, 0x10000);
+	tfg.AddTraceFlow(walker.GetTraceList());
 	tfg.MergeAllNodes();
-	std::stringstream ss;
-	tfg.DumpGraph(ss,true);
-	std::string graphTxt = ss.str();
-	int a = 0;
+	while (!walker.IsWalkToEnd()) {
+		VmpNode nodeInput = walker.GetNextNode();
+		if (!nodeInput.addrList.size()) {
+			return false;
+		}
+		ghidra::Funcdata* fd =  Architecture()->AnaVmpHandler(&nodeInput);
+		int a = 0;
+	}
+	return true;
+}
+
+VmpArchitecture* VmpControlFlowBuilder::Architecture()
+{
+	return data.Arch();
 }
 
 bool VmpControlFlowBuilder::BuildCFG(size_t startAddr)
