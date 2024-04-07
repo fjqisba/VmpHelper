@@ -46,3 +46,26 @@ int4 RuleVmpLoadConst::applyOp(PcodeOp* op, Funcdata& data)
     data.opSetOpcode(op, CPUI_COPY);
     return 0x1;
 }
+
+int4 RuleVmpEarlyRemoval::applyOp(PcodeOp* op, Funcdata& data)
+{
+    Varnode* vn;
+    if (op->isCall()) return 0;	// Functions automatically consumed
+    if (op->isIndirectSource()) return 0;
+    vn = op->getOut();
+    if (vn == (Varnode*)0) return 0;
+    //  if (vn->isPersist()) return 0;
+    if (!vn->hasNoDescend()) return 0;
+    if (vn->isAutoLive()) return 0;
+    AddrSpace* spc = vn->getSpace();
+    if (spc == stackspace) {
+        return 0x0;
+    }
+    if (spc->doesDeadcode()) {
+        if (!data.deadRemovalAllowedSeen(spc)) {
+            return 0;
+        }
+    }
+    data.opDestroy(op);		// Get rid of unused op
+    return 1;
+}

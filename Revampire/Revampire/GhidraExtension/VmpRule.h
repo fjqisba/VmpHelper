@@ -17,5 +17,17 @@ namespace ghidra
         virtual int4 applyOp(PcodeOp* op, Funcdata& data);
     };
 
-
+    //²»ÒÆ³ý¶ÑÕ»
+    class RuleVmpEarlyRemoval : public Rule {
+    public:
+        RuleVmpEarlyRemoval(const string& g, AddrSpace* ss) : Rule(g, 0, "vmpearlyremoval") { stackspace = ss; }	///< Constructor
+        virtual Rule* clone(const ActionGroupList& grouplist) const {
+            if (!grouplist.contains(getGroup())) return (Rule*)0;
+            return new RuleVmpEarlyRemoval(getGroup(), stackspace);
+        }
+        // This rule applies to all ops
+        virtual int4 applyOp(PcodeOp* op, Funcdata& data);
+    private:
+        AddrSpace* stackspace;
+    };
 }

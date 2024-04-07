@@ -41,10 +41,11 @@ int4 ActionVmpHandlerDeadCode::apply(Funcdata& data)
         }
     }
 
+    //返回都是全消费
     returnConsume = ~((uintb)0);
+
     for (iter = data.beginOpAlive(); iter != data.endOpAlive(); ++iter) {
         op = *iter;
-
         op->clearIndirectSource();
         if (op->isCall()) {
             // Postpone setting consumption on CALL and CALLIND inputs
@@ -88,8 +89,13 @@ int4 ActionVmpHandlerDeadCode::apply(Funcdata& data)
             }
         }
         vn = op->getOut();
-        if (vn->isAutoLive())
+        if (vn->isAutoLive()) {
             ActionDeadCode::pushConsumed(~((uintb)0), vn, worklist);
+        }
+        //增加对堆栈的处理
+        else if (vn->getSpace() == data.getArch()->getStackSpace()) {
+            ActionDeadCode::pushConsumed(~((uintb)0), vn, worklist);
+        }
     }
 
     // Mark consumption of call parameters

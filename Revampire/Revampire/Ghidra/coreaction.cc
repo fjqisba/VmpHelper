@@ -5369,7 +5369,7 @@ void ActionDatabase::buildVmpHandlerAction(Architecture* conf)
             actmainloop->addAction(new ActionActiveParam("protorecovery"));
             actmainloop->addAction(new ActionReturnRecovery("protorecovery"));
             actmainloop->addAction(new ActionRestrictLocal("localrecovery")); // Do before dead code removed
-            actmainloop->addAction(new ActionVmpHandlerDeadCode("deadcode"));
+            actmainloop->addAction(new ActionVmpHandlerDeadCode("deadcode", stackspace));
             actmainloop->addAction(new ActionDynamicMapping("dynamic")); // Must come before restructurevarnode and infertypes
             actmainloop->addAction(new ActionRestructureVarnode("localrecovery"));
             actmainloop->addAction(new ActionSpacebase("base"));	// Must come before infertypes and nonzeromask
@@ -5379,7 +5379,7 @@ void ActionDatabase::buildVmpHandlerAction(Architecture* conf)
             {
                 actprop = new ActionPool(Action::rule_repeatapply, "oppool1");
                 actprop->addRule(new RuleVmpLoadConst("deadcode"));
-                actprop->addRule(new RuleEarlyRemoval("deadcode"));
+                actprop->addRule(new RuleVmpEarlyRemoval("deadcode", stackspace));
                 actprop->addRule(new RuleTermOrder("analysis"));
                 actprop->addRule(new RuleSelectCse("analysis"));
                 actprop->addRule(new RuleCollectTerms("analysis"));
@@ -5537,7 +5537,7 @@ void ActionDatabase::buildVmpHandlerAction(Architecture* conf)
         actfullloop->addAction(new ActionLikelyTrash("protorecovery"));
         actfullloop->addAction(new ActionDirectWrite("protorecovery_a", true));
         actfullloop->addAction(new ActionDirectWrite("protorecovery_b", false));
-        actfullloop->addAction(new ActionVmpHandlerDeadCode("deadcode"));
+        actfullloop->addAction(new ActionVmpHandlerDeadCode("deadcode", stackspace));
         actfullloop->addAction(new ActionDoNothing("deadcontrolflow"));
         actfullloop->addAction(new ActionSwitchNorm("switchnorm"));
         actfullloop->addAction(new ActionReturnSplit("returnsplit"));
