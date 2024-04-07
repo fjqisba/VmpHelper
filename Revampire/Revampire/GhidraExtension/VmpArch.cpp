@@ -85,9 +85,7 @@ ghidra::Funcdata* VmpArchitecture::AnaVmpHandler(VmpNode* nodeInput)
         fd = symboltab->getGlobalScope()->addFunction(startAddr, "")->getFunction();
     }
     clearAnalysis(fd);
-    //clear extension data
-    fd->actIdx = 0x0;
-    fd->nodeInput = nullptr;
+    fd->clearExtensionData();
     fd->FollowVmpNode(nodeInput);
     ghidra::Action* rootAction = allacts.setCurrent("vmphandler");
     rootAction->reset(*fd);

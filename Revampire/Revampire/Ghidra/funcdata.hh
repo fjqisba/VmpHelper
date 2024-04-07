@@ -146,6 +146,8 @@ public:
     std::uint64_t actIdx = 0x0;
     void FollowVmpNode(VmpNode* node);
     void buildReturnVal();
+    //清理扩展数据
+    void clearExtensionData();
 public:
   Funcdata(const string &nm,const string &disp,Scope *conf,const Address &addr,FunctionSymbol *sym,int4 sz=0);	///< Constructor
   ~Funcdata(void);							///< Destructor

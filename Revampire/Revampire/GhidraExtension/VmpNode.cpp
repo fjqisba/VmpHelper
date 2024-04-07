@@ -112,6 +112,12 @@ void ghidra::FlowInfo::generateVmpNodeOps(VmpNode* node)
     }
 }
 
+void ghidra::Funcdata::clearExtensionData()
+{
+    actIdx = 0x0;
+    nodeInput = nullptr;
+}
+
 void ghidra::Funcdata::buildReturnVal()
 {
     std::vector<VarnodeData> retVarList;
@@ -125,7 +131,6 @@ void ghidra::Funcdata::buildReturnVal()
     retVarList.push_back(glb->translate->getRegister("EDI"));
     retVarList.push_back(glb->translate->getRegister("eflags"));
     retVarList.push_back(glb->translate->getRegister("EIP"));
-
     auto opStart = beginOp(ghidra::CPUI_RETURN);
     auto opEnd = endOp(ghidra::CPUI_RETURN);
     while (opStart != opEnd) {
@@ -170,7 +175,7 @@ void ghidra::Funcdata::FollowVmpNode(VmpNode* node)
 ghidra::int4 ghidra::Action::debugApply(Funcdata& data)
 {
 #ifdef _DEBUG
-    if (data.actIdx == 21) {
+    if (data.actIdx == 66) {
         std::stringstream ss;
         data.printRaw(ss);
         std::string rawResult = ss.str();

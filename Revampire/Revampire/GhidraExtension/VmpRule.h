@@ -3,7 +3,7 @@
 
 namespace ghidra
 {
-    //作用是将内存访问直接转换为常量访问
+    //作用是将只读内存访问直接转换为常量
     //例如a = *[0x401000] => a = 0x40000
     class RuleVmpLoadConst : public Rule
     {
