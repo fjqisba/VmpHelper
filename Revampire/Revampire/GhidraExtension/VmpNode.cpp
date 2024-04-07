@@ -175,7 +175,7 @@ void ghidra::Funcdata::FollowVmpNode(VmpNode* node)
 ghidra::int4 ghidra::Action::debugApply(Funcdata& data)
 {
 #ifdef _DEBUG
-    if (data.actIdx == 66) {
+    if (data.actIdx == 60) {
         std::stringstream ss;
         data.printRaw(ss);
         std::string rawResult = ss.str();
@@ -184,6 +184,9 @@ ghidra::int4 ghidra::Action::debugApply(Funcdata& data)
 #endif
     ghidra::int4 ret = apply(data);
 #ifdef _DEBUG
+    if (count > 0) {
+        int a = 0;
+    }
     std::string actClassName = typeid(*this).name();
     if (actClassName == "class ghidra::ActionRestartGroup") {
         return ret;

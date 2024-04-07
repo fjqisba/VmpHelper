@@ -225,12 +225,19 @@ bool VmpControlFlowBuilder::fallthruVmp(AnaTask& task)
 	walker.StartWalk(*task.ctx, 0x10000);
 	tfg.AddTraceFlow(walker.GetTraceList());
 	tfg.MergeAllNodes();
+
+	enum VM_STATUS {
+		FIND_VM_INIT = 0x0,
+	};
+	VM_STATUS curVMStatus;
 	while (!walker.IsWalkToEnd()) {
 		VmpNode nodeInput = walker.GetNextNode();
 		if (!nodeInput.addrList.size()) {
 			return false;
 		}
+
 		ghidra::Funcdata* fd =  Architecture()->AnaVmpHandler(&nodeInput);
+
 		int a = 0;
 	}
 	return true;

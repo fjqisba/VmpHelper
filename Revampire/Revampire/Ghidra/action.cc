@@ -295,70 +295,70 @@ Rule *Action::getSubRule(const string &specify)
 /// A successive call to perform() will "continue" from the break point.
 /// \param data is the function being acted on
 /// \return the number of changes or -1
-int4 Action::perform(Funcdata &data)
+int4 Action::perform(Funcdata& data)
 
 {
-  int4 res;
+    int4 res;
 
-  do {
-    switch(status) {
-    case status_start:
-      count = 0;		// No changes made yet by this action
-      if (checkStartBreak()) {
-	status = status_breakstarthit;
-	return -1;		// Indicate partial completion
-      }
-      count_tests += 1;
-    case status_breakstarthit:
-    case status_repeat:
-      lcount = count;
-    case status_mid:
+    do {
+        switch (status) {
+        case status_start:
+            count = 0;		// No changes made yet by this action
+            if (checkStartBreak()) {
+                status = status_breakstarthit;
+                return -1;		// Indicate partial completion
+            }
+            count_tests += 1;
+        case status_breakstarthit:
+        case status_repeat:
+            lcount = count;
+        case status_mid:
 #ifdef OPACTION_DEBUG
-      data.debugActivate();
+            data.debugActivate();
 #endif
-      res = debugApply(data);// Start or continue action
+            res = debugApply(data);// Start or continue action
 #ifdef OPACTION_DEBUG
-      data.debugModPrint(getName());
+            data.debugModPrint(getName());
 #endif
-      if (res < 0) {		// negative indicates partial completion
-	status = status_mid;
-	return res;
-      }
-      else if (lcount < count) { // Action has been applied
-	issueWarning(data.getArch());
-	count_apply += 1;
-	if (checkActionBreak()) {
-	  status = status_actionbreak;
-	  return -1;		// Indicate action breakpoint
-	}
+            if (res < 0) {		// negative indicates partial completion
+                status = status_mid;
+                return res;
+            }
+            else if (lcount < count) { // Action has been applied
+                issueWarning(data.getArch());
+                count_apply += 1;
+                if (checkActionBreak()) {
+                    status = status_actionbreak;
+                    return -1;		// Indicate action breakpoint
+                }
 #ifdef OPACTION_DEBUG
-	else if (data.debugBreak()) {
-	  status = status_actionbreak;
-	  data.debugHandleBreak();
-	  return -1;
-	}
+                else if (data.debugBreak()) {
+                    status = status_actionbreak;
+                    data.debugHandleBreak();
+                    return -1;
+                }
 #endif
-      }
-      break;
-    case status_end:
-      return 0;			// Rule applied, do not repeat until reset
-      break;
-    case status_actionbreak:	// Returned -1 last time, but we do not reapply
-      break;			// we either repeat, or return our count
+            }
+            break;
+        case status_end:
+            return 0;			// Rule applied, do not repeat until reset
+            break;
+        case status_actionbreak:	// Returned -1 last time, but we do not reapply
+            break;			// we either repeat, or return our count
+        }
+        status = status_repeat;
+    } while ((lcount < count) && ((flags & rule_repeatapply) != 0));
+
+    if ((flags & (rule_onceperfunc | rule_oneactperfunc)) != 0) {
+        if ((count > 0) || ((flags & rule_onceperfunc) != 0))
+            status = status_end;
+        else
+            status = status_start;
     }
-    status = status_repeat;
-  } while((lcount<count)&&((flags&rule_repeatapply)!=0));
-
-  if ((flags&(rule_onceperfunc|rule_oneactperfunc))!=0) {
-    if ((count>0)||((flags&rule_onceperfunc)!=0))
-      status = status_end;
     else
-      status = status_start;
-  }
-  else
-    status = status_start;
+        status = status_start;
 
-  return count;
+    return count;
 }
 
 ActionGroup::~ActionGroup(void)

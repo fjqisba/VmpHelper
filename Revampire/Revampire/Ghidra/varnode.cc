@@ -726,21 +726,21 @@ int4 Varnode::printRawNoMarkup(ostream &s) const
 /// In particular, the identifiers have either "i" or defining op SeqNum information appended
 /// to them in parantheses.
 /// \param s is the output stream
-void Varnode::printRaw(ostream &s) const
-
+void Varnode::printRaw(ostream& s) const
 {
-  int4 expect = printRawNoMarkup(s);
+    int4 expect = printRawNoMarkup(s);
 
-  if (expect != size)
-    s << ':' << setw(1) << size;
-  if ((flags&Varnode::input)!=0)
-    s << "(i)";
-  if (isWritten())
-    s << '(' << def->getSeqNum() << ')';
-  if ((flags&(Varnode::insert|Varnode::constant))==0) {
-    s << "(free)";
-    return;
-  }
+    if (expect != size)
+        s << ':' << setw(1) << size;
+    if ((flags & Varnode::input) != 0)
+        s << "(i)";
+    if (isWritten())
+        s << '(' << def->getSeqNum() << ')';
+    if ((flags & (Varnode::insert | Varnode::constant)) == 0) {
+        s << "(free)";
+    }
+    //打印消费属性
+    //s << "[" << consumed << "]";
 }
 
 /// Recursively print a terse textual representation of the data-flow (SSA) tree rooted at this Varnode

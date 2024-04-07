@@ -550,6 +550,8 @@ public:
 /// the particular op being passed through can transform the
 /// "bit usage" vector of the output to obtain the input.
 class ActionDeadCode : public Action {
+    friend class ActionVmpHandlerDeadCode;
+protected:
   static void pushConsumed(uintb val,Varnode *vn,vector<Varnode *> &worklist);
   static void propagateConsumed(vector<Varnode *> &worklist);
   static bool neverConsumed(Varnode *vn,Funcdata &data);
