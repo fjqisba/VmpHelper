@@ -1,9 +1,11 @@
 #include "IDALoadImage.h"
 #include "../Helper/IDAWrapper.h"
+#include "VmpArch.h"
+#include <segment.hpp>
 
-IDALoadImage::IDALoadImage() :ghidra::LoadImage("image")
+IDALoadImage::IDALoadImage(VmpArchitecture* glb) :ghidra::LoadImage("image")
 {
-
+	arch = glb;
 }
 
 IDALoadImage::~IDALoadImage()
@@ -27,4 +29,22 @@ std::string IDALoadImage::getArchType(void)const
 void IDALoadImage::adjustVma(long adjust)
 {
 
+}
+
+void IDALoadImage::getReadonly(ghidra::RangeList& list) const
+{
+	int segCount = get_segm_qty();
+	for (int idx = 0; idx < segCount; ++idx)
+	{
+		segment_t* pSegment = getnseg(idx);
+		if (pSegment->perm & SEGPERM_EXEC) {
+			continue;
+		}
+		if (pSegment->perm & SEGPERM_WRITE) {
+			continue;
+		}
+		if (pSegment->perm & SEGPERM_READ) {
+			list.insertRange(arch->getSpaceByName("const"), pSegment->start_ea, pSegment->end_ea - 1);
+		}
+	}
 }

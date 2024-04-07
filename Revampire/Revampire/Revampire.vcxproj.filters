@@ -361,6 +361,12 @@
     <ClCompile Include="GhidraExtension\FuncBuildHelper.cpp">
       <Filter>GhidraExtension</Filter>
     </ClCompile>
+    <ClCompile Include="GhidraExtension\VmpAction.cpp">
+      <Filter>GhidraExtension</Filter>
+    </ClCompile>
+    <ClCompile Include="GhidraExtension\VmpRule.cpp">
+      <Filter>GhidraExtension</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="IDAPlugin.h">
@@ -706,6 +712,12 @@
       <Filter>Ghidra</Filter>
     </ClInclude>
     <ClInclude Include="GhidraExtension\FuncBuildHelper.h">
+      <Filter>GhidraExtension</Filter>
+    </ClInclude>
+    <ClInclude Include="GhidraExtension\VmpAction.h">
+      <Filter>GhidraExtension</Filter>
+    </ClInclude>
+    <ClInclude Include="GhidraExtension\VmpRule.h">
       <Filter>GhidraExtension</Filter>
     </ClInclude>
   </ItemGroup>

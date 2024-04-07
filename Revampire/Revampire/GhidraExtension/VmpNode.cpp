@@ -112,6 +112,32 @@ void ghidra::FlowInfo::generateVmpNodeOps(VmpNode* node)
     }
 }
 
+void ghidra::Funcdata::buildReturnVal()
+{
+    std::vector<VarnodeData> retVarList;
+    retVarList.push_back(glb->translate->getRegister("EAX"));
+    retVarList.push_back(glb->translate->getRegister("EBX"));
+    retVarList.push_back(glb->translate->getRegister("ECX"));
+    retVarList.push_back(glb->translate->getRegister("EDX"));
+    retVarList.push_back(glb->translate->getRegister("EBP"));
+    retVarList.push_back(glb->translate->getRegister("ESP"));
+    retVarList.push_back(glb->translate->getRegister("ESI"));
+    retVarList.push_back(glb->translate->getRegister("EDI"));
+    retVarList.push_back(glb->translate->getRegister("eflags"));
+    retVarList.push_back(glb->translate->getRegister("EIP"));
+
+    auto opStart = beginOp(ghidra::CPUI_RETURN);
+    auto opEnd = endOp(ghidra::CPUI_RETURN);
+    while (opStart != opEnd) {
+        ghidra::PcodeOp* retOp = *opStart;
+        for (const VarnodeData& retVar : retVarList) {
+            ghidra::Varnode* tmpVarNode = newVarnode(retVar.size, retVar.space, retVar.offset);
+            opInsertInput(retOp, tmpVarNode, retOp->numInput());
+        }
+        opStart++;
+    }
+}
+
 void ghidra::Funcdata::FollowVmpNode(VmpNode* node)
 {
     nodeInput = node;
@@ -126,6 +152,7 @@ void ghidra::Funcdata::FollowVmpNode(VmpNode* node)
     flow.setFlags(fl);
     flow.setMaximumInstructions(glb->max_instructions);
     flow.generateVmpNodeOps(node);
+    buildReturnVal();
 #ifdef _DEBUG
     std::stringstream ss;
     printRaw(ss);
@@ -142,8 +169,20 @@ void ghidra::Funcdata::FollowVmpNode(VmpNode* node)
 
 ghidra::int4 ghidra::Action::debugApply(Funcdata& data)
 {
+#ifdef _DEBUG
+    if (data.actIdx == 21) {
+        std::stringstream ss;
+        data.printRaw(ss);
+        std::string rawResult = ss.str();
+        int a = 0;
+    }
+#endif
     ghidra::int4 ret = apply(data);
 #ifdef _DEBUG
+    std::string actClassName = typeid(*this).name();
+    if (actClassName == "class ghidra::ActionRestartGroup") {
+        return ret;
+    }
     std::stringstream ss;
     data.printRaw(ss);
     std::string rawResult = ss.str();

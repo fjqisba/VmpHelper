@@ -50,7 +50,7 @@ std::string GetX86RegName(x86_reg reg)
     case X86_REG_EDX:
         return "EDX";
     case X86_REG_EFLAGS:
-        return "EFLAGS";
+        return "eflags";
     case X86_REG_EIP:
         return "EIP";
     case X86_REG_ESI:

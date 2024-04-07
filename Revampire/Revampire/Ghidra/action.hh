@@ -98,7 +98,7 @@ public:
   virtual bool turnOnDebug(const string &nm);			///< Turn on debugging
   virtual bool turnOffDebug(const string &nm);			///< Turn off debugging
 #endif
-  int4 debugApply(Funcdata& data);
+  ghidra::int4 debugApply(Funcdata& data);
   virtual void printStatistics(ostream &s) const;		///< Dump statistics to stream
   int4 perform(Funcdata &data); 				///< Perform this action (if necessary)
   bool setBreakPoint(uint4 tp,const string &specify);		///< Set a breakpoint on this action

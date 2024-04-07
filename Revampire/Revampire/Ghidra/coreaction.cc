@@ -17,6 +17,8 @@
 #include "condexe.hh"
 #include "double.hh"
 #include "subflow.hh"
+#include "../GhidraExtension/VmpAction.h"
+#include "../GhidraExtension/VmpRule.h"
 
 namespace ghidra {
 
@@ -5377,6 +5379,7 @@ void ActionDatabase::buildVmpHandlerAction(Architecture* conf)
             actstackstall = new ActionGroup(Action::rule_repeatapply, "stackstall");
             {
                 actprop = new ActionPool(Action::rule_repeatapply, "oppool1");
+                actprop->addRule(new RuleVmpLoadConst("deadcode"));
                 actprop->addRule(new RuleEarlyRemoval("deadcode"));
                 actprop->addRule(new RuleTermOrder("analysis"));
                 actprop->addRule(new RuleSelectCse("analysis"));

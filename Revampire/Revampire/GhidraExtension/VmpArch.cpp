@@ -21,7 +21,7 @@ VmpArchitecture::~VmpArchitecture()
 void VmpArchitecture::buildLoader(ghidra::DocumentStorage& store)
 {
 	collectSpecFiles(*errorstream);
-	loader = new IDALoadImage();
+	loader = new IDALoadImage(this);
 }
 
 void VmpArchitecture::resolveArchitecture(void)

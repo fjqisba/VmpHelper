@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 
 template<typename T>
 class Singleton {
@@ -15,3 +16,10 @@ protected:
 };
 
 size_t AlignByMemory(size_t originValue, size_t alignment);
+
+template<typename T>
+T readFromMemory(unsigned char* buffer) {
+    T result;
+    std::memcpy(&result, buffer, sizeof(T));
+    return result;
+}

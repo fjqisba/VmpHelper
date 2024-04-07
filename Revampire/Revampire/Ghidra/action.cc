@@ -316,7 +316,7 @@ int4 Action::perform(Funcdata &data)
 #ifdef OPACTION_DEBUG
       data.debugActivate();
 #endif
-      res = debugApply(data);	// Start or continue action
+      res = debugApply(data);// Start or continue action
 #ifdef OPACTION_DEBUG
       data.debugModPrint(getName());
 #endif
@@ -841,6 +841,9 @@ int4 ActionPool::processOp(PcodeOp *op,Funcdata &data)
 #endif
     rl->count_tests += 1;
     res = rl->applyOp(op,data);
+#ifdef _DEBUG
+    std::string testName = rl->getName();
+#endif
 #ifdef OPACTION_DEBUG
     data.debugModPrint(rl->getName());
 #endif
@@ -875,15 +878,16 @@ int4 ActionPool::processOp(PcodeOp *op,Funcdata &data)
 }
 
 int4 ActionPool::apply(Funcdata &data)
-
 {
   if (status != status_mid) {
     op_state = data.beginOpAll();	// Initialize the derived action
     rule_index = 0;
   }
-  for(;op_state!=data.endOpAll();)
-	  if (0!=processOp((*op_state).second,data)) return -1;
-
+  for (; op_state != data.endOpAll();) {
+      if (0 != processOp((*op_state).second, data)){
+          return -1;
+      }
+  }
   return 0;			// Indicate successful completion
 }
 
