@@ -1,7 +1,6 @@
 #pragma once
 #include <vector>
 #include <memory>
-#include <sstream>
 #include <unicorn/unicorn.h>
 #include "../Helper/UnicornHelper.h"
 

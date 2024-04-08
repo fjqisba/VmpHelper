@@ -12,6 +12,7 @@
     <ClCompile Include="Utils\Public.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
+    <ClCompile Include="VmpCommon.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Utils\StringUtils.h">
@@ -20,5 +21,6 @@
     <ClInclude Include="Utils\Public.h">
       <Filter>Utils</Filter>
     </ClInclude>
+    <ClInclude Include="VmpCommon.h" />
   </ItemGroup>
 </Project>

@@ -1,4 +1,5 @@
 #include "VmpUnicorn.h"
+#include <sstream>
 #include "../Manager/DisasmManager.h"
 #include "../Manager/SectionManager.h"
 #include "../Common/Utils/Public.h"

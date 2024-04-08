@@ -7,6 +7,8 @@
 #include "../GhidraExtension/VmpFunction.h"
 #include "../GhidraExtension/VmpArch.h"
 #include "../Helper/UnicornHelper.h"
+#include "../VmpCore/VmpHandler.h"
+#include "../VmpCore/VmpReEngine.h"
 
 VmpControlFlow::VmpControlFlow() :graph(this)
 {
@@ -108,7 +110,7 @@ void VmpControlFlowBuilder::linkBlockEdge(VmAddress from, VmAddress to)
 	fromEdges[from].insert(to);
 }
 
-VmpBasicBlock* VmpControlFlowBuilder::createNewBlock(size_t startAddr)
+VmpBasicBlock* VmpControlFlowBuilder::createNewBlock(VmAddress startAddr)
 {
 	VmpBasicBlock* newBlock = &data.cfg.blocksMap[startAddr];
 	if (data.cfg.blocksMap.size() == 1) {
@@ -203,6 +205,12 @@ bool VmpBlockWalker::IsWalkToEnd()
 	return idx >= unicorn.traceList.size();
 }
 
+void VmpBlockWalker::MoveToNext()
+{
+	idx = idx + curNodeSize;
+	curNodeSize = 0x0;
+}
+
 VmpNode VmpBlockWalker::GetNextNode()
 {
 	VmpNode retNode;
@@ -211,6 +219,7 @@ VmpNode VmpBlockWalker::GetNextNode()
 	for (unsigned int n = 0; n < retNode.addrList.size(); ++n) {
 		retNode.contextList.push_back(unicorn.traceList[idx + n]);
 	}
+	curNodeSize = retNode.addrList.size();
 	return retNode;
 }
 
@@ -226,21 +235,16 @@ bool VmpControlFlowBuilder::fallthruVmp(AnaTask& task)
 	tfg.AddTraceFlow(walker.GetTraceList());
 	tfg.MergeAllNodes();
 
-	enum VM_STATUS {
-		FIND_VM_INIT = 0x0,
-	};
-	VM_STATUS curVMStatus;
-	while (!walker.IsWalkToEnd()) {
-		VmpNode nodeInput = walker.GetNextNode();
-		if (!nodeInput.addrList.size()) {
-			return false;
-		}
-
-		ghidra::Funcdata* fd =  Architecture()->AnaVmpHandler(&nodeInput);
-
-		int a = 0;
+	VmpBlockBuildContext buildContext;
+	buildContext.bBlock = createNewBlock(task.vmAddr);
+	if (task.vmAddr.vmdata == 0) {
+		buildContext.status = VmpBlockBuildContext::FIND_VM_INIT;
 	}
-	return true;
+	else {
+		buildContext.status = VmpBlockBuildContext::FINISH_VM_INIT;
+	}
+	VmpHandlerFactory handlerFactory(data.Arch());
+	return handlerFactory.BuildVmpBlock(&buildContext, walker);
 }
 
 VmpArchitecture* VmpControlFlowBuilder::Architecture()
@@ -260,6 +264,7 @@ bool VmpControlFlowBuilder::BuildCFG(size_t startAddr)
 		if (visited.count(curTask->vmAddr)) {
 			continue;
 		}
+		visited.insert(curTask->vmAddr);
 		switch (curTask->type) {
 		case FIND_VM_ENTRY:
 			fallthruNormal(*curTask);

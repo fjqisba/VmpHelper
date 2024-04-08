@@ -203,3 +203,15 @@ ghidra::int4 ghidra::Action::debugApply(Funcdata& data)
 #endif
     return ret;
 }
+
+void VmpNode::append(VmpNode& other)
+{
+    addrList.insert(addrList.end(), other.addrList.begin(), other.addrList.end());
+    contextList.insert(contextList.end(), other.contextList.begin(), other.contextList.end());
+}
+
+void VmpNode::clear()
+{
+    addrList.clear();
+    contextList.clear();
+}

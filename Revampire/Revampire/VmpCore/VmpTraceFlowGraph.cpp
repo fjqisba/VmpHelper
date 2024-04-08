@@ -1,4 +1,5 @@
 #include "VmpTraceFlowGraph.h"
+#include <sstream>
 #include "../Manager/DisasmManager.h"
 #include "../Manager/VmpVersionManager.h"
 #include "../Manager/exceptions.h"

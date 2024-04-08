@@ -1,7 +1,7 @@
 #include "VmpFunction.h"
 #include <graph.hpp>
 
-VmpFunction::VmpFunction(VmpArchitecture* glb):arch(glb)
+VmpFunction::VmpFunction(VmpArchitecture* glb, VmpReEngine* re):arch(glb),reEngine(re)
 {
 	
 }
@@ -9,6 +9,11 @@ VmpFunction::VmpFunction(VmpArchitecture* glb):arch(glb)
 VmpFunction::~VmpFunction()
 {
 
+}
+
+VmpReEngine* VmpFunction::VmpEngine()
+{
+    return reEngine;
 }
 
 VmpArchitecture* VmpFunction::Arch()

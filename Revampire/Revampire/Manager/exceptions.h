@@ -39,3 +39,10 @@ public:
     VmpVersionException(const char* message) :Exception(message) {};
     VmpVersionException(const std::string& message) :Exception(message) {};
 };
+
+class GhidraException :public Exception
+{
+public:
+    GhidraException(const char* message) :Exception(message) {};
+    GhidraException(const std::string& message) :Exception(message) {};
+};

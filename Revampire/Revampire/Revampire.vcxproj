@@ -90,7 +90,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>false</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_WINDOWS;USE_STANDARD_FILE_FUNCTIONS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\MyLib\idasdk75\include;../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4099</DisableSpecificWarnings>
@@ -106,7 +106,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>false</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_WINDOWS;USE_STANDARD_FILE_FUNCTIONS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\MyLib\idasdk75\include;../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4099</DisableSpecificWarnings>
@@ -124,7 +124,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_WINDOWS;USE_STANDARD_FILE_FUNCTIONS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\MyLib\idasdk75\include;../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -145,7 +145,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_WINDOWS;USE_STANDARD_FILE_FUNCTIONS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\MyLib\idasdk75\include;../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -265,6 +265,7 @@
     <ClCompile Include="Ghidra\varnode.cc" />
     <ClCompile Include="Ghidra\xml.cc" />
     <ClCompile Include="Ghidra\xml_arch.cc" />
+    <ClCompile Include="Helper\GhidraHelper.cpp" />
     <ClCompile Include="Helper\IDAWrapper.cpp" />
     <ClCompile Include="Helper\UnicornHelper.cpp" />
     <ClCompile Include="IDAPlugin.cpp" />
@@ -273,6 +274,8 @@
     <ClCompile Include="Manager\exceptions.cpp" />
     <ClCompile Include="Manager\SectionManager.cpp" />
     <ClCompile Include="Manager\VmpVersionManager.cpp" />
+    <ClCompile Include="VmpCore\VmpHandler.cpp" />
+    <ClCompile Include="VmpCore\VmpHandlerExecute.cpp" />
     <ClCompile Include="VmpCore\VmpReEngine.cpp" />
     <ClCompile Include="VmpCore\VmpTraceFlowGraph.cpp" />
     <ClCompile Include="VmpCore\VmpUnicorn.cpp" />
@@ -385,6 +388,7 @@
     <ClInclude Include="Ghidra\varnode.hh" />
     <ClInclude Include="Ghidra\xml.hh" />
     <ClInclude Include="Ghidra\xml_arch.hh" />
+    <ClInclude Include="Helper\GhidraHelper.h" />
     <ClInclude Include="Helper\IDAWrapper.h" />
     <ClInclude Include="Helper\UnicornHelper.h" />
     <ClInclude Include="IDAPlugin.h" />
@@ -392,6 +396,7 @@
     <ClInclude Include="Manager\exceptions.h" />
     <ClInclude Include="Manager\SectionManager.h" />
     <ClInclude Include="Manager\VmpVersionManager.h" />
+    <ClInclude Include="VmpCore\VmpHandler.h" />
     <ClInclude Include="VmpCore\VmpReEngine.h" />
     <ClInclude Include="VmpCore\VmpTraceFlowGraph.h" />
     <ClInclude Include="VmpCore\VmpUnicorn.h" />

@@ -9,68 +9,13 @@
 #include "../VmpCore/VmpTraceFlowGraph.h"
 #include "../VmpCore/VmpUnicorn.h"
 #include "../GhidraExtension/VmpNode.h"
+#include "../Common/VmpCommon.h"
 
 class mutable_graph_t;
 class VmpFunction;
 class VmpControlFlow;
 class VmpArchitecture;
-
-struct VmAddress
-{
-	size_t raw;
-	size_t vmdata;
-	VmAddress() {
-		raw = 0x0;
-		vmdata = 0x0;
-	}
-	VmAddress(size_t ins, size_t vm) {
-		raw = ins;
-		vmdata = vm;
-	}
-	VmAddress(size_t ins) {
-		raw = ins;
-		vmdata = 0x0;
-	}
-	bool operator<(const VmAddress& other) const
-	{
-		return std::tie(raw, vmdata) < std::tie(other.raw, other.vmdata);
-	}
-};
-
-class VmpBlockWalker
-{
-public:
-	VmpBlockWalker(VmpTraceFlowGraph& t) :tfg(t) {};
-	~VmpBlockWalker() {};
-public:
-	void StartWalk(VmpUnicornContext& startCtx, size_t walkSize);
-	const std::vector<reg_context>& GetTraceList();
-	bool IsWalkToEnd();
-	VmpNode GetNextNode();
-private:
-	VmpUnicorn unicorn;
-	VmpTraceFlowGraph& tfg;
-	//当前执行的指令顺序
-	size_t idx = 0x0;
-};
-
-class VmpBasicBlock
-{
-public:
-
-	//和IDA打印图有关
-	void SetGraphIndex(int idx) { graphIdx = idx; };
-	int GetGraphIndex() { return graphIdx; };
-	std::string MakeGraphTxt();
-public:
-	std::vector<std::unique_ptr<vm_inst>> insList;
-	std::vector<VmpBasicBlock*> inBlocks;
-	std::vector<VmpBasicBlock*> outBlocks;
-	VmAddress blockEntry;
-private:
-	int graphIdx = 0x0;
-};
-
+class VmpBasicBlock;
 
 class VmpControlFlowBuilder
 {
@@ -95,7 +40,7 @@ private:
 	bool fallthruVmp(AnaTask& task);
 	void fallthruNormal(AnaTask& task);
 	bool isVmpEntry(size_t startAddr);
-	VmpBasicBlock* createNewBlock(size_t startAddr);
+	VmpBasicBlock* createNewBlock(VmAddress startAddr);
 	void linkBlockEdge(VmAddress from, VmAddress to);
 private:
 	std::queue<std::unique_ptr<AnaTask>> anaQueue;
@@ -105,6 +50,46 @@ private:
 	VmpFunction& data;
 	VmpTraceFlowGraph tfg;
 };
+
+
+class VmpBlockWalker
+{
+public:
+	VmpBlockWalker(VmpTraceFlowGraph& t) :tfg(t) {};
+	~VmpBlockWalker() {};
+public:
+	void StartWalk(VmpUnicornContext& startCtx, size_t walkSize);
+	const std::vector<reg_context>& GetTraceList();
+	bool IsWalkToEnd();
+	VmpNode GetNextNode();
+	void MoveToNext();
+private:
+	VmpUnicorn unicorn;
+	VmpTraceFlowGraph& tfg;
+	//当前执行的指令顺序
+	size_t idx = 0x0;
+	//当前节点大小
+	size_t curNodeSize = 0x0;
+};
+
+class VmpBasicBlock
+{
+public:
+	//和IDA打印图有关
+	void SetGraphIndex(int idx) { graphIdx = idx; };
+	int GetGraphIndex() { return graphIdx; };
+	std::string MakeGraphTxt();
+public:
+	std::vector<std::unique_ptr<vm_inst>> insList;
+	std::vector<VmpBasicBlock*> inBlocks;
+	std::vector<VmpBasicBlock*> outBlocks;
+	VmAddress blockEntry;
+private:
+	int graphIdx = 0x0;
+};
+
+
+
 
 //仅用于进行IDA展示
 
@@ -134,5 +119,5 @@ protected:
 public:
 	VmpControlFlowShowGraph graph;
 	//存储所有的block
-	std::unordered_map<size_t, VmpBasicBlock> blocksMap;
+	std::map<VmAddress, VmpBasicBlock> blocksMap;
 };

@@ -1,5 +1,7 @@
 #pragma once
 #include "../GhidraExtension/VmpFunction.h"
+#include "VmpHandler.h"
+#include <math.h>
 
 class VmpArchitecture;
 
@@ -12,9 +14,11 @@ public:
 public:
 	void PrintGraph(size_t startAddr);
 	void MarkVmpEntry(size_t startAddr);
+	VmpArchitecture* Arch();
 private:
 	VmpFunction* makeFunction(size_t startAddr);
 	void clearFunction(size_t startAddr);
+public:
 private:
 	VmpArchitecture* arch = nullptr;
 	std::list<std::unique_ptr<VmpFunction>> funcCache;

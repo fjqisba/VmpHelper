@@ -1,10 +1,10 @@
 #include "VmpReEngine.h"
+#include <nalt.hpp>
+#include <graph.hpp>
 #include "../GhidraExtension/VmpArch.h"
 #include "../GhidraExtension/VmpFunction.h"
-#include <nalt.hpp>
 #include "../Helper/IDAWrapper.h"
 #include "../Manager/exceptions.h"
-#include <graph.hpp>
 
 VmpReEngine::VmpReEngine()
 {
@@ -12,17 +12,25 @@ VmpReEngine::VmpReEngine()
 	if (arch == nullptr) {
 		throw Exception("VmpReEngine::VmpReEngine(): Not enough memory.");
 	}
+
 }
 
 VmpReEngine::~VmpReEngine()
 {
-	delete this->arch;
+	if (arch) {
+		delete arch;
+	}
 }
 
 VmpReEngine& VmpReEngine::Instance()
 {
 	static VmpReEngine globalReEngine;
 	return globalReEngine;
+}
+
+VmpArchitecture* VmpReEngine::Arch()
+{
+	return arch;
 }
 
 void VmpReEngine::MarkVmpEntry(size_t startAddr)
@@ -68,7 +76,7 @@ VmpFunction* VmpReEngine::makeFunction(size_t startAddr)
 			break;
 		}
 	}
-	std::unique_ptr<VmpFunction> retVmp = std::make_unique<VmpFunction>(arch);
+	std::unique_ptr<VmpFunction> retVmp = std::make_unique<VmpFunction>(arch, this);
 	VmpFunction* retFunc = retVmp.get();
 	funcCache.push_back(std::move(retVmp));
 	return retFunc;
