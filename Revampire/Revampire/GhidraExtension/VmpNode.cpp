@@ -6,13 +6,13 @@
 #include "../GhidraExtension/FuncBuildHelper.h"
 
 
-void BuildVmRet(ghidra::Funcdata& data, const ghidra::Address& addr)
+int BuildVmRet(ghidra::Funcdata& data, ghidra::Address& addr)
 {
     //return 0x0,第一个参数似乎必须是常量
     ghidra::PcodeOp* opReturn = data.newOp(1, addr);
     data.opSetOpcode(opReturn, ghidra::CPUI_RETURN);
     data.opSetInput(opReturn, data.newConstant(4, 0x0), 0);
-    return;
+    return 1;
 }
 
 int BuildVmCall(ghidra::Funcdata& data, ghidra::Address& pc)
@@ -34,7 +34,7 @@ int BuildVmCall(ghidra::Funcdata& data, ghidra::Address& pc)
     return 3;
 }
 
-int BuildJmpIns(ghidra::Funcdata& data, ghidra::Address& pc, cs_insn* raw)
+int BuildJmpReg(ghidra::Funcdata& data, ghidra::Address& pc, cs_insn* raw)
 {
     std::string regName = GetX86RegName(raw->detail->x86.operands[0].reg);
     auto regJMP = data.getArch()->translate->getRegister(regName);
@@ -47,67 +47,112 @@ int BuildJmpIns(ghidra::Funcdata& data, ghidra::Address& pc, cs_insn* raw)
     return 1;
 }
 
-void ghidra::FlowInfo::processVmpInstruction(Address& curaddr, bool& startbasic)
+int BuildJmpImm(ghidra::Funcdata& data, ghidra::Address& pc, size_t jmpAddr)
 {
-    bool emptyflag;
-    bool isfallthru = true;
-    list<PcodeOp*>::const_iterator oiter;
-    int4 step = 0x0;
+	auto regEIP = data.getArch()->translate->getRegister("EIP");
+	//eip = 0x123456
+	ghidra::PcodeOp* opCopy = data.newOp(1, pc);
+	data.opSetOpcode(opCopy, ghidra::CPUI_COPY);
+	data.newVarnodeOut(regEIP.size, regEIP.getAddr(), opCopy);
+    data.opSetInput(opCopy, data.newConstant(0x4, jmpAddr), 0);
+	return 1;
+}
 
-    //先取出最后一个opcode
-    if (obank.empty())
-        emptyflag = true;
-    else {
-        emptyflag = false;
-        oiter = obank.endDead();
-        --oiter;
-    }
-    
+int BuildPopIns(ghidra::Funcdata& data, ghidra::Address& pc, unsigned int offset)
+{
+    PCodeBuildHelper opBuilder(data, pc);
+	ghidra::VarnodeData regESP = data.getArch()->translate->getRegister("ESP");
 
-    //再生成新的opcode
-    auto asmData = DisasmManager::Main().DecodeInstruction(curaddr.getOffset());
-    if (DisasmManager::IsE8Call(asmData->raw)) {
-        step = BuildVmCall(data, curaddr);
-    } //jmp eax
-    else if (asmData->raw->id == X86_INS_JMP && asmData->raw->detail->x86.operands[0].type == X86_OP_REG) {
-        step = BuildJmpIns(data, curaddr, asmData->raw);
-    }
-    else {
-        step = glb->translate->oneInstruction(emitter, curaddr);
-    }
+    //u2500 = #0x24 + ESP
+	ghidra::Varnode* u2500 = opBuilder.CPUI_INT_ADD(data.newConstant(4, offset),
+		data.newVarnode(regESP.size, regESP.space, regESP.offset), 4);
 
-    VisitStat& stat(visited[curaddr]); // Mark that we visited this instruction
-    stat.size = step;		// Record size of instruction
+    //u7a00 = *(ram,ESP)
+    ghidra::Varnode* u7a00 = opBuilder.CPUI_LOAD(data.newVarnode(regESP.size, regESP.space, regESP.offset), 4);
 
-    //指向最新的节点
-    if (emptyflag) {
-        oiter = obank.beginDead();
-    }
-    else {
-        ++oiter;
-    }
+    //*(ram,u2500) = u7a00
+    opBuilder.CPUI_STORE(u2500, u7a00);
 
-    if (oiter != obank.endDead()) {
-        stat.seqnum = (*oiter)->getSeqNum();
-        data.opMarkStartInstruction(*oiter);
-        xrefControlFlow(oiter, startbasic, isfallthru, (FuncCallSpecs*)0);
-    }
+    //ESP = ESP + 0x4
+    ghidra::PcodeOp* opAdd = data.newOp(2, pc);
+    data.opSetOpcode(opAdd, ghidra::CPUI_INT_ADD);
+    data.newVarnodeOut(regESP.size, regESP.getAddr(), opAdd);
+    data.opSetInput(opAdd, data.newVarnode(regESP.size, regESP.space, regESP.offset), 0);
+    data.opSetInput(opAdd, data.newConstant(0x4, 0x4), 1);
+
+    return 4;
+}
+
+void ghidra::FlowInfo::beginProcessInstruction(list<PcodeOp*>::const_iterator& oiter, bool& emptyflag)
+{
+	//先取出最后一个opcode
+	if (obank.empty())
+		emptyflag = true;
+	else {
+		emptyflag = false;
+		oiter = obank.endDead();
+		--oiter;
+	}
 }
 
 void ghidra::FlowInfo::generateVmpNodeOps(VmpNode* node)
 {
     clearProperties();
     bool startbasic = true;
+    bool isfallthru = false;
+    bool emptyflag;
+    list<PcodeOp*>::const_iterator oiter;
     for (unsigned int n = 0; n < node->addrList.size(); ++n) {
-        ghidra::Address disAddr(glb->getDefaultCodeSpace(), node->addrList[n]);
-        processVmpInstruction(disAddr, startbasic);
+        ghidra::Address curaddr(glb->getDefaultCodeSpace(), node->addrList[n]);
+        int4 step = 0x0;
+        beginProcessInstruction(oiter, emptyflag);
+		//再生成新的opcode
+		auto asmData = DisasmManager::Main().DecodeInstruction(curaddr.getOffset());
+		if (DisasmManager::IsE8Call(asmData->raw)) {
+			step = BuildVmCall(data, curaddr);
+		}
+		//特殊的pop [esp]指令,Ghidra解析暂时有问题
+		else if (asmData->raw->id == X86_INS_POP && asmData->raw->detail->x86.operands[0].mem.base == X86_REG_ESP) {
+			step = BuildPopIns(data, curaddr, asmData->raw->detail->x86.operands[0].mem.disp + 0x4);
+		}
+		//jmp reg
+		else if (asmData->raw->id == X86_INS_JMP && asmData->raw->detail->x86.operands[0].type == X86_OP_REG) {
+			step = BuildJmpReg(data, curaddr, asmData->raw);
+		}
+		//分支条件指令
+		else if (asmData->raw->id >= X86_INS_JAE && asmData->raw->id <= X86_INS_JS) {
+            //不是最后一条指令
+            if (n != node->addrList.size() - 1) {
+                step = BuildJmpImm(data, curaddr, node->addrList[n + 1]);
+            }
+		}
+		else {
+			step = glb->translate->oneInstruction(emitter, curaddr);
+		}
+        if (step) {
+			VisitStat& stat(visited[curaddr]); // Mark that we visited this instruction
+			stat.size = step;		// Record size of instruction
+			//指向最新的节点
+			if (emptyflag) {
+				oiter = obank.beginDead();
+			}
+			else {
+				++oiter;
+			}
+			if (oiter != obank.endDead()) {
+				stat.seqnum = (*oiter)->getSeqNum();
+				data.opMarkStartInstruction(*oiter);
+				xrefControlFlow(oiter, startbasic, isfallthru, (FuncCallSpecs*)0);
+			}
+        }
     }
-
+    
     //判断有没有ret结尾
+    ghidra::Address endAddr(glb->getDefaultCodeSpace(), node->addrList[node->addrList.size() - 1]);
     auto itEnd = std::prev(obank.endDead());
     if (itEnd != obank.endDead()) {
         if ((*itEnd)->code() != CPUI_RETURN) {
-            BuildVmRet(data, ghidra::Address(glb->getDefaultCodeSpace(), node->addrList[node->addrList.size() - 1]));
+            BuildVmRet(data, endAddr);
         }
     }
 }

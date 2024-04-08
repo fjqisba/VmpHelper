@@ -144,7 +144,7 @@ private:
 public:
 	//GhidraExtension
 	void generateVmpNodeOps(VmpNode* node);
-	void processVmpInstruction(Address& curaddr, bool& startbasic);
+	void beginProcessInstruction(list<PcodeOp*>::const_iterator& oiter, bool& emptyflag);
 public:
   FlowInfo(Funcdata &d,PcodeOpBank &o,BlockGraph &b,vector<FuncCallSpecs *> &q);	///< Constructor
   FlowInfo(Funcdata &d,PcodeOpBank &o,BlockGraph &b,vector<FuncCallSpecs *> &q,const FlowInfo *op2);	///< Cloning constructor
