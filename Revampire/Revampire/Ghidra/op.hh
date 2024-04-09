@@ -296,6 +296,7 @@ typedef map<SeqNum,PcodeOp *> PcodeOpTree;
 /// to distinguish between raw p-code ops and those that are fully linked into control-flow.
 /// Several lists group PcodeOps with important op-codes (like STORE and RETURN).
 class PcodeOpBank {
+public:
   PcodeOpTree optree;			///< The main sequence number sort
   list<PcodeOp *> deadlist;		///< List of \e dead PcodeOps
   list<PcodeOp *> alivelist;		///< List of \e alive PcodeOps

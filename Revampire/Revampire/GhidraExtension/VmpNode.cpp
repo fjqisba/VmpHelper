@@ -119,6 +119,10 @@ void ghidra::FlowInfo::generateVmpNodeOps(VmpNode* node)
 		else if (asmData->raw->id == X86_INS_JMP && asmData->raw->detail->x86.operands[0].type == X86_OP_REG) {
 			step = BuildJmpReg(data, curaddr, asmData->raw);
 		}
+        //jmp imm
+        else if (asmData->raw->id == X86_INS_JMP && asmData->raw->detail->x86.operands[0].type == X86_OP_IMM) {
+            step = BuildJmpImm(data, curaddr, asmData->raw->detail->x86.operands[0].imm);
+        }
 		//分支条件指令
 		else if (asmData->raw->id >= X86_INS_JAE && asmData->raw->id <= X86_INS_JS) {
             //不是最后一条指令
@@ -253,6 +257,27 @@ void VmpNode::append(VmpNode& other)
 {
     addrList.insert(addrList.end(), other.addrList.begin(), other.addrList.end());
     contextList.insert(contextList.end(), other.contextList.begin(), other.contextList.end());
+}
+
+VmAddress VmpNode::readVmAddress(const std::string& reg_code)
+{
+    VmAddress retaddr;
+    if (addrList.empty()) {
+        return retaddr;
+    }
+    retaddr.raw = addrList[0];
+    retaddr.vmdata = contextList[0].ReadReg(reg_code);
+    return retaddr;
+}
+
+size_t VmpNode::findRegContext(size_t eip, const std::string& regName)
+{
+    for (unsigned int n = 0; n < contextList.size(); ++n) {
+        if (contextList[n].EIP == eip) {
+            return contextList[n].ReadReg(regName);
+        }
+    }
+    return 0x0;
 }
 
 void VmpNode::clear()

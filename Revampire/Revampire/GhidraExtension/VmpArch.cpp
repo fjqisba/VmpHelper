@@ -79,6 +79,10 @@ bool VmpArchitecture::initVmpArchitecture()
 
 ghidra::Funcdata* VmpArchitecture::AnaVmpHandler(VmpNode* nodeInput)
 {
+    //²âÊÔ´úÂë
+    if (nodeInput->addrList[0] == 0x450A40) {
+        int a = 0;
+    }
     ghidra::Address startAddr(getDefaultCodeSpace(), nodeInput->addrList[0]);
     ghidra::Funcdata* fd = symboltab->getGlobalScope()->findFunction(startAddr);
     if (!fd) {

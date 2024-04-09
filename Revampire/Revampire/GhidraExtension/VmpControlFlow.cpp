@@ -235,8 +235,12 @@ bool VmpControlFlowBuilder::fallthruVmp(AnaTask& task)
 	tfg.AddTraceFlow(walker.GetTraceList());
 	tfg.MergeAllNodes();
 
+	std::stringstream testGraph;
+	tfg.DumpGraph(testGraph, true);
+	std::string strData = testGraph.str();
+
 	VmpBlockBuildContext buildContext;
-	buildContext.bBlock = createNewBlock(task.vmAddr);
+	buildContext.newBlock = createNewBlock(task.vmAddr);
 	if (task.vmAddr.vmdata == 0) {
 		buildContext.status = VmpBlockBuildContext::FIND_VM_INIT;
 	}

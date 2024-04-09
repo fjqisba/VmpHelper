@@ -1,9 +1,11 @@
 #pragma once
 #include "../Ghidra/pcoderaw.hh"
+#include "../GhidraExtension/VmpInstruction.h"
 
 namespace ghidra
 {
     class Funcdata;
+	class PcodeOp;
 }
 
 namespace GhidraHelper
@@ -19,12 +21,13 @@ class VmpBasicBlock;
 class VmpRegStatus
 {
 public:
+	void ClearStatus();
 	//vm字节码寄存器
-	std::string vmCodeReg;
+	std::string reg_code;
 	//vm虚拟堆栈寄存器
-	std::string vmStackReg;
+	std::string reg_stack;
 	//是否已选择好了寄存器
-	bool isSelected;
+	bool isSelected = false;
 };
 
 //vmp分析数据
@@ -46,10 +49,16 @@ public:
 		FINISH_VM_INIT = 0x1,
 	};
 public:
-	VmpRegStatus vmReg;
+	VmpBlockBuildContext();
+	bool PushVmpOp(std::unique_ptr<VmpInstruction> inst);
+public:
+	VmpRegStatus vmreg;
 	VM_MATCH_STATUS status;
-	VmpBasicBlock* bBlock;
-	BUILD_RET ret;
+	//新生成的block
+	VmpBasicBlock* newBlock;
+	//记录上一个block
+	VmAddress from_addr;
+	BUILD_RET build_ret;
 };
 
 struct VmpHandlerRange
@@ -77,7 +86,12 @@ private:
 	void ExecuteVmpPattern(VmpNode& nodeInput);
 	bool Execute_FIND_VM_INIT(VmpNode& nodeInput, ghidra::Funcdata* fd);
 	bool Execute_FINISH_VM_INIT(VmpNode& nodeInput, ghidra::Funcdata* fd);
-	bool tryMatch_vPopReg(std::vector<GhidraHelper::TraceResult>& dstResult, std::vector<GhidraHelper::TraceResult>& srcResult);
+	bool tryMatch_vPopReg(ghidra::PcodeOp* opStore, VmpNode& nodeInput, std::vector<GhidraHelper::TraceResult>& dstResult, std::vector<GhidraHelper::TraceResult>& srcResult);
+	bool tryMatch_vPushImm(ghidra::Funcdata* fd, VmpNode& nodeInput, std::vector<GhidraHelper::TraceResult>& dstResult, std::vector<GhidraHelper::TraceResult>& srcResult);
+	bool tryMatch_vPushReg(ghidra::Funcdata* fd, VmpNode& nodeInput, std::vector<GhidraHelper::TraceResult>& dstResult, std::vector<GhidraHelper::TraceResult>& srcResult);
+	bool tryMatch_vLogicalOp(ghidra::Funcdata* fd, VmpNode& nodeInput, std::vector<GhidraHelper::TraceResult>& dstResult, std::vector<GhidraHelper::TraceResult>& srcResult);
+	bool tryMatch_vCheckEsp(ghidra::Funcdata* fd, VmpNode& nodeInput);
+	bool tryMatch_vJmp(ghidra::Funcdata* fd, VmpNode& nodeInput);
 private:
 	VmpBlockBuildContext* buildContext;
 private:

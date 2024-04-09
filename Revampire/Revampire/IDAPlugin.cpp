@@ -7,7 +7,6 @@ hexdsp_t* hexdsp = nullptr;
 
 #define ACTION_MarkVmpEntry "Revampire::MarkVmpEntry"
 #define ACTION_VMP350		"Revampire::VMP350"
-#define ACTION_VMP380		"Revampire::VMP380"
 
 int MenuRevampire::activate(action_activation_ctx_t* ctx)
 {
@@ -17,10 +16,6 @@ int MenuRevampire::activate(action_activation_ctx_t* ctx)
 	}
 	else if (actionName == ACTION_VMP350) {
 		VmpVersionManager::SetVmpVersion(VmpVersionManager::VMP_350);
-		VmpReEngine::Instance().PrintGraph(get_screen_ea());
-	}
-	else if (actionName == ACTION_VMP380) {
-		VmpVersionManager::SetVmpVersion(VmpVersionManager::VMP_380);
 		VmpReEngine::Instance().PrintGraph(get_screen_ea());
 	}
 	return 0x0;
@@ -39,17 +34,11 @@ ida,nullptr,nullptr,0,ADF_OT_PLUGMOD };
 	sizeof(action_desc_t),ACTION_VMP350,"Execute Vmp 3.5.0",this,
 	ida,nullptr,nullptr,0,ADF_OT_PLUGMOD };
 	register_action(actExecuteVmp350);
-
-	const action_desc_t actExecuteVmp380 = {
-sizeof(action_desc_t),ACTION_VMP380,"Execute Vmp 3.8.0",this,
-ida,nullptr,nullptr,0,ADF_OT_PLUGMOD };
-	register_action(actExecuteVmp380);
 }
 
 MenuRevampire::~MenuRevampire()
 {
 	unregister_action(ACTION_VMP350);
-	unregister_action(ACTION_VMP380);
 	unregister_action(ACTION_MarkVmpEntry);
 }
 
@@ -57,7 +46,6 @@ void MenuRevampire::AttachToPopupMenu(TWidget* view, TPopupMenu* p)
 {
 	attach_action_to_popup(view, p, ACTION_MarkVmpEntry, "Revampire/", SETMENU_INS);
 	attach_action_to_popup(view, p, ACTION_VMP350, "Revampire/", SETMENU_INS);
-	attach_action_to_popup(view, p, ACTION_VMP380, "Revampire/", SETMENU_INS);
 }
 
 action_state_t idaapi MenuRevampire::update(action_update_ctx_t* ctx)

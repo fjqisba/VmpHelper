@@ -2662,57 +2662,57 @@ int4 ActionSetCasts::castInput(PcodeOp *op,int4 slot,Funcdata &data,CastStrategy
   return 1;
 }
 
-int4 ActionSetCasts::apply(Funcdata &data)
+int4 ActionSetCasts::apply(Funcdata& data)
 
 {
-  list<PcodeOp *>::const_iterator iter;
-  PcodeOp *op;
+	list<PcodeOp*>::const_iterator iter;
+	PcodeOp* op;
 
-  data.startCastPhase();
-  CastStrategy *castStrategy = data.getArch()->print->getCastStrategy();
-  // We follow data flow, doing basic blocks in dominance order
-  // Doing operations in basic block order
-  const BlockGraph &basicblocks( data.getBasicBlocks() );
-  for(int4 j=0;j<basicblocks.getSize();++j) {
-    BlockBasic *bb = (BlockBasic *)basicblocks.getBlock(j);
-    for(iter=bb->beginOp();iter!=bb->endOp();++iter) {
-      op = *iter;
-      if (op->notPrinted()) continue;
-      OpCode opc = op->code();
-      if (opc == CPUI_CAST) continue;
-      if (opc == CPUI_PTRADD) {	// Check for PTRADD that no longer fits its pointer
-	int4 sz = (int4)op->getIn(2)->getOffset();
-	TypePointer *ct = (TypePointer *)op->getIn(0)->getHighTypeReadFacing(op);
-	if ((ct->getMetatype() != TYPE_PTR)||(ct->getPtrTo()->getAlignSize() != AddrSpace::addressToByteInt(sz, ct->getWordSize())))
-	  data.opUndoPtradd(op,true);
-      }
-      else if (opc == CPUI_PTRSUB) {	// Check for PTRSUB that no longer fits pointer
-	if (!op->getIn(0)->getHighTypeReadFacing(op)->isPtrsubMatching(op->getIn(1)->getOffset())) {
-	  if (op->getIn(1)->getOffset() == 0) {
-	    data.opRemoveInput(op, 1);
-	    data.opSetOpcode(op, CPUI_COPY);
-	  }
-	  else
-	    data.opSetOpcode(op, CPUI_INT_ADD);
+	data.startCastPhase();
+	CastStrategy* castStrategy = data.getArch()->print->getCastStrategy();
+	// We follow data flow, doing basic blocks in dominance order
+	// Doing operations in basic block order
+	const BlockGraph& basicblocks(data.getBasicBlocks());
+	for (int4 j = 0; j < basicblocks.getSize(); ++j) {
+		BlockBasic* bb = (BlockBasic*)basicblocks.getBlock(j);
+		for (iter = bb->beginOp(); iter != bb->endOp(); ++iter) {
+			op = *iter;
+			if (op->notPrinted()) continue;
+			OpCode opc = op->code();
+			if (opc == CPUI_CAST) continue;
+			if (opc == CPUI_PTRADD) {	// Check for PTRADD that no longer fits its pointer
+				int4 sz = (int4)op->getIn(2)->getOffset();
+				TypePointer* ct = (TypePointer*)op->getIn(0)->getHighTypeReadFacing(op);
+				if ((ct->getMetatype() != TYPE_PTR) || (ct->getPtrTo()->getAlignSize() != AddrSpace::addressToByteInt(sz, ct->getWordSize())))
+					data.opUndoPtradd(op, true);
+			}
+			else if (opc == CPUI_PTRSUB) {	// Check for PTRSUB that no longer fits pointer
+				if (!op->getIn(0)->getHighTypeReadFacing(op)->isPtrsubMatching(op->getIn(1)->getOffset())) {
+					if (op->getIn(1)->getOffset() == 0) {
+						data.opRemoveInput(op, 1);
+						data.opSetOpcode(op, CPUI_COPY);
+					}
+					else
+						data.opSetOpcode(op, CPUI_INT_ADD);
+				}
+			}
+			// Do input casts first, as output may depend on input
+			for (int4 i = 0; i < op->numInput(); ++i) {
+				count += resolveUnion(op, i, data);
+				count += castInput(op, i, data, castStrategy);
+			}
+			if (opc == CPUI_LOAD) {
+				checkPointerIssues(op, op->getOut(), data);
+			}
+			else if (opc == CPUI_STORE) {
+				checkPointerIssues(op, op->getIn(2), data);
+			}
+			Varnode* vn = op->getOut();
+			if (vn == (Varnode*)0) continue;
+			count += castOutput(op, data, castStrategy);
+		}
 	}
-      }
-      // Do input casts first, as output may depend on input
-      for(int4 i=0;i<op->numInput();++i) {
-	count += resolveUnion(op, i, data);
-	count += castInput(op,i,data,castStrategy);
-      }
-      if (opc == CPUI_LOAD) {
-	checkPointerIssues(op, op->getOut(), data);
-      }
-      else if (opc == CPUI_STORE) {
-	checkPointerIssues(op, op->getIn(2), data);
-      }
-      Varnode *vn = op->getOut();
-      if (vn == (Varnode *)0) continue;
-      count += castOutput(op,data,castStrategy);
-    }
-  }
-  return 0;			// Indicate full completion
+	return 0;			// Indicate full completion
 }
 
 /// Name the Varnode which seems to be the putative switch variable for an
@@ -5584,7 +5584,7 @@ void ActionDatabase::buildVmpHandlerAction(Architecture* conf)
     act->addAction(new ActionMapGlobals("fixateglobals"));
     act->addAction(new ActionDynamicSymbols("dynamic"));
     act->addAction(new ActionNameVars("merge"));
-    act->addAction(new ActionSetCasts("casts"));
+    //act->addAction(new ActionSetCasts("casts"));
     act->addAction(new ActionFinalStructure("blockrecovery"));
     act->addAction(new ActionPrototypeWarnings("protorecovery"));
     act->addAction(new ActionStop("base"));

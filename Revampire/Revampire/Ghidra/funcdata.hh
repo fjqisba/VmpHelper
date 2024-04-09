@@ -91,7 +91,6 @@ class Funcdata {
   vector<JumpTable *> jumpvec;	///< List of jump-tables for this function
 
   VarnodeBank vbank;		///< Container of Varnode objects for \b this function
-  PcodeOpBank obank;		///< Container of PcodeOp objects for \b this function
   BlockGraph bblocks;		///< Unstructured basic blocks
   BlockGraph sblocks;		///< Structured block hierarchy (on top of basic blocks)
   Heritage heritage;		///< Manager for maintaining SSA form
@@ -144,6 +143,8 @@ public:
     VmpNode* nodeInput = nullptr;
     //用于记录被优化的索引次数
     std::uint64_t actIdx = 0x0;
+    ///< Container of PcodeOp objects for \b this function
+    PcodeOpBank obank;
     void FollowVmpNode(VmpNode* node);
     void buildReturnVal();
     //清理扩展数据
