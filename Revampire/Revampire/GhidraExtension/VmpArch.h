@@ -7,6 +7,7 @@ namespace ghidra
 }
 
 class VmpNode;
+class VmpBasicBlock;
 
 class VmpArchitecture :public ghidra::SleighArchitecture
 {
@@ -15,6 +16,7 @@ public:
 	~VmpArchitecture();
 public:
 	ghidra::Funcdata* AnaVmpHandler(VmpNode* nodeInput);
+	ghidra::Funcdata* AnaVmpBasicBlock(VmpBasicBlock* basicBlock);
 protected:
 	void buildLoader(ghidra::DocumentStorage& store) override;
 	void resolveArchitecture(void) override;

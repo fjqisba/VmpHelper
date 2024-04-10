@@ -15,4 +15,15 @@ namespace ghidra
     private:
         AddrSpace* stackspace;		///< Stack space associated with stack-pointer register
     };
+
+	//Vmpº¯ÊýÆô¶¯
+	class ActionVmpStart : public Action {
+	public:
+		ActionVmpStart(const string& g) : Action(0, "vmpstart", g) {}		///< Constructor
+		virtual Action* clone(const ActionGroupList& grouplist) const {
+			if (!grouplist.contains(getGroup())) return (Action*)0;
+			return new ActionVmpStart(getGroup());
+		}
+        virtual int4 apply(Funcdata& data);
+	};
 }

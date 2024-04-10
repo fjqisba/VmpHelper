@@ -4,6 +4,7 @@
 #include "../Ghidra/action.hh"
 #include "../Manager/DisasmManager.h"
 #include "../GhidraExtension/FuncBuildHelper.h"
+#include "../GhidraExtension/VmpControlFlow.h"
 
 
 int BuildVmRet(ghidra::Funcdata& data, ghidra::Address& addr)
@@ -95,6 +96,46 @@ void ghidra::FlowInfo::beginProcessInstruction(list<PcodeOp*>::const_iterator& o
 	}
 }
 
+void ghidra::FlowInfo::generateVmpBlockOps(VmpBasicBlock* bblock)
+{
+    clearProperties();
+	bool startbasic = true;
+	bool isfallthru = false;
+	bool emptyflag;
+	list<PcodeOp*>::const_iterator oiter;
+    for (unsigned int n = 0; n < bblock->insList.size(); ++n) {
+        VmpInstruction* vmIns = static_cast<VmpInstruction*>(bblock->insList[n].get());
+		ghidra::Address curaddr(glb->getDefaultCodeSpace(), vmIns->addr.vmdata);
+		beginProcessInstruction(oiter, emptyflag);
+        int4 step = vmIns->BuildInstruction(data);
+		if (step) {
+			VisitStat& stat(visited[curaddr]);
+			stat.size = step;
+			if (emptyflag) {
+				oiter = obank.beginDead();
+			}
+			else {
+				++oiter;
+			}
+			if (oiter != obank.endDead()) {
+				stat.seqnum = (*oiter)->getSeqNum();
+				data.opMarkStartInstruction(*oiter);
+				xrefControlFlow(oiter, startbasic, isfallthru, (FuncCallSpecs*)0);
+			}
+		}
+    }
+
+	//判断有没有ret结尾
+    VmpInstruction* endIns = static_cast<VmpInstruction*>(bblock->insList[bblock->insList.size() - 1].get());
+	ghidra::Address endAddr(glb->getDefaultCodeSpace(), endIns->addr.vmdata);
+	auto itEnd = std::prev(obank.endDead());
+	if (itEnd != obank.endDead()) {
+		if ((*itEnd)->code() != CPUI_RETURN) {
+			BuildVmRet(data, endAddr);
+		}
+	}
+}
+
 void ghidra::FlowInfo::generateVmpNodeOps(VmpNode* node)
 {
     clearProperties();
@@ -161,10 +202,38 @@ void ghidra::FlowInfo::generateVmpNodeOps(VmpNode* node)
     }
 }
 
+void ghidra::Funcdata::startVmpProcessing(void)
+{
+	if ((flags & processing_started) != 0)
+		throw LowlevelError("Function processing already started");
+	flags |= processing_started;
+
+	if (funcp.isInline())
+		warningHeader("This is an inlined function");
+	localmap->clearUnlocked();
+	funcp.clearUnlockedOutput();
+	Address baddr(baseaddr.getSpace(), 0);
+	Address eaddr(baseaddr.getSpace(), ~((uintb)0));
+    if (nodeInput) {
+        followVmpNode(nodeInput);
+    }
+    else if (vm_basicblock) {
+        followVmpBasicBlock(vm_basicblock);
+    }
+    else {
+        followFlow(baddr, eaddr);
+    }
+	structureReset();
+	sortCallSpecs();		// Must come after structure reset
+	heritage.buildInfoList();
+	localoverride.applyDeadCodeDelay(*this);
+}
+
 void ghidra::Funcdata::clearExtensionData()
 {
-    actIdx = 0x0;
-    nodeInput = nullptr;
+	actIdx = 0x0;
+	nodeInput = nullptr;
+    vm_basicblock = nullptr;
 }
 
 void ghidra::Funcdata::buildReturnVal()
@@ -192,7 +261,36 @@ void ghidra::Funcdata::buildReturnVal()
     }
 }
 
-void ghidra::Funcdata::FollowVmpNode(VmpNode* node)
+void ghidra::Funcdata::followVmpBasicBlock(VmpBasicBlock* node)
+{
+    vm_basicblock = node;
+	if (!obank.empty()) {
+		if ((flags & blocks_generated) == 0)
+			throw LowlevelError("Function loaded for inlining");
+		return;	// Already translated
+	}
+	uint4 fl = 0;
+	fl |= glb->flowoptions;	// Global flow options
+	FlowInfo flow(*this, obank, bblocks, qlst);
+	flow.setFlags(fl);
+	flow.setMaximumInstructions(glb->max_instructions);
+    flow.generateVmpBlockOps(vm_basicblock);
+	buildReturnVal();
+#ifdef _DEBUG
+	std::stringstream ss;
+	printRaw(ss);
+	std::string rawResult = ss.str();
+#endif
+	flow.generateBlocks();
+	flags |= blocks_generated;
+	switchOverJumpTables(flow);
+	if (flow.hasUnimplemented())
+		flags |= unimplemented_present;
+	if (flow.hasBadData())
+		flags |= baddata_present;
+}
+
+void ghidra::Funcdata::followVmpNode(VmpNode* node)
 {
     nodeInput = node;
     if (!obank.empty()) {

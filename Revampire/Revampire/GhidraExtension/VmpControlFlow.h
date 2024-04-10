@@ -9,6 +9,7 @@
 #include "../VmpCore/VmpTraceFlowGraph.h"
 #include "../VmpCore/VmpUnicorn.h"
 #include "../GhidraExtension/VmpNode.h"
+#include "../GhidraExtension/VmpInstruction.h"
 #include "../Common/VmpCommon.h"
 
 class mutable_graph_t;
@@ -17,38 +18,71 @@ class VmpControlFlow;
 class VmpArchitecture;
 class VmpBasicBlock;
 
-class VmpControlFlowBuilder
+class VmpRegStatus
 {
 public:
-	enum AnaTaskType {
-		TASK_DEFAULT = 0x0,
-		FIND_VM_ENTRY,
-		HANDLE_VM_ENTRY,
+	void ClearStatus();
+	//vm×Ö½ÚÂë¼Ä´æÆ÷
+	std::string reg_code;
+	//vmÐéÄâ¶ÑÕ»¼Ä´æÆ÷
+	std::string reg_stack;
+	//ÊÇ·ñÒÑÑ¡ÔñºÃÁË¼Ä´æÆ÷
+	bool isSelected = false;
+};
+
+class VmpFlowBuildContext
+{
+public:
+	enum FlowBuildType {
+		HANDLE_NORMAL = 0x0,
+		HANDLE_VMP_ENTRY,
+		HANDLE_VMP_JMP,
 	};
-	struct AnaTask
-	{
-		AnaTaskType type;
-		VmAddress vmAddr;
-		std::unique_ptr<VmpUnicornContext> ctx;
+	enum VM_MATCH_STATUS {
+		FIND_VM_INIT = 0x0,
+		FINISH_VM_INIT = 0x1,
 	};
+public:
+	VmpFlowBuildContext();
+public:
+	FlowBuildType btype;
+	//ÆðÊ¼µØÖ·
+	VmAddress start_addr;
+	//vm¼Ä´æÆ÷×´Ì¬
+	VmpRegStatus vmreg;
+	//Ä£ÄâÖ´ÐÐ×´Ì¬
+	std::unique_ptr<VmpUnicornContext> ctx;
+
+
+	VM_MATCH_STATUS status;
+	//¼ÇÂ¼ÉÏÒ»¸öblock
+	VmAddress from_addr;
+};
+
+class VmpControlFlowBuilder
+{
+	friend class VmpBlockBuilder;
 public:
 	VmpControlFlowBuilder(VmpFunction& fd);
 	~VmpControlFlowBuilder();
 	bool BuildCFG(size_t startAddr);
-private:
-	VmpArchitecture* Architecture();
-	bool fallthruVmp(AnaTask& task);
-	void fallthruNormal(AnaTask& task);
-	bool isVmpEntry(size_t startAddr);
+protected:
 	VmpBasicBlock* createNewBlock(VmAddress startAddr);
-	void linkBlockEdge(VmAddress from, VmAddress to);
 private:
-	std::queue<std::unique_ptr<AnaTask>> anaQueue;
+	void addVmpEntryBuildTask(VmAddress startAddr);
+	VmpArchitecture* Arch();
+	void fallthruVmp(VmpFlowBuildContext& task);
+	void fallthruNormal(VmpFlowBuildContext& task);
+	bool isVmpEntry(size_t startAddr);
+	void linkBlockEdge(VmAddress from, VmAddress to);
+public:
+	VmpTraceFlowGraph tfg;
+private:
+	std::queue<std::unique_ptr<VmpFlowBuildContext>> anaQueue;
 	std::set<VmAddress> visited;
 	std::map<VmAddress, VmpBasicBlock*> instructionMap;
 	std::map<VmAddress, std::set<VmAddress>> fromEdges;
 	VmpFunction& data;
-	VmpTraceFlowGraph tfg;
 };
 
 

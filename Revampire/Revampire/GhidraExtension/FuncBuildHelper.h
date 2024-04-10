@@ -26,3 +26,12 @@ private:
     ghidra::Funcdata& data;
     ghidra::Address& pc;
 };
+
+class FuncBuildHelper
+{
+public:
+    //push 0x12345678
+    static void BuildPushConst(ghidra::Funcdata& data, size_t addr, size_t val, size_t valSize);
+    //push eax
+    static void BuildPushRegister(ghidra::Funcdata& data, size_t addr, const ghidra::VarnodeData& regData);
+};

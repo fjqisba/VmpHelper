@@ -7,8 +7,8 @@
 #include "../GhidraExtension/VmpFunction.h"
 #include "../GhidraExtension/VmpArch.h"
 #include "../Helper/UnicornHelper.h"
-#include "../VmpCore/VmpHandler.h"
 #include "../VmpCore/VmpReEngine.h"
+#include "../VmpCore/VmpBlockBuilder.h"
 
 VmpControlFlow::VmpControlFlow() :graph(this)
 {
@@ -29,6 +29,20 @@ VmpControlFlowBuilder::~VmpControlFlowBuilder()
 {
 
 }
+
+VmpFlowBuildContext::VmpFlowBuildContext()
+{
+
+}
+
+void VmpRegStatus::ClearStatus()
+{
+	isSelected = false;
+	reg_code = "";
+	reg_stack = "";
+}
+
+
 
 std::string VmpBasicBlock::MakeGraphTxt()
 {
@@ -150,9 +164,14 @@ bool isNormalTerminalInstruction(RawInstruction* data)
 	return false;
 }
 
-void VmpControlFlowBuilder::fallthruNormal(AnaTask& task)
+void VmpControlFlowBuilder::fallthruNormal(VmpFlowBuildContext& task)
 {
-	size_t curAddr = task.vmAddr.raw;
+	if (visited.count(task.start_addr)) {
+		return;
+	}
+	visited.insert(task.start_addr);
+
+	size_t curAddr = task.start_addr.raw;
 	VmpBasicBlock* curBasicBlock = nullptr;
 	while (true) {
 		if (isVmpEntry(curAddr)) {
@@ -160,10 +179,7 @@ void VmpControlFlowBuilder::fallthruNormal(AnaTask& task)
 				RawInstruction* rawIns = static_cast<RawInstruction*>(curBasicBlock->insList.back().get());
 				linkBlockEdge(rawIns->raw->address,curAddr);
 			}
-			auto newTask = std::make_unique<AnaTask>();
-			newTask->type = HANDLE_VM_ENTRY;
-			newTask->vmAddr = VmAddress(curAddr, 0x0);
-			anaQueue.push(std::move(newTask));
+			addVmpEntryBuildTask(curAddr);
 			return;
 		}
 		if (curBasicBlock == nullptr) {
@@ -224,58 +240,40 @@ VmpNode VmpBlockWalker::GetNextNode()
 }
 
 
-bool VmpControlFlowBuilder::fallthruVmp(AnaTask& task)
+void VmpControlFlowBuilder::addVmpEntryBuildTask(VmAddress startAddr)
 {
-	VmpBlockWalker walker(tfg);
-	if (task.ctx == nullptr) {
-		task.ctx = VmpUnicornContext::DefaultContext();
-		task.ctx->context.EIP = task.vmAddr.raw;
-	}
-	walker.StartWalk(*task.ctx, 0x10000);
-	tfg.AddTraceFlow(walker.GetTraceList());
-	tfg.MergeAllNodes();
-
-	std::stringstream testGraph;
-	tfg.DumpGraph(testGraph, true);
-	std::string strData = testGraph.str();
-
-	VmpBlockBuildContext buildContext;
-	buildContext.newBlock = createNewBlock(task.vmAddr);
-	if (task.vmAddr.vmdata == 0) {
-		buildContext.status = VmpBlockBuildContext::FIND_VM_INIT;
-	}
-	else {
-		buildContext.status = VmpBlockBuildContext::FINISH_VM_INIT;
-	}
-	VmpHandlerFactory handlerFactory(data.Arch());
-	return handlerFactory.BuildVmpBlock(&buildContext, walker);
+	auto newTask = std::make_unique<VmpFlowBuildContext>();
+	newTask->btype = VmpFlowBuildContext::HANDLE_VMP_ENTRY;
+	newTask->start_addr = startAddr;
+	anaQueue.push(std::move(newTask));
 }
 
-VmpArchitecture* VmpControlFlowBuilder::Architecture()
+void VmpControlFlowBuilder::fallthruVmp(VmpFlowBuildContext& task)
+{
+	VmpBlockBuilder builder(*this);
+	builder.BuildVmpBlock(&task);
+	return;
+}
+
+VmpArchitecture* VmpControlFlowBuilder::Arch()
 {
 	return data.Arch();
 }
 
 bool VmpControlFlowBuilder::BuildCFG(size_t startAddr)
 {
-	auto startTask = std::make_unique<AnaTask>();
-	startTask->type = FIND_VM_ENTRY;
-	startTask->vmAddr = VmAddress(startAddr, 0x0);
+	auto startTask = std::make_unique<VmpFlowBuildContext>();
+	startTask->btype = VmpFlowBuildContext::HANDLE_NORMAL;
+	startTask->start_addr = VmAddress(startAddr, 0x0);
 	anaQueue.push(std::move(startTask));
 	while (!anaQueue.empty()) {
 		auto curTask = std::move(anaQueue.front());
 		anaQueue.pop();
-		if (visited.count(curTask->vmAddr)) {
-			continue;
-		}
-		visited.insert(curTask->vmAddr);
-		switch (curTask->type) {
-		case FIND_VM_ENTRY:
+		if (curTask->btype == VmpFlowBuildContext::HANDLE_NORMAL) {
 			fallthruNormal(*curTask);
-			break;
-		case HANDLE_VM_ENTRY:
+		}
+		else {
 			fallthruVmp(*curTask);
-			break;
 		}
 	}
 	return true;

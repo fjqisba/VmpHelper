@@ -25,10 +25,18 @@ public:
 	VmpInstruction() {};
 	virtual ~VmpInstruction() {};
 	bool IsRawInstruction() override { return false; };
+	virtual int BuildInstruction(ghidra::Funcdata& data);
 public:
 	VmAddress addr;
 	VmpOpType opType;
 	unsigned char opSize;
+};
+
+class VmpOpUnknown :public VmpInstruction
+{
+public:
+	VmpOpUnknown() { opType = VM_UNKNOWN; };
+	~VmpOpUnknown() {};
 };
 
 class VmpOpInit :public VmpInstruction
@@ -36,26 +44,58 @@ class VmpOpInit :public VmpInstruction
 public:
 	VmpOpInit() { opType = VM_INIT; };
 	~VmpOpInit() {};
+	int BuildInstruction(ghidra::Funcdata& data) override;
 public:
 	//Ñ¹ÈëµÄ¶ÑÕ»
 	std::vector<ghidra::VarnodeData> storeContext;
 };
+
+//vPopReg2
+//mov cx, word ptr ds:[vmstack]
+//lea vmstack, ds:[vmstack+0x2]
+//mov word ptr ss:[vmReg], cx
+
+//vPopReg4
+//mov ecx,dword ptr ds:[vmstack]
+//vmstack edi,0x4
+//mov dword ptr ss:[vmReg],ecx
 
 class VmpOpPopReg :public VmpInstruction
 {
 public:
 	VmpOpPopReg() { opType = VM_POP_REG; };
 	~VmpOpPopReg() {};
+	int BuildInstruction(ghidra::Funcdata& data) override;
 public:
 	//¼Ä´æÆ÷Æ«ÒÆ
 	int vmRegOffset;
 };
 
+//PushImm1
+//movzx ecx,byte ptr ss:[ebp]
+//lea esi,dword ptr ds:[esi-0x2]
+//mov word ptr ds:[esi],cx
+
+//PushImm2
+//movzx edx,word ptr ds:[esi]
+//sub edi,0x2
+//mov word ptr ds:[edi],dx
+
+//PushImm4
+//mov eax,dword ptr ds:[esi]
+//lea esi,dword ptr ds:[esi+0x4]
+//mov dword ptr ds:[edi],eax
+
 class VmpOpPushImm :public VmpInstruction
 {
 public:
-	VmpOpPushImm() { opType = VM_POP_REG; };
+	VmpOpPushImm() { opType = VM_PUSH_IMM; };
 	~VmpOpPushImm() {};
+	int BuildInstruction(ghidra::Funcdata& data) override;
+private:
+	int BuildPushImm1(ghidra::Funcdata& data);
+	int BuildPushImm2(ghidra::Funcdata& data);
+	int BuildPushImm4(ghidra::Funcdata& data);
 public:
 	size_t immVal;
 };
@@ -84,6 +124,7 @@ class VmpOpPushReg :public VmpInstruction
 public:
 	VmpOpPushReg() { opType = VM_PUSH_REG; };
 	~VmpOpPushReg() {};
+	int BuildInstruction(ghidra::Funcdata& data) override;
 public:
 	//¼Ä´æÆ÷Æ«ÒÆ
 	int vmRegOffset;
@@ -143,6 +184,7 @@ class VmpOpJmp :public VmpInstruction
 public:
 	VmpOpJmp() { opType = VM_JMP; };
 	~VmpOpJmp() {};
+	int BuildInstruction(ghidra::Funcdata& data) override;
 public:
 	std::vector<size_t> branchList;
 };

@@ -22,6 +22,7 @@
 #include "funcdata.hh"
 
 class VmpNode;
+class VmpBasicBlock;
 
 namespace ghidra {
 
@@ -144,6 +145,7 @@ private:
 public:
 	//GhidraExtension
 	void generateVmpNodeOps(VmpNode* node);
+	void generateVmpBlockOps(VmpBasicBlock* node);
 	void beginProcessInstruction(list<PcodeOp*>::const_iterator& oiter, bool& emptyflag);
 public:
   FlowInfo(Funcdata &d,PcodeOpBank &o,BlockGraph &b,vector<FuncCallSpecs *> &q);	///< Constructor

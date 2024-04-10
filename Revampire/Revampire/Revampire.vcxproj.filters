@@ -367,14 +367,11 @@
     <ClCompile Include="GhidraExtension\VmpRule.cpp">
       <Filter>GhidraExtension</Filter>
     </ClCompile>
-    <ClCompile Include="VmpCore\VmpHandler.cpp">
-      <Filter>VmpCore</Filter>
-    </ClCompile>
-    <ClCompile Include="VmpCore\VmpHandlerExecute.cpp">
-      <Filter>VmpCore</Filter>
-    </ClCompile>
     <ClCompile Include="Helper\GhidraHelper.cpp">
       <Filter>Helper</Filter>
+    </ClCompile>
+    <ClCompile Include="VmpCore\VmpBlockBuilder.cpp">
+      <Filter>VmpCore</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -729,11 +726,11 @@
     <ClInclude Include="GhidraExtension\VmpRule.h">
       <Filter>GhidraExtension</Filter>
     </ClInclude>
-    <ClInclude Include="VmpCore\VmpHandler.h">
-      <Filter>VmpCore</Filter>
-    </ClInclude>
     <ClInclude Include="Helper\GhidraHelper.h">
       <Filter>Helper</Filter>
+    </ClInclude>
+    <ClInclude Include="VmpCore\VmpBlockBuilder.h">
+      <Filter>VmpCore</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

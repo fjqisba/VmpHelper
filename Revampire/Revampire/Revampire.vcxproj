@@ -274,8 +274,7 @@
     <ClCompile Include="Manager\exceptions.cpp" />
     <ClCompile Include="Manager\SectionManager.cpp" />
     <ClCompile Include="Manager\VmpVersionManager.cpp" />
-    <ClCompile Include="VmpCore\VmpHandler.cpp" />
-    <ClCompile Include="VmpCore\VmpHandlerExecute.cpp" />
+    <ClCompile Include="VmpCore\VmpBlockBuilder.cpp" />
     <ClCompile Include="VmpCore\VmpReEngine.cpp" />
     <ClCompile Include="VmpCore\VmpTraceFlowGraph.cpp" />
     <ClCompile Include="VmpCore\VmpUnicorn.cpp" />
@@ -396,7 +395,7 @@
     <ClInclude Include="Manager\exceptions.h" />
     <ClInclude Include="Manager\SectionManager.h" />
     <ClInclude Include="Manager\VmpVersionManager.h" />
-    <ClInclude Include="VmpCore\VmpHandler.h" />
+    <ClInclude Include="VmpCore\VmpBlockBuilder.h" />
     <ClInclude Include="VmpCore\VmpReEngine.h" />
     <ClInclude Include="VmpCore\VmpTraceFlowGraph.h" />
     <ClInclude Include="VmpCore\VmpUnicorn.h" />

@@ -158,3 +158,55 @@ void PCodeBuildHelper::CPUI_STORE(ghidra::Varnode* v1, ghidra::Varnode* v2)
     data.opSetInput(opStore, v1, 1);
     data.opSetInput(opStore, v2, 2);
 }
+
+
+void FuncBuildHelper::BuildPushRegister(ghidra::Funcdata& data, size_t addr, const ghidra::VarnodeData& regData)
+{
+	auto regESP = data.getArch()->translate->getRegister("ESP");
+
+	ghidra::Address pc = ghidra::Address(data.getArch()->getDefaultCodeSpace(), addr);
+	ghidra::PcodeOp* opCopy = data.newOp(1, pc);
+	data.opSetOpcode(opCopy, ghidra::CPUI_COPY);
+	ghidra::Varnode* uniqReg = data.newUniqueOut(4, opCopy);
+	data.opSetInput(opCopy, data.newVarnode(regData.size, regData.space, regData.offset), 0);
+
+	ghidra::PcodeOp* opSub = data.newOp(2, pc);
+	data.opSetOpcode(opSub, ghidra::CPUI_INT_SUB);
+	data.newVarnodeOut(regESP.size, regESP.getAddr(), opSub);
+	data.opSetInput(opSub, data.newVarnode(regESP.size, regESP.space, regESP.offset), 0);
+	data.opSetInput(opSub, data.newConstant(4, 0x4), 1);
+
+	ghidra::PcodeOp* opStore = data.newOp(3, pc);
+	data.opSetOpcode(opStore, ghidra::CPUI_STORE);
+	data.opSetInput(opStore, data.newVarnodeSpace(data.getArch()->getSpaceByName("ram")), 0);
+	data.opSetInput(opStore, data.newVarnode(regESP.size, regESP.space, regESP.offset), 1);
+	data.opSetInput(opStore, uniqReg, 2);
+
+    return;
+}
+
+void FuncBuildHelper::BuildPushConst(ghidra::Funcdata& data, size_t addr, size_t val, size_t valSize)
+{
+    auto regESP = data.getArch()->translate->getRegister("ESP");
+
+    //uniqReg = constant
+    ghidra::Address pc = ghidra::Address(data.getArch()->getDefaultCodeSpace(), addr);
+    ghidra::PcodeOp* opCopy = data.newOp(1, pc);
+    data.opSetOpcode(opCopy, ghidra::CPUI_COPY);
+    ghidra::Varnode* uniqReg = data.newUniqueOut(valSize, opCopy);
+    data.opSetInput(opCopy, data.newConstant(valSize, val), 0);
+
+    //regESP = regESP - valSize
+    ghidra::PcodeOp* opSub = data.newOp(2, pc);
+    data.opSetOpcode(opSub, ghidra::CPUI_INT_SUB);
+    data.newVarnodeOut(regESP.size, regESP.getAddr(), opSub);
+    data.opSetInput(opSub, data.newVarnode(regESP.size, regESP.space, regESP.offset), 0);
+    data.opSetInput(opSub, data.newConstant(4, valSize), 1);
+
+    //*(ram,ESP(free)) = u0x00009a80:2(free)
+    ghidra::PcodeOp* opStore = data.newOp(3, pc);
+    data.opSetOpcode(opStore, ghidra::CPUI_STORE);
+    data.opSetInput(opStore, data.newVarnodeSpace(data.getArch()->getSpaceByName("ram")), 0);
+    data.opSetInput(opStore, data.newVarnode(regESP.size, regESP.space, regESP.offset), 1);
+    data.opSetInput(opStore, uniqReg, 2);
+}

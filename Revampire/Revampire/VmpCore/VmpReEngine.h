@@ -1,6 +1,5 @@
 #pragma once
 #include "../GhidraExtension/VmpFunction.h"
-#include "VmpHandler.h"
 #include <math.h>
 
 class VmpArchitecture;

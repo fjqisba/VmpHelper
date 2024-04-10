@@ -6,6 +6,11 @@
 using namespace ghidra;
 
 
+int4 ActionVmpStart::apply(Funcdata& data) {
+	data.startVmpProcessing();
+	return 0;
+}
+
 int4 ActionVmpHandlerDeadCode::apply(Funcdata& data)
 {
     int4 i;
