@@ -9,6 +9,7 @@ public:
 	virtual ~vm_inst() {};
 public:
 	virtual bool IsRawInstruction() = 0;
+	virtual void PrintRaw(std::ostream& ss) = 0x0;
 };
 
 class RawInstruction :public vm_inst
@@ -17,6 +18,7 @@ public:
 	RawInstruction();
 	~RawInstruction();
 	bool IsRawInstruction() override { return true; };
+	void PrintRaw(std::ostream& ss) override;
 public:
 	cs_insn* raw;
 };

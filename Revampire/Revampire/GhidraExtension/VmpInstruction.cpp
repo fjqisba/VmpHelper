@@ -1,196 +1,100 @@
 #include "VmpInstruction.h"
-#include "../GhidraExtension/FuncBuildHelper.h"
+#include <functional>
+#include <lines.hpp>
 
-int VmpInstruction::BuildInstruction(ghidra::Funcdata& data)
+void colorAddr(std::ostream& ss, size_t addr, const char* tag)
 {
-	return 0x0;
+	ss << SCOLOR_ON << tag << std::hex << addr << SCOLOR_OFF << tag;
 }
 
-int VmpOpInit::BuildInstruction(ghidra::Funcdata& data)
+void colorString(std::ostream& ss, const std::string& str, const char* tag)
 {
-	int step = 0x0;
-	for (const auto& context : storeContext) {
-		if (context.getAddr().getSpace()->getName() == "const") {
-			FuncBuildHelper::BuildPushConst(data, addr.vmdata, context.getAddr().getOffset(), 0x4);
-			step++;
-		}
-		else if (context.getAddr().getSpace()->getName() == "register") {
-			FuncBuildHelper::BuildPushRegister(data, addr.vmdata, context);
-			step++;
-		}
-	}
-	return step;
+	ss << SCOLOR_ON << tag << str << SCOLOR_OFF << tag;
 }
 
-int VmpOpPushReg::BuildInstruction(ghidra::Funcdata& data)
+void colorString(std::ostream& ss, const char* tag, const std::function<void()>& outputFunction)
 {
-	auto regESP = data.getArch()->translate->getRegister("ESP");
-
-	ghidra::Address pc = ghidra::Address(data.getArch()->getDefaultCodeSpace(), addr.vmdata);
-
-	//uniq = stack_context
-	ghidra::PcodeOp* opCopy = data.newOp(1, pc);
-	data.opSetOpcode(opCopy, ghidra::CPUI_COPY);
-	ghidra::Varnode* uniqData = data.newUniqueOut(opSize, opCopy);
-	data.opSetInput(opCopy, data.newVarnode(opSize, data.getArch()->getStackSpace(), uint32_t(vmRegOffset)), 0);
-
-	//esp = esp - pushOffset
-	ghidra::PcodeOp* opSub = data.newOp(2, pc);
-	data.opSetOpcode(opSub, ghidra::CPUI_INT_SUB);
-	data.newVarnodeOut(regESP.size, regESP.getAddr(), opSub);
-	data.opSetInput(opSub, data.newVarnode(regESP.size, regESP.space, regESP.offset), 0);
-	if (opSize == 0x4) {
-		data.opSetInput(opSub, data.newConstant(4, 0x4), 1);
-	}
-	else {
-		data.opSetInput(opSub, data.newConstant(4, 0x2), 1);
-	}
-
-	//*[esp] = uniq
-	ghidra::PcodeOp* opStore = data.newOp(3, pc);
-	data.opSetOpcode(opStore, ghidra::CPUI_STORE);
-	data.opSetInput(opStore, data.newVarnodeSpace(data.getArch()->getSpaceByName("ram")), 0);
-	data.opSetInput(opStore, data.newVarnode(regESP.size, regESP.space, regESP.offset), 1);
-	data.opSetInput(opStore, uniqData, 2);
-	return 3;
+	ss << SCOLOR_ON << tag;
+	outputFunction();
+	ss << SCOLOR_OFF << tag;
 }
 
-int VmpOpPushImm::BuildPushImm1(ghidra::Funcdata& data)
+void VmpInstruction::PrintRaw(std::ostream& ss)
 {
-	auto regESP = data.getArch()->translate->getRegister("ESP");
-	ghidra::Address pc = ghidra::Address(data.getArch()->getDefaultCodeSpace(), addr.vmdata);
 
-	//uniqReg = constant
-	ghidra::PcodeOp* opCopy = data.newOp(1, pc);
-	data.opSetOpcode(opCopy, ghidra::CPUI_COPY);
-	ghidra::Varnode* uniqReg = data.newUniqueOut(opSize, opCopy);
-	data.opSetInput(opCopy, data.newConstant(opSize, immVal), 0);
-
-	//ESP = ESP - 0x2
-	ghidra::PcodeOp* opSub = data.newOp(2, pc);
-	data.opSetOpcode(opSub, ghidra::CPUI_INT_SUB);
-	data.newVarnodeOut(regESP.size, regESP.getAddr(), opSub);
-	data.opSetInput(opSub, data.newVarnode(regESP.size, regESP.space, regESP.offset), 0);
-	data.opSetInput(opSub, data.newConstant(4, 0x2), 1);
-
-	//*(ram,ESP(free)) = u0x00009a80:2(free)
-	ghidra::PcodeOp* opStore = data.newOp(3, pc);
-	data.opSetOpcode(opStore, ghidra::CPUI_STORE);
-	data.opSetInput(opStore, data.newVarnodeSpace(data.getArch()->getSpaceByName("ram")), 0);
-	data.opSetInput(opStore, data.newVarnode(regESP.size, regESP.space, regESP.offset), 1);
-	data.opSetInput(opStore, uniqReg, 2);
-
-	return 0x3;
 }
 
-int VmpOpPushImm::BuildPushImm2(ghidra::Funcdata& data)
+void VmpInstruction::printAddress(std::ostream& ss)
 {
-	auto regESP = data.getArch()->translate->getRegister("ESP");
-	ghidra::Address pc = ghidra::Address(data.getArch()->getDefaultCodeSpace(), addr.vmdata);
-
-	//uniqReg = constant
-	ghidra::PcodeOp* opCopy = data.newOp(1, pc);
-	data.opSetOpcode(opCopy, ghidra::CPUI_COPY);
-	ghidra::Varnode* uniqReg = data.newUniqueOut(opSize, opCopy);
-	data.opSetInput(opCopy, data.newConstant(opSize, immVal), 0);
-
-	//ESP = ESP - 0x2
-	ghidra::PcodeOp* opSub = data.newOp(2, pc);
-	data.opSetOpcode(opSub, ghidra::CPUI_INT_SUB);
-	data.newVarnodeOut(regESP.size, regESP.getAddr(), opSub);
-	data.opSetInput(opSub, data.newVarnode(regESP.size, regESP.space, regESP.offset), 0);
-	data.opSetInput(opSub, data.newConstant(4, 0x2), 1);
-
-	//*(ram,ESP(free)) = u0x00009a80:2(free)
-	ghidra::PcodeOp* opStore = data.newOp(3, pc);
-	data.opSetOpcode(opStore, ghidra::CPUI_STORE);
-	data.opSetInput(opStore, data.newVarnodeSpace(data.getArch()->getSpaceByName("ram")), 0);
-	data.opSetInput(opStore, data.newVarnode(regESP.size, regESP.space, regESP.offset), 1);
-	data.opSetInput(opStore, uniqReg, 2);
-
-	return 0x3;
+	colorAddr(ss, addr.vmdata, SCOLOR_DNUM);
+	ss << " ";
+	colorAddr(ss, addr.raw, SCOLOR_DREF);
 }
 
-int VmpOpPushImm::BuildPushImm4(ghidra::Funcdata& data)
+void VmpOpNand::PrintRaw(std::ostream& ss)
 {
-	FuncBuildHelper::BuildPushConst(data, addr.vmdata, immVal, opSize);
-	return 0x3;
+	//colorString(ss, DecToHex(vmAddr), SCOLOR_DNUM);
+	//ss << " ";
+	//colorString(ss, DecToHex(rawAddr), SCOLOR_DREF);
+	//ss << "\t";
+	//colorString(ss, SCOLOR_INSN, [this, &ss]() {
+	//	ss << "vNand" << this->opSize;
+	//	});
+	//ss << "\n";
 }
 
-int VmpOpPushImm::BuildInstruction(ghidra::Funcdata& data)
+void VmpOpPushImm::PrintRaw(std::ostream& ss)
 {
-	if (opSize == 0x4) {
-		return BuildPushImm4(data);
-	}
-	if (opSize == 0x2) {
-		return BuildPushImm2(data);
-	}
-	if (opSize == 0x1) {
-		return BuildPushImm1(data);
-	}
-	return 0x0;
+	printAddress(ss);
+	ss << "\t";
+	colorString(ss, SCOLOR_INSN, [this, &ss]() {
+		ss << "vPushImm" << this->opSize;
+	});
+	ss << " ";
+	colorAddr(ss, immVal, SCOLOR_NUMBER);
+	ss << "\n";
 }
 
-int VmpOpJmp::BuildInstruction(ghidra::Funcdata& data)
+void VmpOpExit::PrintRaw(std::ostream& ss)
 {
-	auto regESP = data.getArch()->translate->getRegister("ESP");
-	ghidra::Address pc = ghidra::Address(data.getArch()->getDefaultCodeSpace(), addr.vmdata);
-
-	PCodeBuildHelper opBuilder(data, pc);
-
-	//u1 = *(ram,ESP)
-	ghidra::PcodeOp* opLoad = data.newOp(2, pc);
-	data.opSetOpcode(opLoad, ghidra::CPUI_LOAD);
-	ghidra::Varnode* u1 = data.newUniqueOut(4, opLoad);
-	data.opSetInput(opLoad, data.newVarnodeSpace(data.getArch()->getSpaceByName("ram")), 0);
-	data.opSetInput(opLoad, data.newVarnode(regESP.size, regESP.space, regESP.offset), 1);
-
-	//esp = esp + 0x4
-	ghidra::PcodeOp* opAdd = data.newOp(2, pc);
-	data.opSetOpcode(opAdd, ghidra::CPUI_INT_ADD);
-	data.newVarnodeOut(regESP.size, regESP.getAddr(), opAdd);
-	data.opSetInput(opAdd, data.newVarnode(regESP.size, regESP.space, regESP.offset), 0);
-	data.opSetInput(opAdd, data.newConstant(4, 0x4), 1);
-
-	//EIP = u1
-	auto regEIP = data.getArch()->translate->getRegister("EIP");
-	ghidra::PcodeOp* opCopy = data.newOp(1, pc);
-	data.opSetOpcode(opCopy, ghidra::CPUI_COPY);
-	data.newVarnodeOut(regEIP.size, regEIP.getAddr(), opCopy);
-	data.opSetInput(opCopy, u1, 0);
-
-	return 0x3;
+	printAddress(ss);
+	ss << "\t";
+	colorString(ss, "vExit", SCOLOR_INSN);
+	ss << "\n";
 }
 
-int VmpOpPopReg::BuildInstruction(ghidra::Funcdata& data)
+void VmpOpInit::PrintRaw(std::ostream& ss)
 {
-	auto regESP = data.getArch()->translate->getRegister("ESP");
-	ghidra::Address pc = ghidra::Address(data.getArch()->getDefaultCodeSpace(), addr.vmdata);
+	printAddress(ss);
+	ss << "\t";
+	colorString(ss, "vInit", SCOLOR_INSN);
+	ss << "\n";
+}
 
-	ghidra::PcodeOp* opLoad = data.newOp(2, pc);
-	data.opSetOpcode(opLoad, ghidra::CPUI_LOAD);
-	ghidra::Varnode* uniqOut = data.newUniqueOut(opSize, opLoad);
-	data.opSetInput(opLoad, data.newVarnodeSpace(data.getArch()->getSpaceByName("ram")), 0);
-	data.opSetInput(opLoad, data.newVarnode(regESP.size, regESP.space, regESP.offset), 1);
+void VmpOpJmp::PrintRaw(std::ostream& ss)
+{
+	printAddress(ss);
+	ss << "\t";
+	colorString(ss, "vJmp", SCOLOR_INSN);
+	ss << "\n";
+}
 
-	//堆栈也有大小
-	ghidra::PcodeOp* opCopy = data.newOp(1, pc);
-	data.opSetOpcode(opCopy, ghidra::CPUI_COPY);
-	ghidra::Address stackOffset(data.getArch()->getStackSpace(), uint32_t(vmRegOffset));
-	data.newVarnodeOut(opSize, stackOffset, opCopy);
-	opCopy->getOut()->setStackStore();
-	data.opSetInput(opCopy, uniqOut, 0);
+void VmpOpPopReg::PrintRaw(std::ostream& ss)
+{
+	printAddress(ss);
+	ss << "\t";
+	colorString(ss, SCOLOR_INSN, [this, &ss]() {
+		ss << "vStore" << this->opSize << " " << std::hex << vmRegOffset;
+	});
+	ss << "\n";
+}
 
-	//esp = esp + popOffset
-	ghidra::PcodeOp* opAdd = data.newOp(2, pc);
-	data.opSetOpcode(opAdd, ghidra::CPUI_INT_ADD);
-	data.newVarnodeOut(regESP.size, regESP.getAddr(), opAdd);
-	data.opSetInput(opAdd, data.newVarnode(regESP.size, regESP.space, regESP.offset), 0);
-	if (opSize == 0x4) {
-		data.opSetInput(opAdd, data.newConstant(4, 0x4), 1);
-	}
-	else {
-		data.opSetInput(opAdd, data.newConstant(4, 0x2), 1);
-	}
-	return 3;
+void VmpOpPushReg::PrintRaw(std::ostream& ss)
+{
+	printAddress(ss);
+	ss << "\t";
+	colorString(ss, SCOLOR_INSN, [this, &ss]() {
+		ss << "vLoad" << this->opSize << " " << std::hex << vmRegOffset;
+	});
+	ss << "\n";
 }

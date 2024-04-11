@@ -1,5 +1,7 @@
 #pragma once
 #include "../GhidraExtension/VmpInstruction.h"
+#include "../Helper/UnicornHelper.h"
+#include "../VmpCore/VmpUnicorn.h"
 
 namespace GhidraHelper
 {
@@ -10,6 +12,28 @@ class VmpControlFlowBuilder;
 class VmpFlowBuildContext;
 class VmpNode;
 class VmpBasicBlock;
+class VmpTraceFlowGraph;
+
+class VmpBlockWalker
+{
+public:
+	VmpBlockWalker(VmpTraceFlowGraph& t) :tfg(t) {};
+	~VmpBlockWalker() {};
+public:
+	void StartWalk(VmpUnicornContext& startCtx, size_t walkSize);
+	const std::vector<reg_context>& GetTraceList();
+	bool IsWalkToEnd();
+	VmpNode GetNextNode();
+	void MoveToNext();
+	size_t CurrentIndex();
+private:
+	VmpUnicorn unicorn;
+	VmpTraceFlowGraph& tfg;
+	//当前执行的指令顺序
+	size_t idx = 0x0;
+	//当前节点大小
+	size_t curNodeSize = 0x0;
+};
 
 //处理真vmp基本块
 
@@ -21,22 +45,25 @@ public:
 public:
 	bool BuildVmpBlock(VmpFlowBuildContext* task);
 private:
-	bool ExecuteVmpPattern(VmpNode& nodeInput);
-	bool Execute_FIND_VM_INIT(VmpNode& nodeInput, ghidra::Funcdata* fd);
-	bool Execute_FINISH_VM_INIT(VmpNode& nodeInput, ghidra::Funcdata* fd);
+	bool Execute_FIND_VM_INIT();
+	bool Execute_FINISH_VM_INIT();
 
-
-	bool tryMatch_vPopReg(ghidra::PcodeOp* opStore, VmpNode& nodeInput, std::vector<GhidraHelper::TraceResult>& dstResult, std::vector<GhidraHelper::TraceResult>& srcResult);
-	bool tryMatch_vPushImm(ghidra::Funcdata* fd, VmpNode& nodeInput, std::vector<GhidraHelper::TraceResult>& dstResult, std::vector<GhidraHelper::TraceResult>& srcResult);
-	bool tryMatch_vPushReg(ghidra::Funcdata* fd, VmpNode& nodeInput, std::vector<GhidraHelper::TraceResult>& dstResult, std::vector<GhidraHelper::TraceResult>& srcResult);
-	bool tryMatch_vLogicalOp(ghidra::Funcdata* fd, VmpNode& nodeInput, std::vector<GhidraHelper::TraceResult>& dstResult, std::vector<GhidraHelper::TraceResult>& srcResult);
+	bool tryMatch_vPopReg(ghidra::Funcdata* fd, VmpNode& nodeInput);
+	bool tryMatch_vPushImm(ghidra::Funcdata* fd, VmpNode& nodeInput);
+	bool tryMatch_vPushReg(ghidra::Funcdata* fd, VmpNode& nodeInput);
+	bool tryMatch_vLogicalOp(ghidra::Funcdata* fd, VmpNode& nodeInput);
+	bool tryMatch_vMemAccess(ghidra::Funcdata* fd, VmpNode& nodeInput);
 	bool tryMatch_vCheckEsp(ghidra::Funcdata* fd, VmpNode& nodeInput);
 	bool tryMatch_vJmp(ghidra::Funcdata* fd, VmpNode& nodeInput);
+	bool tryMatch_vExit(ghidra::Funcdata* fd, VmpNode& nodeInput);
 private:
 	//执行每条op指令
-	bool executeVmpOp(std::unique_ptr<VmpInstruction> inst);
+	bool executeVmpOp(VmpNode& nodeInput, std::unique_ptr<VmpInstruction> inst);
+	bool executeVmJmp(VmpNode& nodeInput, VmpInstruction* inst);
+	bool executeVmExit(VmpNode& nodeInput, VmpInstruction* inst);
 private:
 	VmpControlFlowBuilder& flow;
 	VmpBasicBlock* curBlock;
 	VmpFlowBuildContext* buildCtx;
+	VmpBlockWalker walker;
 };

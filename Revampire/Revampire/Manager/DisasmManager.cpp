@@ -2,6 +2,7 @@
 #include "SectionManager.h"
 #include "../Helper/IDAWrapper.h"
 #include "exceptions.h"
+#include <sstream>
 
 csh DisasmManager::handle;
 
@@ -16,6 +17,11 @@ RawInstruction::RawInstruction()
 RawInstruction::~RawInstruction()
 {
 	cs_free(raw, 1);
+}
+
+void RawInstruction::PrintRaw(std::ostream& ss)
+{
+	ss << "0x" << std::hex << raw->address << "\t" << raw->mnemonic << " " << raw->op_str << "\n";
 }
 
 DisasmManager::DisasmManager()
@@ -43,6 +49,8 @@ DisasmManager::~DisasmManager()
 {
 	cs_close(&handle);
 }
+
+
 
 std::unique_ptr<RawInstruction> DisasmManager::DecodeInstruction(size_t addr)
 {

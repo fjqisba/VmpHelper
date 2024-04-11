@@ -40,7 +40,12 @@ public:
 	};
 	enum VM_MATCH_STATUS {
 		FIND_VM_INIT = 0x0,
-		FINISH_VM_INIT = 0x1,
+		FINISH_VM_INIT,
+		//寻找vm寄存器
+		FIND_VM_REG,
+		//完成匹配
+		FINISH_MATCH,
+		MATCH_ERROR,
 	};
 public:
 	VmpFlowBuildContext();
@@ -50,13 +55,12 @@ public:
 	VmAddress start_addr;
 	//vm寄存器状态
 	VmpRegStatus vmreg;
-	//模拟执行状态
+	//模拟数据
 	std::unique_ptr<VmpUnicornContext> ctx;
-
-
-	VM_MATCH_STATUS status;
-	//记录上一个block
+	//记录来源地址
 	VmAddress from_addr;
+	//模拟状态
+	VM_MATCH_STATUS status;
 };
 
 class VmpControlFlowBuilder
@@ -68,17 +72,19 @@ public:
 	bool BuildCFG(size_t startAddr);
 protected:
 	VmpBasicBlock* createNewBlock(VmAddress startAddr);
-private:
 	void addVmpEntryBuildTask(VmAddress startAddr);
+	void addNormalBuildTask(VmAddress startAddr);
+private:
 	VmpArchitecture* Arch();
 	void fallthruVmp(VmpFlowBuildContext& task);
 	void fallthruNormal(VmpFlowBuildContext& task);
-	bool isVmpEntry(size_t startAddr);
 	void linkBlockEdge(VmAddress from, VmAddress to);
+	void buildEdges();
 public:
 	VmpTraceFlowGraph tfg;
-private:
+protected:
 	std::queue<std::unique_ptr<VmpFlowBuildContext>> anaQueue;
+private:
 	std::set<VmAddress> visited;
 	std::map<VmAddress, VmpBasicBlock*> instructionMap;
 	std::map<VmAddress, std::set<VmAddress>> fromEdges;
@@ -86,25 +92,7 @@ private:
 };
 
 
-class VmpBlockWalker
-{
-public:
-	VmpBlockWalker(VmpTraceFlowGraph& t) :tfg(t) {};
-	~VmpBlockWalker() {};
-public:
-	void StartWalk(VmpUnicornContext& startCtx, size_t walkSize);
-	const std::vector<reg_context>& GetTraceList();
-	bool IsWalkToEnd();
-	VmpNode GetNextNode();
-	void MoveToNext();
-private:
-	VmpUnicorn unicorn;
-	VmpTraceFlowGraph& tfg;
-	//当前执行的指令顺序
-	size_t idx = 0x0;
-	//当前节点大小
-	size_t curNodeSize = 0x0;
-};
+
 
 class VmpBasicBlock
 {

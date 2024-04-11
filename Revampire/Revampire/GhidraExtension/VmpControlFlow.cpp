@@ -42,17 +42,11 @@ void VmpRegStatus::ClearStatus()
 	reg_stack = "";
 }
 
-
-
 std::string VmpBasicBlock::MakeGraphTxt()
 {
 	std::stringstream ss;
 	for (unsigned int n = 0; n < insList.size(); ++n) {
-		if (insList[n]->IsRawInstruction()) {
-			RawInstruction* ins = static_cast<RawInstruction*>(insList[n].get());
-			cs_insn* raw = ins->raw;
-			ss << "0x" << std::hex << raw->address << "\t" << raw->mnemonic << " " << raw->op_str << "\n";
-		}
+		insList[n]->PrintRaw(ss);
 	}
 	return ss.str();
 }
@@ -133,13 +127,7 @@ VmpBasicBlock* VmpControlFlowBuilder::createNewBlock(VmAddress startAddr)
 	return newBlock;
 }
 
-bool VmpControlFlowBuilder::isVmpEntry(size_t startAddr)
-{
-	if (IDAWrapper::get_cmt(startAddr) == "vmp entry") {
-		return true;
-	}
-	return false;
-}
+
 
 //是否是正常的终结指令
 
@@ -174,7 +162,7 @@ void VmpControlFlowBuilder::fallthruNormal(VmpFlowBuildContext& task)
 	size_t curAddr = task.start_addr.raw;
 	VmpBasicBlock* curBasicBlock = nullptr;
 	while (true) {
-		if (isVmpEntry(curAddr)) {
+		if (IDAWrapper::isVmpEntry(curAddr)) {
 			if (curBasicBlock != nullptr) {
 				RawInstruction* rawIns = static_cast<RawInstruction*>(curBasicBlock->insList.back().get());
 				linkBlockEdge(rawIns->raw->address,curAddr);
@@ -206,44 +194,18 @@ void VmpControlFlowBuilder::fallthruNormal(VmpFlowBuildContext& task)
 	}
 }
 
-void VmpBlockWalker::StartWalk(VmpUnicornContext& startCtx, size_t walkSize)
-{
-	unicorn.StartVmpTrace(startCtx, walkSize);
-}
-
-const std::vector<reg_context>& VmpBlockWalker::GetTraceList()
-{
-	return unicorn.traceList;
-}
-
-bool VmpBlockWalker::IsWalkToEnd()
-{
-	return idx >= unicorn.traceList.size();
-}
-
-void VmpBlockWalker::MoveToNext()
-{
-	idx = idx + curNodeSize;
-	curNodeSize = 0x0;
-}
-
-VmpNode VmpBlockWalker::GetNextNode()
-{
-	VmpNode retNode;
-	size_t curAddr = unicorn.traceList[idx].EIP;
-	retNode.addrList = tfg.nodeMap[curAddr].addrList;
-	for (unsigned int n = 0; n < retNode.addrList.size(); ++n) {
-		retNode.contextList.push_back(unicorn.traceList[idx + n]);
-	}
-	curNodeSize = retNode.addrList.size();
-	return retNode;
-}
-
-
 void VmpControlFlowBuilder::addVmpEntryBuildTask(VmAddress startAddr)
 {
 	auto newTask = std::make_unique<VmpFlowBuildContext>();
 	newTask->btype = VmpFlowBuildContext::HANDLE_VMP_ENTRY;
+	newTask->start_addr = startAddr;
+	anaQueue.push(std::move(newTask));
+}
+
+void VmpControlFlowBuilder::addNormalBuildTask(VmAddress startAddr)
+{
+	auto newTask = std::make_unique<VmpFlowBuildContext>();
+	newTask->btype = VmpFlowBuildContext::HANDLE_NORMAL;
 	newTask->start_addr = startAddr;
 	anaQueue.push(std::move(newTask));
 }
@@ -264,7 +226,7 @@ bool VmpControlFlowBuilder::BuildCFG(size_t startAddr)
 {
 	auto startTask = std::make_unique<VmpFlowBuildContext>();
 	startTask->btype = VmpFlowBuildContext::HANDLE_NORMAL;
-	startTask->start_addr = VmAddress(startAddr, 0x0);
+	startTask->start_addr = startAddr;
 	anaQueue.push(std::move(startTask));
 	while (!anaQueue.empty()) {
 		auto curTask = std::move(anaQueue.front());
@@ -276,5 +238,42 @@ bool VmpControlFlowBuilder::BuildCFG(size_t startAddr)
 			fallthruVmp(*curTask);
 		}
 	}
+	buildEdges();
 	return true;
+}
+
+void VmpControlFlowBuilder::buildEdges()
+{
+	for (auto& eBlock : data.cfg.blocksMap) {
+		VmpBasicBlock* basicBlock = &eBlock.second;
+		vm_inst* lastIns = basicBlock->insList.back().get();
+		VmAddress fromAddr;
+		if (lastIns->IsRawInstruction()) {
+			RawInstruction* rawIns = (RawInstruction*)lastIns;
+			fromAddr = rawIns->raw->address;
+		}
+		else {
+			VmpInstruction* vmIns = (VmpInstruction*)lastIns;
+			fromAddr = vmIns->addr;
+		}
+		auto itEdge = fromEdges.find(fromAddr);
+		if (itEdge == fromEdges.end()) {
+			continue;
+		}
+		auto edgeList = itEdge->second;
+		std::set<VmAddress> linkedCache;
+		for (const auto& edgeAddr : edgeList) {
+			auto itChild = data.cfg.blocksMap.find(edgeAddr);
+			if (itChild == data.cfg.blocksMap.end()) {
+				continue;
+			}
+			if (linkedCache.count(edgeAddr)) {
+				continue;
+			}
+			linkedCache.insert(edgeAddr);
+			VmpBasicBlock* edgeBlock = &itChild->second;
+			basicBlock->outBlocks.push_back(edgeBlock);
+			edgeBlock->inBlocks.push_back(basicBlock);
+		}
+	}
 }

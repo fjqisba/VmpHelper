@@ -3,6 +3,71 @@
 
 using namespace GhidraHelper;
 
+void VmpBranchExtractor::checkBranchPattern(ghidra::PcodeOp* curOp)
+{
+	if (curOp == nullptr) {
+		return;
+	}
+	auto code = curOp->code();
+	switch (code) {
+	case ghidra::CPUI_INT_ADD:
+	case ghidra::CPUI_INT_SUB:
+		anaList.push_back(curOp->getIn(0)->getDef());
+		anaList.push_back(curOp->getIn(1)->getDef());
+		return;
+	case ghidra::CPUI_COPY:
+		anaList.push_back(curOp->getIn(0)->getDef());
+		return;
+	}
+	if (code == ghidra::CPUI_INT_NEGATE) {
+		ghidra::PcodeOp* defOp = curOp->getIn(0)->getDef();
+		if (defOp && defOp->code() == ghidra::CPUI_INT_OR && defOp->getIn(1)->isConstant()) {
+			unsigned int nextBranchData = defOp->getIn(1)->getOffset();
+			nextBranchData = ~nextBranchData;
+			branchList.push_back(nextBranchData);
+			return;
+		}
+		anaList.push_back(defOp);
+	}
+	return;
+}
+
+
+std::vector<size_t> VmpBranchExtractor::ExtractVmAllBranch(ghidra::Funcdata* fd)
+{
+	std::vector<size_t> nextBrachList;
+	ghidra::PcodeOp* retOp = fd->getFirstReturnOp();
+	if (!retOp) {
+		return nextBrachList;
+	}
+	for (unsigned int n = 0; n < retOp->numInput(); ++n) {
+		ghidra::Varnode* vn = retOp->getIn(n);
+        std::string retRegName = fd->getArch()->translate->getRegisterName(vn->getSpace(), vn->getOffset(), vn->getSize());
+		if (retRegName != "EIP") {
+			continue;
+		}
+		ghidra::PcodeOp* defOp = vn->getDef();
+		if (!defOp) {
+			continue;
+		}
+		if (defOp->code() == ghidra::CPUI_COPY && defOp->getIn(0)->isConstant()) {
+			nextBrachList.push_back(defOp->getIn(0)->getAddr().getOffset());
+			return nextBrachList;
+		}
+		anaList.push_back(defOp);
+	}
+	while (!anaList.empty()) {
+		ghidra::PcodeOp* anaOp = anaList.back();
+		anaList.pop_back();
+		checkBranchPattern(anaOp);
+		if (branchList.size() == 2) {
+			nextBrachList = branchList;
+			return nextBrachList;
+		}
+	}
+    return nextBrachList;
+}
+
 void PcodeOpTracer::traceOpCode(ghidra::PcodeOp* op, bool bAccessMem, std::vector<TraceResult>& outResult)
 {
     if (!op) {

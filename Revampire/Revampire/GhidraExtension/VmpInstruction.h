@@ -7,6 +7,7 @@ enum VmpOpType
 {
 	VM_UNKNOWN = 0x0,
 	VM_INIT,
+	VM_EXIT,
 	VM_POP_REG,
 	VM_PUSH_IMM,
 	VM_PUSH_REG,
@@ -17,6 +18,8 @@ enum VmpOpType
 	VM_SHR,
 	VM_SHL,
 	VM_JMP,
+	VM_READ_MEM,
+	VM_WRITE_MEM,
 };
 
 class VmpInstruction :public vm_inst
@@ -26,6 +29,8 @@ public:
 	virtual ~VmpInstruction() {};
 	bool IsRawInstruction() override { return false; };
 	virtual int BuildInstruction(ghidra::Funcdata& data);
+	void PrintRaw(std::ostream& ss);
+	void printAddress(std::ostream& ss);
 public:
 	VmAddress addr;
 	VmpOpType opType;
@@ -45,9 +50,22 @@ public:
 	VmpOpInit() { opType = VM_INIT; };
 	~VmpOpInit() {};
 	int BuildInstruction(ghidra::Funcdata& data) override;
+	void PrintRaw(std::ostream& ss) override;
 public:
 	//Ñ¹ÈëµÄ¶ÑÕ»
 	std::vector<ghidra::VarnodeData> storeContext;
+};
+
+class VmpOpExit :public VmpInstruction
+{
+public:
+	VmpOpExit() { opType = VM_EXIT; };
+	~VmpOpExit() {};
+	int BuildInstruction(ghidra::Funcdata& data) override;
+	void PrintRaw(std::ostream& ss) override;
+public:
+	//ÍË³öµÄ¼Ä´æÆ÷
+	std::vector<ghidra::VarnodeData> exitContext;
 };
 
 //vPopReg2
@@ -65,6 +83,7 @@ class VmpOpPopReg :public VmpInstruction
 public:
 	VmpOpPopReg() { opType = VM_POP_REG; };
 	~VmpOpPopReg() {};
+	void PrintRaw(std::ostream& ss) override;
 	int BuildInstruction(ghidra::Funcdata& data) override;
 public:
 	//¼Ä´æÆ÷Æ«ÒÆ
@@ -91,6 +110,7 @@ class VmpOpPushImm :public VmpInstruction
 public:
 	VmpOpPushImm() { opType = VM_PUSH_IMM; };
 	~VmpOpPushImm() {};
+	void PrintRaw(std::ostream& ss) override;
 	int BuildInstruction(ghidra::Funcdata& data) override;
 private:
 	int BuildPushImm1(ghidra::Funcdata& data);
@@ -118,12 +138,12 @@ public:
 //lea vmStack, ss:[vmStack-0x4]
 //mov dword ptr ss:[vmStack], edx
 
-
 class VmpOpPushReg :public VmpInstruction
 {
 public:
 	VmpOpPushReg() { opType = VM_PUSH_REG; };
 	~VmpOpPushReg() {};
+	void PrintRaw(std::ostream& ss) override;
 	int BuildInstruction(ghidra::Funcdata& data) override;
 public:
 	//¼Ä´æÆ÷Æ«ÒÆ
@@ -150,6 +170,7 @@ class VmpOpNand :public VmpInstruction
 public:
 	VmpOpNand() { opType = VM_NAND; };
 	~VmpOpNand() {};
+	void PrintRaw(std::ostream& ss) override;
 };
 
 class VmpOpNor :public VmpInstruction
@@ -185,6 +206,26 @@ public:
 	VmpOpJmp() { opType = VM_JMP; };
 	~VmpOpJmp() {};
 	int BuildInstruction(ghidra::Funcdata& data) override;
+	void PrintRaw(std::ostream& ss) override;
 public:
 	std::vector<size_t> branchList;
 };
+
+
+class VmpOpReadMem :public VmpInstruction
+{
+public:
+	VmpOpReadMem() { opType = VM_READ_MEM; };
+	~VmpOpReadMem() {};
+	int BuildInstruction(ghidra::Funcdata& data) override;
+};
+
+class VmpOpWriteMem :public VmpInstruction
+{
+public:
+	VmpOpWriteMem() { opType = VM_WRITE_MEM; };
+	~VmpOpWriteMem() {};
+	int BuildInstruction(ghidra::Funcdata& data) override;
+public:
+};
+

@@ -94,6 +94,9 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\MyLib\idasdk75\include;../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4099</DisableSpecificWarnings>
+      <Optimization>MaxSpeed</Optimization>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -124,7 +127,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_WINDOWS;USE_STANDARD_FILE_FUNCTIONS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_WINDOWS;USE_STANDARD_FILE_FUNCTIONS;DeveloperMode;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\MyLib\idasdk75\include;../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -135,8 +138,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\MyLib\idasdk75\lib\x64_win_vc_32;../lib/Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ida.lib;capstone.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\MyLib\idasdk75\lib\x64_win_vc_32;../lib/Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ida.lib;capstone.lib;arm-softmmu.lib;unicorn-common.lib;unicorn-static.lib;x86_64-softmmu.lib;Common.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='64Release|x64'">
@@ -169,6 +172,7 @@
     <ClCompile Include="GhidraExtension\VmpControlFlow.cpp" />
     <ClCompile Include="GhidraExtension\VmpFunction.cpp" />
     <ClCompile Include="GhidraExtension\VmpInstruction.cpp" />
+    <ClCompile Include="GhidraExtension\VmpInstructionBuilder.cpp" />
     <ClCompile Include="GhidraExtension\VmpNode.cpp" />
     <ClCompile Include="GhidraExtension\VmpRule.cpp" />
     <ClCompile Include="Ghidra\action.cc" />

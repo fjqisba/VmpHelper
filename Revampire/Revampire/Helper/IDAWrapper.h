@@ -30,4 +30,6 @@ public:
     static std::string get_input_file_path();
 
     static bool is64BitProgram();
+
+	static bool isVmpEntry(size_t startAddr);
 };

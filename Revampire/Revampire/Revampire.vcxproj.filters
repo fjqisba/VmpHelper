@@ -373,6 +373,9 @@
     <ClCompile Include="VmpCore\VmpBlockBuilder.cpp">
       <Filter>VmpCore</Filter>
     </ClCompile>
+    <ClCompile Include="GhidraExtension\VmpInstructionBuilder.cpp">
+      <Filter>GhidraExtension</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="IDAPlugin.h">

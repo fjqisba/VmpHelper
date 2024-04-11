@@ -73,6 +73,9 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='32Debug|x64'">
     <OutDir>../lib/Debug</OutDir>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='32Release|x64'">
+    <OutDir>../lib/Release</OutDir>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='32Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>

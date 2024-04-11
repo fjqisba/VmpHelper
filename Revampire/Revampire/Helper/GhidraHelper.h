@@ -59,4 +59,16 @@ namespace GhidraHelper
         ghidra::Funcdata* fd;
         std::set<TraceResult> filterResult;
     };
+
+
+	class VmpBranchExtractor
+	{
+	public:
+		std::vector<size_t> ExtractVmAllBranch(ghidra::Funcdata* fd);
+	private:
+		void checkBranchPattern(ghidra::PcodeOp* curOp);
+	private:
+		std::vector<size_t> branchList;
+		std::vector<ghidra::PcodeOp*> anaList;
+	};
 }

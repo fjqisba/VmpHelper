@@ -149,3 +149,11 @@ bool IDAWrapper::is64BitProgram()
 {
     return inf_is_64bit();
 }
+
+bool IDAWrapper::isVmpEntry(size_t startAddr)
+{
+	if (IDAWrapper::get_cmt(startAddr) == "vmp entry") {
+		return true;
+	}
+	return false;
+}
