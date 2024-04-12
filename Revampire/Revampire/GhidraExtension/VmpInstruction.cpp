@@ -78,6 +78,14 @@ void VmpOpInit::PrintRaw(std::ostream& ss)
 	ss << "\n";
 }
 
+void VmpOpUnknown::PrintRaw(std::ostream& ss)
+{
+	printAddress(ss);
+	ss << "\t";
+	colorString(ss, "vUnknown", SCOLOR_INSN);
+	ss << "\n";
+}
+
 void VmpOpJmp::PrintRaw(std::ostream& ss)
 {
 	printAddress(ss);
@@ -105,3 +113,4 @@ void VmpOpPushReg::PrintRaw(std::ostream& ss)
 	});
 	ss << "\n";
 }
+

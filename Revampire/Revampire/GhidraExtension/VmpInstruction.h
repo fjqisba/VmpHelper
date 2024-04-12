@@ -42,6 +42,7 @@ class VmpOpUnknown :public VmpInstruction
 public:
 	VmpOpUnknown() { opType = VM_UNKNOWN; };
 	~VmpOpUnknown() {};
+	void PrintRaw(std::ostream& ss) override;
 };
 
 class VmpOpInit :public VmpInstruction

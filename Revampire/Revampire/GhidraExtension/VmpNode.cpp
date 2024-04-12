@@ -321,8 +321,8 @@ void ghidra::Funcdata::followVmpNode(VmpNode* node)
 
 ghidra::int4 ghidra::Action::debugApply(Funcdata& data)
 {
-#ifdef _DEBUG
-    if (data.actIdx == 66) {
+#ifdef DeveloperMode
+    if (data.actIdx == 19) {
         std::stringstream ss;
         data.printRaw(ss);
         std::string rawResult = ss.str();
@@ -330,7 +330,7 @@ ghidra::int4 ghidra::Action::debugApply(Funcdata& data)
     }
 #endif
     ghidra::int4 ret = apply(data);
-#ifdef _DEBUG
+#ifdef DeveloperMode
     if (count > 0) {
         int a = 0;
     }

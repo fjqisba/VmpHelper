@@ -580,6 +580,7 @@ bool VmpBlockBuilder::Execute_FINISH_VM_INIT()
 	}
 	std::unique_ptr<VmpOpUnknown> vOpUnknown = std::make_unique<VmpOpUnknown>();
 	vOpUnknown->addr = nodeInput.readVmAddress(buildCtx->vmreg.reg_code);
+	executeVmpOp(nodeInput, std::move(vOpUnknown));
 	return true;
 }
 

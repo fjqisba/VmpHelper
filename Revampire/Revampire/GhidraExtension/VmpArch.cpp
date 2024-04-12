@@ -7,6 +7,10 @@
 #include "../GhidraExtension/VmpControlFlow.h"
 #include "../Ghidra/funcdata.hh"
 
+#ifdef DeveloperMode
+#pragma optimize("", off) 
+#endif
+
 VmpArchitecture* gArch = nullptr;
 
 VmpArchitecture::VmpArchitecture() :ghidra::SleighArchitecture("", "", 0x0)
@@ -116,7 +120,7 @@ ghidra::Funcdata* VmpArchitecture::AnaVmpBasicBlock(VmpBasicBlock* basicBlock)
 ghidra::Funcdata* VmpArchitecture::AnaVmpHandler(VmpNode* nodeInput)
 {
     //²âÊÔ´úÂë
-    if (nodeInput->addrList[0] == 0x44B8F7) {
+    if (nodeInput->addrList[0] == 0x00489984) {
         int a = 0;
     }
     ghidra::Address startAddr(getDefaultCodeSpace(), 0x0);
@@ -140,3 +144,7 @@ ghidra::Funcdata* VmpArchitecture::AnaVmpHandler(VmpNode* nodeInput)
 #endif
     return fd;
 }
+
+#ifdef DeveloperMode
+#pragma optimize("", on) 
+#endif
