@@ -4,14 +4,23 @@
 #include "../Manager/VmpVersionManager.h"
 #include "../Manager/exceptions.h"
 
+#ifdef DeveloperMode
+#pragma optimize("", off) 
+#endif
+
 VmpTraceFlowGraph::VmpTraceFlowGraph()
 {
-
+#ifdef DEBUG_TRACEFLOW
+	std::string logFilePath = R"(C:\Work\VmpConsole\VmpConsole\Release\traceflow\flow.txt)";
+    logFile.open(logFilePath, std::ios::out | std::ios::trunc);
+#endif
 }
 
 VmpTraceFlowGraph::~VmpTraceFlowGraph()
 {
-
+#ifdef DEBUG_TRACEFLOW
+    logFile.close();
+#endif
 }
 
 bool isEndIns(cs_insn* curIns)
@@ -36,9 +45,10 @@ void VmpTraceFlowGraph::executeMerge(VmpTraceFlowNode* fatherNode, VmpTraceFlowN
 {
     removeEdge(fatherNode->EndAddr(), childNode->nodeEntry);
     //子节点地址移到父节点
+    int startIdx = fatherNode->addrList.size();
     for (unsigned int n = 0; n < childNode->addrList.size(); ++n) {
         fatherNode->addrList.push_back(childNode->addrList[n]);
-        updateInstructionToNodeMap(childNode->addrList[n], fatherNode, fatherNode->addrList.size() + n);
+		updateInstructionToNodeMap(childNode->addrList[n], fatherNode, startIdx + n);
     }
 }
 
@@ -154,6 +164,12 @@ void VmpTraceFlowGraph::updateInstructionToNodeMap(size_t addr, VmpTraceFlowNode
 
 bool VmpTraceFlowGraph::addJmpLink(size_t fromAddr, size_t toAddr)
 {
+#ifdef DEBUG_TRACEFLOW
+	logFile << "Jmp from " << std::hex << fromAddr << " - " << toAddr << std::endl;
+    if (toAddr == 0x451cef) {
+        int a = 0;
+    }
+#endif
     linkEdge(fromAddr, toAddr);
     //先确保存在两个区块
     VmpTraceFlowNodeIndex* curNodeIndex = &instructionToNodeMap[fromAddr];
@@ -188,6 +204,12 @@ bool VmpTraceFlowGraph::addJmpLink(size_t fromAddr, size_t toAddr)
 
 bool VmpTraceFlowGraph::addNormalLink(size_t fromAddr, size_t toAddr)
 {
+#ifdef DEBUG_TRACEFLOW
+    logFile << "link from " << std::hex << fromAddr << " - " << toAddr << std::endl;
+    if (fromAddr == 0x451CEF) {
+        int a = 0;
+    }
+#endif
     VmpTraceFlowNodeIndex* curNodeIndex = &instructionToNodeMap[fromAddr];
     if (curNodeIndex->vmNode == nullptr) {
         curNodeIndex->vmNode = createNode(fromAddr);
@@ -301,3 +323,7 @@ void VmpTraceFlowGraph::DumpGraph(std::ostream& ss, bool bCompress)
     ss << "\n}";
     return;
 }
+
+#ifdef DeveloperMode
+#pragma optimize("", on) 
+#endif

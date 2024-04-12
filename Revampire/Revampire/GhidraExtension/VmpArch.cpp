@@ -133,7 +133,7 @@ ghidra::Funcdata* VmpArchitecture::AnaVmpHandler(VmpNode* nodeInput)
     if (res < 0) {
         return nullptr;
     }
-#ifdef _DEBUG
+#ifdef DeveloperMode
     std::stringstream ss;
     fd->printRaw(ss);
     std::string rawResult = ss.str();

@@ -6,6 +6,10 @@
 #include "../Helper/IDAWrapper.h"
 #include "../Manager/exceptions.h"
 
+#ifdef DeveloperMode
+#pragma optimize("", off) 
+#endif
+
 VmpReEngine::VmpReEngine()
 {
 	arch = new (std::nothrow)VmpArchitecture();
@@ -89,7 +93,12 @@ void VmpReEngine::PrintGraph(size_t startAddr)
 		fd->FollowVmp(startAddr);
 		fd->CreateGraph();
 	}
-	catch (...) {
+	catch (Exception& e) {
+		std::string what = e.what();
 		clearFunction(startAddr);
 	}
 }
+
+#ifdef DeveloperMode
+#pragma optimize("", on) 
+#endif

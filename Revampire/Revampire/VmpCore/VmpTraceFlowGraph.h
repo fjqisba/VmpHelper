@@ -3,6 +3,7 @@
 #include <map>
 #include <set>
 #include <unordered_set>
+#include <fstream>
 #include "../Helper/UnicornHelper.h"
 
 struct VmpTraceFlowNode
@@ -67,4 +68,9 @@ public:
     //key是连接指令地址,value是被连接指令地址
     std::map<size_t, std::unordered_set<size_t>> fromEdges;
     std::map<size_t, std::unordered_set<size_t>> toEdges;
+
+private:
+#ifdef DEBUG_TRACEFLOW
+    std::fstream logFile;
+#endif
 };

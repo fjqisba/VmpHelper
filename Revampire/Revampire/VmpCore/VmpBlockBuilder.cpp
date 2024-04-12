@@ -541,7 +541,6 @@ bool VmpBlockBuilder::tryMatch_vPopReg(ghidra::Funcdata* fd, VmpNode& nodeInput)
 	return false;
 }
 
-
 bool VmpBlockBuilder::Execute_FINISH_VM_INIT()
 {
 	if (walker.IsWalkToEnd()) {
@@ -728,9 +727,9 @@ bool VmpBlockBuilder::BuildVmpBlock(VmpFlowBuildContext* ctx)
 	flow.tfg.AddTraceFlow(walker.GetTraceList());
 	flow.tfg.MergeAllNodes();
 
-	//std::stringstream ss;
-	//flow.tfg.DumpGraph(ss, true);
-	//std::string graphTxt = ss.str();
+	std::stringstream ss;
+	flow.tfg.DumpGraph(ss, true);
+	std::string graphTxt = ss.str();
 
 	if (buildCtx->btype == VmpFlowBuildContext::HANDLE_VMP_ENTRY) {
 		curBlock = flow.createNewBlock(buildCtx->start_addr);
