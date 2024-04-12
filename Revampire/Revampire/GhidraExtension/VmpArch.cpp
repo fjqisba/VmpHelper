@@ -7,17 +7,26 @@
 #include "../GhidraExtension/VmpControlFlow.h"
 #include "../Ghidra/funcdata.hh"
 
+VmpArchitecture* gArch = nullptr;
+
 VmpArchitecture::VmpArchitecture() :ghidra::SleighArchitecture("", "", 0x0)
 {
     if (!initVmpArchitecture()) {
         throw Exception("InitVmpArchitecture error.");
     }
+    gArch = this;
 }
 
 VmpArchitecture::~VmpArchitecture()
 {
 
 }
+
+VmpArchitecture::architecture_e VmpArchitecture::ArchType()
+{
+    return arch_type;
+}
+
 
 void VmpArchitecture::buildLoader(ghidra::DocumentStorage& store)
 {
@@ -30,7 +39,6 @@ void VmpArchitecture::resolveArchitecture(void)
     archid = getTarget();
     if (archid.find(':') == std::string::npos) {
         archid = loader->getArchType();
-        // kludge to distinguish windows binaries from linux/gcc
         if (archid.find("efi-app-ia32") != std::string::npos)
             archid = "x86:LE:32:default:windows";
         else if (archid.find("pe-i386") != std::string::npos)
@@ -51,6 +59,9 @@ void VmpArchitecture::resolveArchitecture(void)
             throw ghidra::LowlevelError("Cannot convert bfd target to sleigh target: " + archid);
     }
     SleighArchitecture::resolveArchitecture();
+    if (archid == "x86:LE:32:default:windows") {
+        arch_type = VmpArchitecture::ARCH_X86;
+    }
 }
 
 bool VmpArchitecture::initVmpArchitecture()

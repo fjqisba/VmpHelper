@@ -385,11 +385,14 @@ bool VmpBlockBuilder::tryMatch_vMemAccess(ghidra::Funcdata* fd, VmpNode& nodeInp
 	if (dstResult[0].bAccessMem) {
 		std::unique_ptr<VmpOpWriteMem> vOpWriteMem = std::make_unique<VmpOpWriteMem>();
 		vOpWriteMem->addr = nodeInput.readVmAddress(buildCtx->vmreg.reg_code);
+		//To do...fix opsize
+		vOpWriteMem->opSize = 0x4;
 		executeVmpOp(nodeInput, std::move(vOpWriteMem));
 	}
 	else {
 		std::unique_ptr<VmpOpReadMem> vOpReadMem = std::make_unique<VmpOpReadMem>();
 		vOpReadMem->addr = nodeInput.readVmAddress(buildCtx->vmreg.reg_code);
+		vOpReadMem->opSize = GetMemAccessSize((*++itLoad)->getAddr().getOffset());
 		executeVmpOp(nodeInput, std::move(vOpReadMem));
 	}
 	return true;

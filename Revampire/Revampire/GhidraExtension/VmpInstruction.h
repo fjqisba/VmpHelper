@@ -34,7 +34,7 @@ public:
 public:
 	VmAddress addr;
 	VmpOpType opType;
-	unsigned char opSize;
+	size_t opSize;
 };
 
 class VmpOpUnknown :public VmpInstruction

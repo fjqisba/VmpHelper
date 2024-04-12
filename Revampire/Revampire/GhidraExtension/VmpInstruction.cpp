@@ -1,10 +1,17 @@
 #include "VmpInstruction.h"
 #include <functional>
 #include <lines.hpp>
+#include "VmpArch.h"
 
 void colorAddr(std::ostream& ss, size_t addr, const char* tag)
 {
-	ss << SCOLOR_ON << tag << std::hex << addr << SCOLOR_OFF << tag;
+	auto archType = gArch->ArchType();
+	if (archType == VmpArchitecture::ARCH_X86) {
+		ss << SCOLOR_ON << tag <<  "0x" << std::setfill('0') << std::setw(8) << std::hex << addr << SCOLOR_OFF << tag;
+	}
+	else if(archType == VmpArchitecture::ARCH_X86_64){
+		ss << SCOLOR_ON << tag << "0x" << std::setfill('0') << std::setw(16) << std::hex << addr << SCOLOR_OFF << tag;
+	}
 }
 
 void colorString(std::ostream& ss, const std::string& str, const char* tag)
@@ -84,7 +91,7 @@ void VmpOpPopReg::PrintRaw(std::ostream& ss)
 	printAddress(ss);
 	ss << "\t";
 	colorString(ss, SCOLOR_INSN, [this, &ss]() {
-		ss << "vStore" << this->opSize << " " << std::hex << vmRegOffset;
+		ss << "vPopReg" << this->opSize << " " << std::hex << vmRegOffset;
 	});
 	ss << "\n";
 }
@@ -94,7 +101,7 @@ void VmpOpPushReg::PrintRaw(std::ostream& ss)
 	printAddress(ss);
 	ss << "\t";
 	colorString(ss, SCOLOR_INSN, [this, &ss]() {
-		ss << "vLoad" << this->opSize << " " << std::hex << vmRegOffset;
+		ss << "vPushReg" << this->opSize << " " << std::hex << vmRegOffset;
 	});
 	ss << "\n";
 }
