@@ -20,6 +20,7 @@ enum VmpOpType
 	VM_JMP,
 	VM_READ_MEM,
 	VM_WRITE_MEM,
+	VM_PUSH_VSP,
 };
 
 class VmpInstruction :public vm_inst
@@ -230,3 +231,13 @@ public:
 public:
 };
 
+
+
+class VmpOpPushVSP :public VmpInstruction
+{
+public:
+	VmpOpPushVSP() { opType = VM_PUSH_VSP; };
+	~VmpOpPushVSP() {};
+	int BuildInstruction(ghidra::Funcdata& data) override;
+	void PrintRaw(std::ostream& ss) override;
+};

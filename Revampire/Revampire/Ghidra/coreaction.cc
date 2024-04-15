@@ -5486,7 +5486,7 @@ void ActionDatabase::buildVmpHandlerAction(Architecture* conf)
 				actprop->addRule(new RuleLzcountShiftBool("analysis"));
                 //这个规则不适用于二进制混淆流分析
 				//actprop->addRule(new RuleSubvarAnd("subvar"));
-				actprop->addRule(new RuleSubvarSubpiece("subvar"));
+			    actprop->addRule(new RuleSubvarSubpiece("subvar"));
 				actprop->addRule(new RuleSplitFlow("subvar"));
 				actprop->addRule(new RulePtrFlow("subvar", conf));
 				actprop->addRule(new RuleSubvarCompZero("subvar"));

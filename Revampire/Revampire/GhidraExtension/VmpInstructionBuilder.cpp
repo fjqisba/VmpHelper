@@ -11,15 +11,43 @@ int VmpOpInit::BuildInstruction(ghidra::Funcdata& data)
 	int step = 0x0;
 	for (const auto& context : storeContext) {
 		if (context.getAddr().getSpace()->getName() == "const") {
-			FuncBuildHelper::BuildPushConst(data, addr.vmdata, context.getAddr().getOffset(), 0x4);
+			FuncBuildHelper::BuildPushConst(data, addr.raw, context.getAddr().getOffset(), 0x4);
 			step++;
 		}
 		else if (context.getAddr().getSpace()->getName() == "register") {
-			FuncBuildHelper::BuildPushRegister(data, addr.vmdata, context);
+			FuncBuildHelper::BuildPushRegister(data, addr.raw, context);
 			step++;
 		}
 	}
 	return step;
+}
+
+int VmpOpPushVSP::BuildInstruction(ghidra::Funcdata& data)
+{
+	auto regESP = data.getArch()->translate->getRegister("ESP");
+	ghidra::Address pc = ghidra::Address(data.getArch()->getDefaultCodeSpace(), addr.vmdata);
+
+	//uEsp = ESP(free)
+	ghidra::PcodeOp* opCopy = data.newOp(1, pc);
+	data.opSetOpcode(opCopy, ghidra::CPUI_COPY);
+	ghidra::Varnode* uEsp = data.newUniqueOut(4, opCopy);
+	data.opSetInput(opCopy, data.newVarnode(regESP.size, regESP.space, regESP.offset), 0);
+
+	//ESP = ESP - #0x4
+	ghidra::PcodeOp* opSub = data.newOp(2, pc);
+	data.opSetOpcode(opSub, ghidra::CPUI_INT_SUB);
+	data.newVarnodeOut(regESP.size, regESP.getAddr(), opSub);
+	data.opSetInput(opSub, data.newVarnode(regESP.size, regESP.space, regESP.offset), 0);
+	data.opSetInput(opSub, data.newConstant(0x4, 0x4), 1);
+
+	//*(ram,ESP) = uEsp
+	ghidra::PcodeOp* opStore = data.newOp(3, pc);
+	data.opSetOpcode(opStore, ghidra::CPUI_STORE);
+	data.opSetInput(opStore, data.newVarnodeSpace(data.getArch()->getSpaceByName("ram")), 0);
+	data.opSetInput(opStore, data.newVarnode(regESP.size, regESP.space, regESP.offset), 1);
+	data.opSetInput(opStore, uEsp, 2);
+
+	return 3;
 }
 
 int VmpOpPushReg::BuildInstruction(ghidra::Funcdata& data)

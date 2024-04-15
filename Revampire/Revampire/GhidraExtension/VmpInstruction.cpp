@@ -114,3 +114,10 @@ void VmpOpPushReg::PrintRaw(std::ostream& ss)
 	ss << "\n";
 }
 
+void VmpOpPushVSP::PrintRaw(std::ostream& ss)
+{
+	printAddress(ss);
+	ss << "\t";
+	colorString(ss, "vPushVSP", SCOLOR_INSN);
+	ss << "\n";
+}

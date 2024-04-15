@@ -54,8 +54,11 @@ private:
 	bool tryMatch_vLogicalOp(ghidra::Funcdata* fd, VmpNode& nodeInput);
 	bool tryMatch_vMemAccess(ghidra::Funcdata* fd, VmpNode& nodeInput);
 	bool tryMatch_vCheckEsp(ghidra::Funcdata* fd, VmpNode& nodeInput);
+	bool tryMatch_vJunkCode(ghidra::Funcdata* fd, VmpNode& nodeInput);
 	bool tryMatch_vJmp(ghidra::Funcdata* fd, VmpNode& nodeInput);
 	bool tryMatch_vExit(ghidra::Funcdata* fd, VmpNode& nodeInput);
+	bool tryMatch_vPushVsp(ghidra::Funcdata* fd, VmpNode& nodeInput);
+	bool tryMatch_vJmpConst(ghidra::Funcdata* fd, VmpNode& nodeInput);
 private:
 	//执行每条op指令
 	bool executeVmpOp(VmpNode& nodeInput, std::unique_ptr<VmpInstruction> inst);
