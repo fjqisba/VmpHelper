@@ -40,14 +40,22 @@ void VmpInstruction::printAddress(std::ostream& ss)
 
 void VmpOpNand::PrintRaw(std::ostream& ss)
 {
-	//colorString(ss, DecToHex(vmAddr), SCOLOR_DNUM);
-	//ss << " ";
-	//colorString(ss, DecToHex(rawAddr), SCOLOR_DREF);
-	//ss << "\t";
-	//colorString(ss, SCOLOR_INSN, [this, &ss]() {
-	//	ss << "vNand" << this->opSize;
-	//	});
-	//ss << "\n";
+	printAddress(ss);
+	ss << "\t";
+	colorString(ss, SCOLOR_INSN, [this, &ss]() {
+		ss << "vNand" << this->opSize;
+	});
+	ss << "\n";
+}
+
+void VmpOpNor::PrintRaw(std::ostream& ss)
+{
+	printAddress(ss);
+	ss << "\t";
+	colorString(ss, SCOLOR_INSN, [this, &ss]() {
+		ss << "vNor" << this->opSize;
+		});
+	ss << "\n";
 }
 
 void VmpOpPushImm::PrintRaw(std::ostream& ss)
@@ -94,6 +102,14 @@ void VmpOpJmp::PrintRaw(std::ostream& ss)
 	ss << "\n";
 }
 
+void VmpOpWriteVSP::PrintRaw(std::ostream& ss)
+{
+	printAddress(ss);
+	ss << "\t";
+	colorString(ss, "vWriteVSP", SCOLOR_INSN);
+	ss << "\n";
+}
+
 void VmpOpPopReg::PrintRaw(std::ostream& ss)
 {
 	printAddress(ss);
@@ -119,5 +135,13 @@ void VmpOpPushVSP::PrintRaw(std::ostream& ss)
 	printAddress(ss);
 	ss << "\t";
 	colorString(ss, "vPushVSP", SCOLOR_INSN);
+	ss << "\n";
+}
+
+void VmpOpImul::PrintRaw(std::ostream& ss)
+{
+	printAddress(ss);
+	ss << "\t";
+	colorString(ss, "vImul", SCOLOR_INSN);
 	ss << "\n";
 }

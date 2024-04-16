@@ -71,4 +71,6 @@ namespace GhidraHelper
 		std::vector<size_t> branchList;
 		std::vector<ghidra::PcodeOp*> anaList;
 	};
+
+	std::string GetVarnodeRegName(ghidra::Varnode* vn);
 }

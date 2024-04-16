@@ -92,8 +92,6 @@ private:
 };
 
 
-
-
 class VmpBasicBlock
 {
 public:
@@ -136,6 +134,7 @@ class VmpControlFlow
 public:
 	VmpControlFlow();
 	~VmpControlFlow();
+	VmpBasicBlock* StartBlock() { return startBlock; };
 protected:
 	VmpBasicBlock* startBlock;
 public:

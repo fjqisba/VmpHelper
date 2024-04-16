@@ -124,6 +124,7 @@ VmpBasicBlock* VmpControlFlowBuilder::createNewBlock(VmAddress startAddr)
 	if (data.cfg.blocksMap.size() == 1) {
 		data.cfg.startBlock = newBlock;
 	}
+	newBlock->blockEntry = startAddr;
 	return newBlock;
 }
 
@@ -247,15 +248,7 @@ void VmpControlFlowBuilder::buildEdges()
 	for (auto& eBlock : data.cfg.blocksMap) {
 		VmpBasicBlock* basicBlock = &eBlock.second;
 		vm_inst* lastIns = basicBlock->insList.back().get();
-		VmAddress fromAddr;
-		if (lastIns->IsRawInstruction()) {
-			RawInstruction* rawIns = (RawInstruction*)lastIns;
-			fromAddr = rawIns->raw->address;
-		}
-		else {
-			VmpInstruction* vmIns = (VmpInstruction*)lastIns;
-			fromAddr = vmIns->addr;
-		}
+		VmAddress fromAddr = lastIns->GetAddress();
 		auto itEdge = fromEdges.find(fromAddr);
 		if (itEdge == fromEdges.end()) {
 			continue;

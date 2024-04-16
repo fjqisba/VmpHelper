@@ -5,7 +5,11 @@
 #include "../Manager/DisasmManager.h"
 #include "../GhidraExtension/FuncBuildHelper.h"
 #include "../GhidraExtension/VmpControlFlow.h"
+#include "../GhidraExtension/VmpFunction.h"
 
+#ifdef DeveloperMode
+#pragma optimize("", off) 
+#endif
 
 int BuildVmRet(ghidra::Funcdata& data, ghidra::Address& addr)
 {
@@ -96,18 +100,52 @@ void ghidra::FlowInfo::beginProcessInstruction(list<PcodeOp*>::const_iterator& o
 	}
 }
 
-void ghidra::FlowInfo::generateVmpBlockOps(VmpBasicBlock* bblock)
+void ghidra::FlowInfo::generateVmpFunctionOps(VmpFunction* vmFunc)
 {
-    clearProperties();
+    VmpBasicBlock* bb = vmFunc->cfg.StartBlock();
+    if (!bb) {
+        return;
+    }
+    std::set<VmAddress> visited;
+    std::vector<VmpBasicBlock*> blockList;
+    blockList.push_back(bb);
 	bool startbasic = true;
+    while (!blockList.empty()) {
+		VmpBasicBlock* curBlock = blockList.back();
+		blockList.pop_back();
+        if (visited.count(curBlock->blockEntry)) {
+            continue;
+        }
+        visited.insert(curBlock->blockEntry);
+        generateVmpBlockOps(curBlock, false);
+        for (unsigned int n = 0; n < curBlock->outBlocks.size(); ++n) {
+            blockList.push_back(curBlock->outBlocks[n]);
+        }
+    }
+    return;
+}
+
+void ghidra::FlowInfo::generateVmpBlockOps(VmpBasicBlock* bblock, bool buildRet)
+{
+	clearProperties();
 	bool isfallthru = false;
+    bool startbasic = true;
 	bool emptyflag;
 	list<PcodeOp*>::const_iterator oiter;
     for (unsigned int n = 0; n < bblock->insList.size(); ++n) {
-        VmpInstruction* vmIns = static_cast<VmpInstruction*>(bblock->insList[n].get());
-		ghidra::Address curaddr(glb->getDefaultCodeSpace(), vmIns->addr.vmdata);
-		beginProcessInstruction(oiter, emptyflag);
-        int4 step = vmIns->BuildInstruction(data);
+        beginProcessInstruction(oiter, emptyflag);
+        int4 step = 0x0;
+        ghidra::Address curaddr;
+        if (bblock->insList[n]->IsRawInstruction()) {
+            RawInstruction* rawIns = static_cast<RawInstruction*>(bblock->insList[n].get());
+            curaddr = ghidra::Address(glb->getDefaultCodeSpace(), rawIns->raw->address);
+            step = glb->translate->oneInstruction(emitter, curaddr);
+        }
+        else {
+			VmpInstruction* vmIns = static_cast<VmpInstruction*>(bblock->insList[n].get());
+            curaddr = ghidra::Address(glb->getDefaultCodeSpace(), vmIns->addr.vmdata);
+			step = vmIns->BuildInstruction(data);
+        }
 		if (step) {
 			VisitStat& stat(visited[curaddr]);
 			stat.size = step;
@@ -126,14 +164,16 @@ void ghidra::FlowInfo::generateVmpBlockOps(VmpBasicBlock* bblock)
     }
 
 	//判断有没有ret结尾
-    VmpInstruction* endIns = static_cast<VmpInstruction*>(bblock->insList[bblock->insList.size() - 1].get());
-	ghidra::Address endAddr(glb->getDefaultCodeSpace(), endIns->addr.vmdata);
-	auto itEnd = std::prev(obank.endDead());
-	if (itEnd != obank.endDead()) {
-		if ((*itEnd)->code() != CPUI_RETURN) {
-			BuildVmRet(data, endAddr);
+    if (buildRet) {
+		VmpInstruction* endIns = static_cast<VmpInstruction*>(bblock->insList[bblock->insList.size() - 1].get());
+		ghidra::Address endAddr(glb->getDefaultCodeSpace(), endIns->addr.vmdata);
+		auto itEnd = std::prev(obank.endDead());
+		if (itEnd != obank.endDead()) {
+			if ((*itEnd)->code() != CPUI_RETURN) {
+				BuildVmRet(data, endAddr);
+			}
 		}
-	}
+    }
 }
 
 void ghidra::FlowInfo::generateVmpNodeOps(VmpNode* node)
@@ -234,6 +274,7 @@ void ghidra::Funcdata::clearExtensionData()
 	actIdx = 0x0;
 	nodeInput = nullptr;
     vm_basicblock = nullptr;
+    vm_func = nullptr;
 }
 
 void ghidra::Funcdata::buildReturnVal()
@@ -261,6 +302,34 @@ void ghidra::Funcdata::buildReturnVal()
     }
 }
 
+void ghidra::Funcdata::followVmpFunction(VmpFunction* vmFunc)
+{
+    vm_func = vmFunc;
+	if (!obank.empty()) {
+		if ((flags & blocks_generated) == 0)
+			throw LowlevelError("Function loaded for inlining");
+		return;	// Already translated
+	}
+	uint4 fl = 0;
+	fl |= glb->flowoptions;	// Global flow options
+	FlowInfo flow(*this, obank, bblocks, qlst);
+	flow.setFlags(fl);
+	flow.setMaximumInstructions(glb->max_instructions);
+	flow.generateVmpFunctionOps(vm_func);
+#ifdef DeveloperMode
+	std::stringstream ss;
+	printRaw(ss);
+	std::string rawResult = ss.str();
+#endif
+	flow.generateBlocks();
+	flags |= blocks_generated;
+	switchOverJumpTables(flow);
+	if (flow.hasUnimplemented())
+		flags |= unimplemented_present;
+	if (flow.hasBadData())
+		flags |= baddata_present;
+}
+
 void ghidra::Funcdata::followVmpBasicBlock(VmpBasicBlock* node)
 {
     vm_basicblock = node;
@@ -274,7 +343,7 @@ void ghidra::Funcdata::followVmpBasicBlock(VmpBasicBlock* node)
 	FlowInfo flow(*this, obank, bblocks, qlst);
 	flow.setFlags(fl);
 	flow.setMaximumInstructions(glb->max_instructions);
-    flow.generateVmpBlockOps(vm_basicblock);
+    flow.generateVmpBlockOps(vm_basicblock, true);
 	buildReturnVal();
 #ifdef _DEBUG
 	std::stringstream ss;
@@ -383,3 +452,7 @@ void VmpNode::clear()
     addrList.clear();
     contextList.clear();
 }
+
+#ifdef DeveloperMode
+#pragma optimize("", on) 
+#endif

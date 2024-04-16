@@ -1,6 +1,7 @@
 #pragma once
 #include <capstone/capstone.h>
 #include <memory>
+#include "../Common/VmpCommon.h"
 
 class vm_inst
 {
@@ -8,8 +9,9 @@ public:
 	vm_inst() {};
 	virtual ~vm_inst() {};
 public:
+	virtual VmAddress GetAddress() = 0;
 	virtual bool IsRawInstruction() = 0;
-	virtual void PrintRaw(std::ostream& ss) = 0x0;
+	virtual void PrintRaw(std::ostream& ss) = 0;
 };
 
 class RawInstruction :public vm_inst
@@ -17,6 +19,7 @@ class RawInstruction :public vm_inst
 public:
 	RawInstruction();
 	~RawInstruction();
+	VmAddress GetAddress() override { return raw->address; };
 	bool IsRawInstruction() override { return true; };
 	void PrintRaw(std::ostream& ss) override;
 public:

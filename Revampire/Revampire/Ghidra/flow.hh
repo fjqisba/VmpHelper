@@ -23,6 +23,7 @@
 
 class VmpNode;
 class VmpBasicBlock;
+class VmpFunction;
 
 namespace ghidra {
 
@@ -145,7 +146,8 @@ private:
 public:
 	//GhidraExtension
 	void generateVmpNodeOps(VmpNode* node);
-	void generateVmpBlockOps(VmpBasicBlock* node);
+	void generateVmpBlockOps(VmpBasicBlock* node,bool buildRet);
+	void generateVmpFunctionOps(VmpFunction* node);
 	void beginProcessInstruction(list<PcodeOp*>::const_iterator& oiter, bool& emptyflag);
 public:
   FlowInfo(Funcdata &d,PcodeOpBank &o,BlockGraph &b,vector<FuncCallSpecs *> &q);	///< Constructor

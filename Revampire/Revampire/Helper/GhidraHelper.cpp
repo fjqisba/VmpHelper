@@ -1,5 +1,6 @@
 #include "GhidraHelper.h"
 #include "../Ghidra/funcdata.hh"
+#include "../GhidraExtension/VmpArch.h"
 
 using namespace GhidraHelper;
 
@@ -126,4 +127,12 @@ std::vector<TraceResult> PcodeOpTracer::TraceInput(size_t startAddr, ghidra::Var
     std::vector<TraceResult> retResult;
     traceNode(startAddr, vn, false, retResult);
     return retResult;
+}
+
+std::string GhidraHelper::GetVarnodeRegName(ghidra::Varnode* vn)
+{
+	if (vn->getSpace()->getName() != "register") {
+		return "";
+	}
+	return gArch->translate->getRegisterName(vn->getSpace(), vn->getOffset(), vn->getSize());
 }

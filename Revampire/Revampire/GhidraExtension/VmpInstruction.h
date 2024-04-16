@@ -21,6 +21,8 @@ enum VmpOpType
 	VM_READ_MEM,
 	VM_WRITE_MEM,
 	VM_PUSH_VSP,
+	VM_WRITE_VSP,
+	VM_IMUL,
 };
 
 class VmpInstruction :public vm_inst
@@ -32,6 +34,7 @@ public:
 	virtual int BuildInstruction(ghidra::Funcdata& data);
 	void PrintRaw(std::ostream& ss);
 	void printAddress(std::ostream& ss);
+	VmAddress GetAddress() override { return addr; };
 public:
 	VmAddress addr;
 	VmpOpType opType;
@@ -172,7 +175,12 @@ class VmpOpNand :public VmpInstruction
 public:
 	VmpOpNand() { opType = VM_NAND; };
 	~VmpOpNand() {};
+	int BuildInstruction(ghidra::Funcdata& data);
 	void PrintRaw(std::ostream& ss) override;
+private:
+	int BuildNand1(ghidra::Funcdata& data);
+	int BuildNand2(ghidra::Funcdata& data);
+	int BuildNand4(ghidra::Funcdata& data);
 };
 
 class VmpOpNor :public VmpInstruction
@@ -180,6 +188,7 @@ class VmpOpNor :public VmpInstruction
 public:
 	VmpOpNor() { opType = VM_NOR; };
 	~VmpOpNor() {};
+	void PrintRaw(std::ostream& ss) override;
 };
 
 class VmpOpShr : public VmpInstruction
@@ -239,5 +248,31 @@ public:
 	VmpOpPushVSP() { opType = VM_PUSH_VSP; };
 	~VmpOpPushVSP() {};
 	int BuildInstruction(ghidra::Funcdata& data) override;
+	void PrintRaw(std::ostream& ss) override;
+};
+
+
+class VmpOpWriteVSP :public VmpInstruction
+{
+public:
+	VmpOpWriteVSP() { opType = VM_WRITE_VSP; };
+	~VmpOpWriteVSP() {};
+	int BuildInstruction(ghidra::Funcdata& data) override;
+	void PrintRaw(std::ostream& ss) override;
+};
+
+//mov eax, dword ptr ds:[vmstack + 4]
+//mov edx, dword ptr ds:[vmstack]
+//imul edx
+//mov dword ptr ds:[vmstack+0x4], edx
+//mov dword ptr ds:[vmstack+0x8], eax
+//pushfd
+//pop dword ptr ds:[vmstack]
+
+class VmpOpImul :public VmpInstruction
+{
+public:
+	VmpOpImul() { opType = VM_IMUL; };
+	~VmpOpImul() {};
 	void PrintRaw(std::ostream& ss) override;
 };

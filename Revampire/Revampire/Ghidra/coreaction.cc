@@ -5337,6 +5337,7 @@ void ActionDatabase::buildDefaultGroups(void)
   isDefaultGroups = true;
 }
 
+
 void ActionDatabase::buildVmpHandlerAction(Architecture* conf)
 {
     vector<Rule*>::iterator iter;

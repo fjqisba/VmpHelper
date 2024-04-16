@@ -7,7 +7,8 @@ class MenuRevampire :public action_handler_t
 public:
 	MenuRevampire(IDAPlugin* plugin);
 	~MenuRevampire();
-	void AttachToPopupMenu(TWidget* view, TPopupMenu* p);
+	void AttachMainMenu(TWidget* view, TPopupMenu* p);
+	void AttachGraphMenu(TWidget* view, TPopupMenu* p);
 private:
 	int activate(action_activation_ctx_t* ctx)override;
 	action_state_t idaapi update(action_update_ctx_t* ctx) override;

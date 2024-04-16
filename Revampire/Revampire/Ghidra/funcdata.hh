@@ -29,6 +29,7 @@
 
 class VmpNode;
 class VmpBasicBlock;
+class VmpFunction;
 
 namespace ghidra {
 
@@ -143,13 +144,14 @@ public:
     //GhidraExtension
     VmpNode* nodeInput = nullptr;
     VmpBasicBlock* vm_basicblock = nullptr;
+    VmpFunction* vm_func = nullptr;
     //用于记录被优化的索引次数
     std::uint64_t actIdx = 0x0;
     ///< Container of PcodeOp objects for \b this function
     PcodeOpBank obank;
     void followVmpNode(VmpNode* node);
 	void followVmpBasicBlock(VmpBasicBlock* node);
-
+    void followVmpFunction(VmpFunction* vmFunc);
     void buildReturnVal();
     //清理扩展数据
     void clearExtensionData();

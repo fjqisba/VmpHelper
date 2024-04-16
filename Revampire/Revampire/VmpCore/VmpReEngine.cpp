@@ -16,7 +16,6 @@ VmpReEngine::VmpReEngine()
 	if (arch == nullptr) {
 		throw Exception("VmpReEngine::VmpReEngine(): Not enough memory.");
 	}
-
 }
 
 VmpReEngine::~VmpReEngine()
@@ -44,6 +43,27 @@ void VmpReEngine::MarkVmpEntry(size_t startAddr)
 	if (anyFunc) {
 		clearFunction(anyFunc->start_ea);
 	}
+}
+
+void VmpReEngine::Decompile(size_t startAddr)
+{
+	auto it = std::find_if(funcCache.begin(), funcCache.end(),
+		[startAddr](const std::unique_ptr<VmpFunction>& func) {
+			return func->startAddr == startAddr;
+	});
+	if (it == funcCache.end()) {
+		return;
+	}
+	ghidra::Funcdata* fd = arch->AnaVmpFunction(it->get());
+	if (!fd) {
+		return;
+	}
+	std::stringstream ss;
+	arch->print->setOutputStream(&ss);
+	arch->print->docFunction(fd);
+	std::string srcResult = ss.str();
+	msg_clear();
+	msg("%s\n", srcResult.c_str());
 }
 
 void VmpReEngine::clearFunction(size_t startAddr)

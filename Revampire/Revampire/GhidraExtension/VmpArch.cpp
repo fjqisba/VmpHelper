@@ -5,8 +5,8 @@
 #include "../Manager/exceptions.h"
 #include "../GhidraExtension/VmpNode.h"
 #include "../GhidraExtension/VmpControlFlow.h"
+#include "../GhidraExtension/VmpFunction.h"
 #include "../Ghidra/funcdata.hh"
-
 #ifdef DeveloperMode
 #pragma optimize("", off) 
 #endif
@@ -93,6 +93,30 @@ bool VmpArchitecture::initVmpArchitecture()
     return true;
 }
 
+ghidra::Funcdata* VmpArchitecture::AnaVmpFunction(VmpFunction* func)
+{
+	ghidra::Address startAddr(getDefaultCodeSpace(), func->startAddr);
+	ghidra::Funcdata* fd = symboltab->getGlobalScope()->findFunction(startAddr);
+	if (!fd) {
+		fd = symboltab->getGlobalScope()->addFunction(startAddr, "")->getFunction();
+	}
+	clearAnalysis(fd);
+	fd->clearExtensionData();
+	fd->followVmpFunction(func);
+	ghidra::Action* rootAction = allacts.setCurrent("decompile");
+	rootAction->reset(*fd);
+	auto res = rootAction->perform(*fd);
+	if (res < 0) {
+		return nullptr;
+	}
+#ifdef DeveloperMode
+	std::stringstream ss;
+	fd->printRaw(ss);
+	std::string rawResult = ss.str();
+#endif
+	return fd;
+}
+
 ghidra::Funcdata* VmpArchitecture::AnaVmpBasicBlock(VmpBasicBlock* basicBlock)
 {
 	ghidra::Address startAddr(getDefaultCodeSpace(), 0x0);
@@ -120,7 +144,7 @@ ghidra::Funcdata* VmpArchitecture::AnaVmpBasicBlock(VmpBasicBlock* basicBlock)
 ghidra::Funcdata* VmpArchitecture::AnaVmpHandler(VmpNode* nodeInput)
 {
     //²âÊÔ´úÂë
-    if (nodeInput->addrList[0] == 0x00489984) {
+    if (nodeInput->addrList[0] == 0x004b58a9) {
         int a = 0;
     }
     ghidra::Address startAddr(getDefaultCodeSpace(), 0x0);
