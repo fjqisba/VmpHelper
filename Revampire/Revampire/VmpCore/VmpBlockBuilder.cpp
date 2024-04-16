@@ -366,7 +366,12 @@ bool VmpBlockBuilder::executeVmJmp(VmpNode& nodeInput,VmpInstruction* inst)
 		newBuildTask->from_addr = inst->addr;
 		flow.anaQueue.push(std::move(newBuildTask));
 		buildCtx->status = VmpFlowBuildContext::FINISH_MATCH;
+		return true;
 	}
+	else if (branchList.size() == 2) {
+
+	}
+	buildCtx->status = VmpFlowBuildContext::FINISH_MATCH;
 	return true;
 }
 
@@ -565,6 +570,20 @@ bool VmpBlockBuilder::tryMatch_vLogicalOp(ghidra::Funcdata* fd, VmpNode& nodeInp
 		vOpNand->addr = nodeInput.readVmAddress(buildCtx->vmreg.reg_code);
 		vOpNand->opSize = GetMemAccessSize(loadOp1->getAddr().getOffset());
 		executeVmpOp(nodeInput, std::move(vOpNand));
+		return true;
+	}
+	else if (logicCode == ghidra::CPUI_INT_RIGHT) {
+		std::unique_ptr<VmpOpShr> vOpShr = std::make_unique<VmpOpShr>();
+		vOpShr->addr = nodeInput.readVmAddress(buildCtx->vmreg.reg_code);
+		vOpShr->opSize = GetMemAccessSize(loadOp1->getAddr().getOffset());
+		executeVmpOp(nodeInput, std::move(vOpShr));
+		return true;
+	}
+	else if (logicCode == ghidra::CPUI_INT_LEFT) {
+		std::unique_ptr<VmpOpShl> vOpShl = std::make_unique<VmpOpShl>();
+		vOpShl->addr = nodeInput.readVmAddress(buildCtx->vmreg.reg_code);
+		vOpShl->opSize = GetMemAccessSize(loadOp1->getAddr().getOffset());
+		executeVmpOp(nodeInput, std::move(vOpShl));
 		return true;
 	}
 	return false;

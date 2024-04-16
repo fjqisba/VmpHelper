@@ -73,15 +73,7 @@ public:
 	std::vector<ghidra::VarnodeData> exitContext;
 };
 
-//vPopReg2
-//mov cx, word ptr ds:[vmstack]
-//lea vmstack, ds:[vmstack+0x2]
-//mov word ptr ss:[vmReg], cx
 
-//vPopReg4
-//mov ecx,dword ptr ds:[vmstack]
-//vmstack edi,0x4
-//mov dword ptr ss:[vmReg],ecx
 
 class VmpOpPopReg :public VmpInstruction
 {
@@ -95,20 +87,7 @@ public:
 	int vmRegOffset;
 };
 
-//PushImm1
-//movzx ecx,byte ptr ss:[ebp]
-//lea esi,dword ptr ds:[esi-0x2]
-//mov word ptr ds:[esi],cx
 
-//PushImm2
-//movzx edx,word ptr ds:[esi]
-//sub edi,0x2
-//mov word ptr ds:[edi],dx
-
-//PushImm4
-//mov eax,dword ptr ds:[esi]
-//lea esi,dword ptr ds:[esi+0x4]
-//mov dword ptr ds:[edi],eax
 
 class VmpOpPushImm :public VmpInstruction
 {
@@ -125,23 +104,7 @@ public:
 	size_t immVal;
 };
 
-//vPushReg1
-//movzx ecx,byte ptr ds:[vmCode]
-//movzx ax,byte ptr ss:[esp+ecx]
-//sub vmStack,0x2
-//mov word ptr ds:[vmStack],ax
 
-//vPushReg2
-//movzx edx, byte ptr ds:[vmCode]
-//mov cx, word ptr ss:[esp+edx]
-//sub vmStack, 0x2
-//mov word ptr ds:[vmStack], cx
-
-//vPushReg4
-//movzx ecx, byte ptr ds:[vmCode]
-//mov edx, dword ptr ss:[esp+ecx]
-//lea vmStack, ss:[vmStack-0x4]
-//mov dword ptr ss:[vmStack], edx
 
 class VmpOpPushReg :public VmpInstruction
 {
@@ -189,6 +152,11 @@ public:
 	VmpOpNor() { opType = VM_NOR; };
 	~VmpOpNor() {};
 	void PrintRaw(std::ostream& ss) override;
+	int BuildInstruction(ghidra::Funcdata& data);
+private:
+	int BuildNor1(ghidra::Funcdata& data);
+	int BuildNor2(ghidra::Funcdata& data);
+	int BuildNor4(ghidra::Funcdata& data);
 };
 
 class VmpOpShr : public VmpInstruction
@@ -196,6 +164,12 @@ class VmpOpShr : public VmpInstruction
 public:
 	VmpOpShr() { opType = VM_SHR; };
 	~VmpOpShr() {};
+	int BuildInstruction(ghidra::Funcdata& data) override;
+	void PrintRaw(std::ostream& ss) override;
+private:
+	int BuildShr1(ghidra::Funcdata& data);
+	int BuildShr2(ghidra::Funcdata& data);
+	int BuildShr4(ghidra::Funcdata& data);
 };
 
 class VmpOpShl : public VmpInstruction
@@ -203,13 +177,13 @@ class VmpOpShl : public VmpInstruction
 public:
 	VmpOpShl() { opType = VM_SHL; };
 	~VmpOpShl() {};
+	int BuildInstruction(ghidra::Funcdata& data) override;
+	void PrintRaw(std::ostream& ss) override;
+private:
+	int BuildShl1(ghidra::Funcdata& data);
+	int BuildShl2(ghidra::Funcdata& data);
+	int BuildShl4(ghidra::Funcdata& data);
 };
-
-
-//mov edx, dword ptr ss:[vmstack]
-//add vmStack, 0x4
-//mov vmCode,edx
-//mov newStack,vmStack
 
 class VmpOpJmp :public VmpInstruction
 {
@@ -221,7 +195,6 @@ public:
 public:
 	std::vector<size_t> branchList;
 };
-
 
 class VmpOpReadMem :public VmpInstruction
 {
@@ -240,8 +213,6 @@ public:
 public:
 };
 
-
-
 class VmpOpPushVSP :public VmpInstruction
 {
 public:
@@ -250,7 +221,6 @@ public:
 	int BuildInstruction(ghidra::Funcdata& data) override;
 	void PrintRaw(std::ostream& ss) override;
 };
-
 
 class VmpOpWriteVSP :public VmpInstruction
 {

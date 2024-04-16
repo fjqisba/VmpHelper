@@ -345,7 +345,7 @@ void ghidra::Funcdata::followVmpBasicBlock(VmpBasicBlock* node)
 	flow.setMaximumInstructions(glb->max_instructions);
     flow.generateVmpBlockOps(vm_basicblock, true);
 	buildReturnVal();
-#ifdef _DEBUG
+#ifdef DeveloperMode
 	std::stringstream ss;
 	printRaw(ss);
 	std::string rawResult = ss.str();

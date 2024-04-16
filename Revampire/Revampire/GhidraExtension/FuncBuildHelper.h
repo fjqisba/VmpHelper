@@ -34,4 +34,12 @@ public:
     static void BuildPushConst(ghidra::Funcdata& data, size_t addr, size_t val, size_t valSize);
     //push eax
     static void BuildPushRegister(ghidra::Funcdata& data, size_t addr, const ghidra::VarnodeData& regData);
+
+	//andÁ½¸öunique
+	static ghidra::Varnode* BuildAnd(ghidra::Funcdata& data, size_t addr, ghidra::Varnode* v1, ghidra::Varnode* v2, size_t opSize);
+
+    static ghidra::Varnode* BuildShr(ghidra::Funcdata& data, size_t addr, ghidra::Varnode* v1, ghidra::Varnode* v2);
+    static ghidra::Varnode* BuildShl(ghidra::Funcdata& data, size_t addr, ghidra::Varnode* v1, ghidra::Varnode* v2);
+
+    static void BuildEflags(ghidra::Funcdata& data, size_t addr);
 };

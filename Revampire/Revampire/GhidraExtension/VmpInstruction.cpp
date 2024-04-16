@@ -145,3 +145,23 @@ void VmpOpImul::PrintRaw(std::ostream& ss)
 	colorString(ss, "vImul", SCOLOR_INSN);
 	ss << "\n";
 }
+
+void VmpOpShl::PrintRaw(std::ostream& ss)
+{
+	printAddress(ss);
+	ss << "\t";
+	colorString(ss, SCOLOR_INSN, [this, &ss]() {
+		ss << "vShl" << this->opSize;
+		});
+	ss << "\n";
+}
+
+void VmpOpShr::PrintRaw(std::ostream& ss)
+{
+	printAddress(ss);
+	ss << "\t";
+	colorString(ss, SCOLOR_INSN, [this, &ss]() {
+		ss << "vShr" << this->opSize;
+		});
+	ss << "\n";
+}
