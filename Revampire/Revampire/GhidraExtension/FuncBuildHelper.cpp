@@ -526,6 +526,82 @@ ghidra::Varnode* FuncBuildHelper::BuildShr(ghidra::Funcdata& data, size_t addr, 
 	return uResult;
 }
 
+ghidra::Varnode* FuncBuildHelper::BuildAdd(ghidra::Funcdata& data, size_t addr, ghidra::Varnode* v1, ghidra::Varnode* v2, size_t opsize)
+{
+	auto regESP = data.getArch()->translate->getRegister("ESP");
+	auto regCF = data.getArch()->translate->getRegister("CF");
+	auto regOF = data.getArch()->translate->getRegister("OF");
+	auto regSF = data.getArch()->translate->getRegister("SF");
+	auto regZF = data.getArch()->translate->getRegister("ZF");
+	auto regPF = data.getArch()->translate->getRegister("PF");
+
+	ghidra::Address pc = ghidra::Address(data.getArch()->getDefaultCodeSpace(), addr);
+
+	//CF = CARRY4(v1,v2)
+	ghidra::PcodeOp* opCarry = data.newOp(2, pc);
+	data.opSetOpcode(opCarry, ghidra::CPUI_INT_CARRY);
+	data.newVarnodeOut(regCF.size, regCF.getAddr(), opCarry);
+	data.opSetInput(opCarry, v1, 0);
+	data.opSetInput(opCarry, v2, 1);
+
+	//OF = SCARRY4(v1,v2)
+	ghidra::PcodeOp* opScarry = data.newOp(2, pc);
+	data.opSetOpcode(opScarry, ghidra::CPUI_INT_SCARRY);
+	data.newVarnodeOut(regOF.size, regOF.getAddr(), opScarry);
+	data.opSetInput(opScarry, v1, 0);
+	data.opSetInput(opScarry, v2, 1);
+
+	//uOut = v1 + v2
+	ghidra::PcodeOp* opAdd = data.newOp(2, pc);
+	data.opSetOpcode(opAdd, ghidra::CPUI_INT_ADD);
+	ghidra::Varnode* uniqOut = data.newUniqueOut(opsize, opAdd);
+	data.opSetInput(opAdd, v1, 0);
+	data.opSetInput(opAdd, v2, 1);
+
+	//SF = uOut < #0x0
+	ghidra::PcodeOp* opSless = data.newOp(2, pc);
+	data.opSetOpcode(opSless, ghidra::CPUI_INT_SLESS);
+	data.newVarnodeOut(regSF.size, regSF.getAddr(), opSless);
+	data.opSetInput(opSless, uniqOut, 0);
+	data.opSetInput(opSless, data.newConstant(opsize, 0x0), 1);
+
+	//ZF = uOut == #0x0
+	ghidra::PcodeOp* opEqual1 = data.newOp(2, pc);
+	data.opSetOpcode(opEqual1, ghidra::CPUI_INT_EQUAL);
+	data.newVarnodeOut(regZF.size, regZF.getAddr(), opEqual1);
+	data.opSetInput(opEqual1, uniqOut, 0);
+	data.opSetInput(opEqual1, data.newConstant(opsize, 0x0), 1);
+
+	//u1 = uOut & #0xff
+	ghidra::PcodeOp* opAnd1 = data.newOp(2, pc);
+	data.opSetOpcode(opAnd1, ghidra::CPUI_INT_AND);
+	ghidra::Varnode* u1 = data.newUniqueOut(opsize, opAnd1);
+	data.opSetInput(opAnd1, uniqOut, 0);
+	data.opSetInput(opAnd1, data.newConstant(opsize, 0xFF), 1);
+
+	//u2 = POPCOUNT(u1)
+	ghidra::PcodeOp* opPopCount = data.newOp(1, pc);
+	data.opSetOpcode(opPopCount, ghidra::CPUI_POPCOUNT);
+	ghidra::Varnode* u2 = data.newUniqueOut(0x1, opPopCount);
+	data.opSetInput(opPopCount, u1, 0);
+
+	//u3 = u2 & #0x1:1
+	ghidra::PcodeOp* opAnd2 = data.newOp(2, pc);
+	data.opSetOpcode(opAnd2, ghidra::CPUI_INT_AND);
+	ghidra::Varnode* u3 = data.newUniqueOut(0x4, opAnd2);
+	data.opSetInput(opAnd2, u2, 0);
+	data.opSetInput(opAnd2, data.newConstant(0x1, 0x1), 1);
+
+	//PF = u3 == #0x0:1
+	ghidra::PcodeOp* opEqual2 = data.newOp(2, pc);
+	data.opSetOpcode(opEqual2, ghidra::CPUI_INT_EQUAL);
+	data.newVarnodeOut(regPF.size, regPF.getAddr(), opEqual2);
+	data.opSetInput(opEqual2, u3, 0);
+	data.opSetInput(opEqual2, data.newConstant(0x1, 0x0), 1);
+
+	return uniqOut;
+}
+
 ghidra::Varnode* FuncBuildHelper::BuildAnd(ghidra::Funcdata& data, size_t addr, ghidra::Varnode* v1, ghidra::Varnode* v2, size_t opSize)
 {
 	ghidra::Address pc = ghidra::Address(data.getArch()->getDefaultCodeSpace(), addr);

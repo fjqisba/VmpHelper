@@ -118,13 +118,17 @@ void VmpControlFlowBuilder::linkBlockEdge(VmAddress from, VmAddress to)
 	fromEdges[from].insert(to);
 }
 
-VmpBasicBlock* VmpControlFlowBuilder::createNewBlock(VmAddress startAddr)
+VmpBasicBlock* VmpControlFlowBuilder::createNewBlock(VmAddress startAddr, bool isVmBlock)
 {
 	VmpBasicBlock* newBlock = &data.cfg.blocksMap[startAddr];
 	if (data.cfg.blocksMap.size() == 1) {
 		data.cfg.startBlock = newBlock;
+		newBlock->setStartBlock();
 	}
 	newBlock->blockEntry = startAddr;
+	if (isVmBlock) {
+		newBlock->setVmInsBlock();
+	}
 	return newBlock;
 }
 
@@ -172,7 +176,7 @@ void VmpControlFlowBuilder::fallthruNormal(VmpFlowBuildContext& task)
 			return;
 		}
 		if (curBasicBlock == nullptr) {
-			curBasicBlock = createNewBlock(curAddr);
+			curBasicBlock = createNewBlock(curAddr, false);
 			if (curBasicBlock == nullptr) {
 				throw Exception("createNewBlock error");
 			}
@@ -240,17 +244,58 @@ bool VmpControlFlowBuilder::BuildCFG(size_t startAddr)
 		}
 	}
 	buildEdges();
+	buildJmps();
 	return true;
+}
+
+//是否会与下一条指令产生链接
+bool IsConnectedInstruction(cs_insn* ins)
+{
+	if (ins->id == X86_INS_JMP) {
+		return true;
+	}
+	if (ins->id >= X86_INS_JAE && ins->id <= X86_INS_JS) {
+		return true;
+	}
+	return false;
+}
+
+void VmpControlFlowBuilder::buildJmps()
+{
+	for (auto& eBlock : data.cfg.blocksMap) {
+		VmpBasicBlock* basicBlock = &eBlock.second;
+		if (basicBlock->isEndBlock()) {
+			continue;
+		}
+		vm_inst* endIns = basicBlock->insList.back().get();
+		if (basicBlock->isVmInsBlock()) {
+			VmpInstruction* vmIns = (VmpInstruction*)(endIns);
+			if (vmIns->opType == VM_JMP) {
+				VmpOpJmp* vOpJmp = (VmpOpJmp*)vmIns;
+				vOpJmp->isBuildJmp = true;
+			}
+		}
+		else {
+			RawInstruction* rawIns = (RawInstruction*)(endIns);
+			if (!IsConnectedInstruction(rawIns->raw)) {
+				std::unique_ptr<UserOpConnect> vOpConnect = std::make_unique<UserOpConnect>();
+				vOpConnect->addr = endIns->GetAddress();
+				vOpConnect->connectAddr = basicBlock->outBlocks[0]->blockEntry.raw;
+				basicBlock->insList.push_back(std::move(vOpConnect));
+			}
+		}
+	}
 }
 
 void VmpControlFlowBuilder::buildEdges()
 {
 	for (auto& eBlock : data.cfg.blocksMap) {
 		VmpBasicBlock* basicBlock = &eBlock.second;
-		vm_inst* lastIns = basicBlock->insList.back().get();
-		VmAddress fromAddr = lastIns->GetAddress();
+		vm_inst* endIns = basicBlock->insList.back().get();
+		VmAddress fromAddr = endIns->GetAddress();
 		auto itEdge = fromEdges.find(fromAddr);
 		if (itEdge == fromEdges.end()) {
+			basicBlock->setEndBlock();
 			continue;
 		}
 		auto edgeList = itEdge->second;

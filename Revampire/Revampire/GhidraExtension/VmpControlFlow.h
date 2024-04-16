@@ -71,7 +71,7 @@ public:
 	~VmpControlFlowBuilder();
 	bool BuildCFG(size_t startAddr);
 protected:
-	VmpBasicBlock* createNewBlock(VmAddress startAddr);
+	VmpBasicBlock* createNewBlock(VmAddress startAddr,bool isVmBlock);
 	void addVmpEntryBuildTask(VmAddress startAddr);
 	void addNormalBuildTask(VmAddress startAddr);
 private:
@@ -80,6 +80,7 @@ private:
 	void fallthruNormal(VmpFlowBuildContext& task);
 	void linkBlockEdge(VmAddress from, VmAddress to);
 	void buildEdges();
+	void buildJmps();
 public:
 	VmpTraceFlowGraph tfg;
 protected:
@@ -91,14 +92,25 @@ private:
 	VmpFunction& data;
 };
 
-
 class VmpBasicBlock
 {
+	enum {
+		start_block = 0x1,
+		end_block = 0x2,
+		vm_ins_block = 0x4,
+	};
 public:
 	//和IDA打印图有关
 	void SetGraphIndex(int idx) { graphIdx = idx; };
 	int GetGraphIndex() { return graphIdx; };
 	std::string MakeGraphTxt();
+
+	void setEndBlock() { flags |= end_block; };
+	bool isEndBlock() { return ((flags & end_block) != 0); };
+	void setStartBlock() { flags |= start_block; };
+	bool isStartBlock() { return ((flags & start_block) != 0); };
+	void setVmInsBlock() { flags |= vm_ins_block; };
+	bool isVmInsBlock() { return ((flags & vm_ins_block) != 0); };
 public:
 	std::vector<std::unique_ptr<vm_inst>> insList;
 	std::vector<VmpBasicBlock*> inBlocks;
@@ -106,9 +118,8 @@ public:
 	VmAddress blockEntry;
 private:
 	int graphIdx = 0x0;
+	unsigned int flags;
 };
-
-
 
 
 //仅用于进行IDA展示

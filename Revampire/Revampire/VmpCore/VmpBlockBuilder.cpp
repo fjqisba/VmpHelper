@@ -346,7 +346,7 @@ bool VmpBlockBuilder::executeVmExit(VmpNode& nodeInput, VmpInstruction* inst)
 	return true;
 }
 
-bool VmpBlockBuilder::executeVmJmp(VmpNode& nodeInput,VmpInstruction* inst)
+bool VmpBlockBuilder::executeVmJmp(VmpNode& nodeInput, VmpOpJmp* inst)
 {
 	VmpUnicorn unicornEngine;
 	ghidra::Funcdata* fd = flow.Arch()->AnaVmpBasicBlock(curBlock);
@@ -356,8 +356,9 @@ bool VmpBlockBuilder::executeVmJmp(VmpNode& nodeInput,VmpInstruction* inst)
 		size_t vmCall = tryGetVmCallAddress(fd);
 		//ÅÐ¶ÏvJmpÊÇ²»ÊÇvmCall
 		if (vmCall) {
-			
+			//To do...	
 		}
+		inst->branchList = branchList;
 		unicornEngine.StartVmpTrace(*buildCtx->ctx, walker.CurrentIndex()+ nodeInput.addrList.size() + 1);
 		auto nextContext = unicornEngine.CopyCurrentUnicornContext();
 		auto newBuildTask = std::make_unique<VmpFlowBuildContext>();
@@ -391,7 +392,7 @@ bool VmpBlockBuilder::executeVmpOp(VmpNode& nodeInput,std::unique_ptr<VmpInstruc
 			return true;
 		}
 		flow.visited.insert(vmInst->addr);
-		curBlock = flow.createNewBlock(vmInst->addr);
+		curBlock = flow.createNewBlock(vmInst->addr, true);
 		if (buildCtx->btype == VmpFlowBuildContext::HANDLE_VMP_JMP) {
 			flow.linkBlockEdge(buildCtx->from_addr, vmInst->addr);
 		}
@@ -399,7 +400,7 @@ bool VmpBlockBuilder::executeVmpOp(VmpNode& nodeInput,std::unique_ptr<VmpInstruc
 	curBlock->insList.push_back(std::move(inst));
 
 	if (vmInst->opType == VM_JMP) {
-		executeVmJmp(nodeInput,vmInst);
+		executeVmJmp(nodeInput, (VmpOpJmp*)vmInst);
 	}
 	else if (vmInst->opType == VM_EXIT) {
 		executeVmExit(nodeInput, vmInst);
@@ -959,7 +960,7 @@ bool VmpBlockBuilder::BuildVmpBlock(VmpFlowBuildContext* ctx)
 	std::string graphTxt = ss.str();
 
 	if (buildCtx->btype == VmpFlowBuildContext::HANDLE_VMP_ENTRY) {
-		curBlock = flow.createNewBlock(buildCtx->start_addr);
+		curBlock = flow.createNewBlock(buildCtx->start_addr, true);
 		buildCtx->status = VmpFlowBuildContext::FIND_VM_INIT;
 	}
 	else if (buildCtx->btype == VmpFlowBuildContext::HANDLE_VMP_JMP) {

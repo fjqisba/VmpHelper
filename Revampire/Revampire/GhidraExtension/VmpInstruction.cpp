@@ -28,7 +28,10 @@ void colorString(std::ostream& ss, const char* tag, const std::function<void()>&
 
 void VmpInstruction::PrintRaw(std::ostream& ss)
 {
-
+	printAddress(ss);
+	ss << "\t";
+	colorString(ss, "vInstruction", SCOLOR_INSN);
+	ss << "\n";
 }
 
 void VmpInstruction::printAddress(std::ostream& ss)
@@ -162,6 +165,36 @@ void VmpOpShr::PrintRaw(std::ostream& ss)
 	ss << "\t";
 	colorString(ss, SCOLOR_INSN, [this, &ss]() {
 		ss << "vShr" << this->opSize;
+		});
+	ss << "\n";
+}
+
+void VmpOpAdd::PrintRaw(std::ostream& ss)
+{
+	printAddress(ss);
+	ss << "\t";
+	colorString(ss, SCOLOR_INSN, [this, &ss]() {
+		ss << "vAdd" << this->opSize;
+	});
+	ss << "\n";
+}
+
+void VmpOpWriteMem::PrintRaw(std::ostream& ss)
+{
+	printAddress(ss);
+	ss << "\t";
+	colorString(ss, SCOLOR_INSN, [this, &ss]() {
+		ss << "vWriteMem" << this->opSize;
+		});
+	ss << "\n";
+}
+
+void VmpOpReadMem::PrintRaw(std::ostream& ss)
+{
+	printAddress(ss);
+	ss << "\t";
+	colorString(ss, SCOLOR_INSN, [this, &ss]() {
+		ss << "vReadMem" << this->opSize;
 		});
 	ss << "\n";
 }

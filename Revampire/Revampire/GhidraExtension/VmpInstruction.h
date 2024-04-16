@@ -18,11 +18,22 @@ enum VmpOpType
 	VM_SHR,
 	VM_SHL,
 	VM_JMP,
+	VM_JMP_CONST,
 	VM_READ_MEM,
 	VM_WRITE_MEM,
 	VM_PUSH_VSP,
 	VM_WRITE_VSP,
 	VM_IMUL,
+
+	USER_CONNECT,
+};
+
+enum VmJmpType
+{
+	V_UNKNOWN = 0x0,
+	V_JMP = 0x1,
+	V_JCC = 0x2,
+	V_CASE = 0x3,
 };
 
 class VmpInstruction :public vm_inst
@@ -37,8 +48,21 @@ public:
 	VmAddress GetAddress() override { return addr; };
 public:
 	VmAddress addr;
-	VmpOpType opType;
-	size_t opSize;
+	VmpOpType opType = VM_UNKNOWN;
+	size_t opSize = 0x0;
+};
+
+//作用只是将汇编块和vm块连接起来
+
+class UserOpConnect :public VmpInstruction
+{
+public:
+	UserOpConnect() { opType = USER_CONNECT; };
+	~UserOpConnect() {};
+	int BuildInstruction(ghidra::Funcdata& data) override;
+	void PrintRaw(std::ostream& ss) override {};
+public:
+	size_t connectAddr = 0x0;
 };
 
 class VmpOpUnknown :public VmpInstruction
@@ -73,8 +97,6 @@ public:
 	std::vector<ghidra::VarnodeData> exitContext;
 };
 
-
-
 class VmpOpPopReg :public VmpInstruction
 {
 public:
@@ -84,27 +106,8 @@ public:
 	int BuildInstruction(ghidra::Funcdata& data) override;
 public:
 	//寄存器偏移
-	int vmRegOffset;
+	int vmRegOffset = 0x0;
 };
-
-
-
-class VmpOpPushImm :public VmpInstruction
-{
-public:
-	VmpOpPushImm() { opType = VM_PUSH_IMM; };
-	~VmpOpPushImm() {};
-	void PrintRaw(std::ostream& ss) override;
-	int BuildInstruction(ghidra::Funcdata& data) override;
-private:
-	int BuildPushImm1(ghidra::Funcdata& data);
-	int BuildPushImm2(ghidra::Funcdata& data);
-	int BuildPushImm4(ghidra::Funcdata& data);
-public:
-	size_t immVal;
-};
-
-
 
 class VmpOpPushReg :public VmpInstruction
 {
@@ -115,14 +118,28 @@ public:
 	int BuildInstruction(ghidra::Funcdata& data) override;
 public:
 	//寄存器偏移
-	int vmRegOffset;
+	int vmRegOffset = 0x0;
 };
+
+class VmpOpPushImm :public VmpInstruction
+{
+public:
+	VmpOpPushImm() { opType = VM_PUSH_IMM; };
+	~VmpOpPushImm() {};
+	void PrintRaw(std::ostream& ss) override;
+	int BuildInstruction(ghidra::Funcdata& data) override;
+public:
+	size_t immVal = 0x0;
+};
+
+
 
 class VmpOpCheckEsp :public VmpInstruction
 {
 public:
 	VmpOpCheckEsp() { opType = VM_CHECK_ESP; };
 	~VmpOpCheckEsp() {};
+	void PrintRaw(std::ostream& ss) override {};
 };
 
 class VmpOpAdd : public VmpInstruction
@@ -130,6 +147,8 @@ class VmpOpAdd : public VmpInstruction
 public:
 	VmpOpAdd() { opType = VM_ADD; };
 	~VmpOpAdd() {};
+	void PrintRaw(std::ostream& ss) override;
+	int BuildInstruction(ghidra::Funcdata& data) override;
 };
 
 
@@ -193,7 +212,10 @@ public:
 	int BuildInstruction(ghidra::Funcdata& data) override;
 	void PrintRaw(std::ostream& ss) override;
 public:
+	//VmJmpType jmpType;
 	std::vector<size_t> branchList;
+	//是否建立Jmp
+	bool isBuildJmp = false;
 };
 
 class VmpOpReadMem :public VmpInstruction
@@ -202,6 +224,7 @@ public:
 	VmpOpReadMem() { opType = VM_READ_MEM; };
 	~VmpOpReadMem() {};
 	int BuildInstruction(ghidra::Funcdata& data) override;
+	void PrintRaw(std::ostream& ss) override;
 };
 
 class VmpOpWriteMem :public VmpInstruction
@@ -210,6 +233,7 @@ public:
 	VmpOpWriteMem() { opType = VM_WRITE_MEM; };
 	~VmpOpWriteMem() {};
 	int BuildInstruction(ghidra::Funcdata& data) override;
+	void PrintRaw(std::ostream& ss) override;
 public:
 };
 
