@@ -38,6 +38,7 @@ public:
 	//andÁ½¸öunique
 	static ghidra::Varnode* BuildAnd(ghidra::Funcdata& data, size_t addr, ghidra::Varnode* v1, ghidra::Varnode* v2, size_t opSize);
     static ghidra::Varnode* BuildAdd(ghidra::Funcdata& data, size_t addr, ghidra::Varnode* v1, ghidra::Varnode* v2, size_t opsize);
+    static ghidra::Varnode* BuildOr(ghidra::Funcdata& data, size_t addr, ghidra::Varnode* v1, ghidra::Varnode* v2, size_t opSize);
     static ghidra::Varnode* BuildShr(ghidra::Funcdata& data, size_t addr, ghidra::Varnode* v1, ghidra::Varnode* v2);
     static ghidra::Varnode* BuildShl(ghidra::Funcdata& data, size_t addr, ghidra::Varnode* v1, ghidra::Varnode* v2);
 

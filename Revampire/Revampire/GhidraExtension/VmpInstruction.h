@@ -133,8 +133,6 @@ public:
 	size_t immVal = 0x0;
 };
 
-
-
 class VmpOpCheckEsp :public VmpInstruction
 {
 public:
@@ -158,12 +156,8 @@ class VmpOpNand :public VmpInstruction
 public:
 	VmpOpNand() { opType = VM_NAND; };
 	~VmpOpNand() {};
-	int BuildInstruction(ghidra::Funcdata& data);
+	int BuildInstruction(ghidra::Funcdata& data) override;
 	void PrintRaw(std::ostream& ss) override;
-private:
-	int BuildNand1(ghidra::Funcdata& data);
-	int BuildNand2(ghidra::Funcdata& data);
-	int BuildNand4(ghidra::Funcdata& data);
 };
 
 class VmpOpNor :public VmpInstruction
@@ -173,10 +167,6 @@ public:
 	~VmpOpNor() {};
 	void PrintRaw(std::ostream& ss) override;
 	int BuildInstruction(ghidra::Funcdata& data);
-private:
-	int BuildNor1(ghidra::Funcdata& data);
-	int BuildNor2(ghidra::Funcdata& data);
-	int BuildNor4(ghidra::Funcdata& data);
 };
 
 class VmpOpShr : public VmpInstruction

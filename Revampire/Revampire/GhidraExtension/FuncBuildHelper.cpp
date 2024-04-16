@@ -526,6 +526,64 @@ ghidra::Varnode* FuncBuildHelper::BuildShr(ghidra::Funcdata& data, size_t addr, 
 	return uResult;
 }
 
+ghidra::Varnode* FuncBuildHelper::BuildOr(ghidra::Funcdata& data, size_t addr, ghidra::Varnode* v1, ghidra::Varnode* v2, size_t opSize)
+{
+	ghidra::Address pc = ghidra::Address(data.getArch()->getDefaultCodeSpace(), addr);
+	PCodeBuildHelper opBuilder(data, pc);
+
+	//CF = #0x0:1
+	auto regCF = data.getArch()->translate->getRegister("CF");
+	ghidra::PcodeOp* opCopy = data.newOp(1, pc);
+	data.opSetOpcode(opCopy, ghidra::CPUI_COPY);
+	data.newVarnodeOut(regCF.size, regCF.getAddr(), opCopy);
+	data.opSetInput(opCopy, data.newConstant(0x1, 0x0), 0);
+
+	//OF = #0x0:1
+	auto regOF = data.getArch()->translate->getRegister("OF");
+	opCopy = data.newOp(1, pc);
+	data.opSetOpcode(opCopy, ghidra::CPUI_COPY);
+	data.newVarnodeOut(regOF.size, regOF.getAddr(), opCopy);
+	data.opSetInput(opCopy, data.newConstant(0x1, 0x0), 0);
+
+	//uResult = v1 | v2
+	ghidra::Varnode* uResult = opBuilder.CPUI_INT_OR(v1, v2, opSize);
+
+	//SF = uResult < #0x0:opSize
+	auto regSF = data.getArch()->translate->getRegister("SF");
+	ghidra::PcodeOp* opSless = data.newOp(2, pc);
+	data.opSetOpcode(opSless, ghidra::CPUI_INT_SLESS);
+	data.newVarnodeOut(regSF.size, regSF.getAddr(), opSless);
+	data.opSetInput(opSless, uResult, 0);
+	data.opSetInput(opSless, data.newConstant(opSize, 0x0), 1);
+
+	//ZF = uResult == #0x0:opSize
+	auto regZF = data.getArch()->translate->getRegister("ZF");
+	ghidra::PcodeOp* opEqual = data.newOp(2, pc);
+	data.opSetOpcode(opEqual, ghidra::CPUI_INT_EQUAL);
+	data.newVarnodeOut(regZF.size, regZF.getAddr(), opEqual);
+	data.opSetInput(opEqual, uResult, 0);
+	data.opSetInput(opEqual, data.newConstant(opSize, 0x0), 1);
+
+	//uCheck1 = uResult & #0xff:opSize
+	ghidra::Varnode* uCheck1 = opBuilder.CPUI_INT_AND(uResult, data.newConstant(opSize, 0xFF), opSize);
+
+	//uCheck2 = POPCOUNT(uCheck1)
+	ghidra::Varnode* uCheck2 = opBuilder.CPUI_POPCOUNT(uCheck1, 0x1);
+
+	//uCheck3 = uCheck2 & #0x1:1
+	ghidra::Varnode* uCheck3 = opBuilder.CPUI_INT_AND(uCheck2, data.newConstant(0x1, 0x1), 0x1);
+
+	//PF = uCheck3 == #0x0:1
+	auto regPF = data.getArch()->translate->getRegister("PF");
+	opEqual = data.newOp(2, pc);
+	data.opSetOpcode(opEqual, ghidra::CPUI_INT_EQUAL);
+	data.newVarnodeOut(regPF.size, regPF.getAddr(), opEqual);
+	data.opSetInput(opEqual, uCheck3, 0);
+	data.opSetInput(opEqual, data.newConstant(0x1, 0x0), 1);
+
+	return uResult;
+}
+
 ghidra::Varnode* FuncBuildHelper::BuildAdd(ghidra::Funcdata& data, size_t addr, ghidra::Varnode* v1, ghidra::Varnode* v2, size_t opsize)
 {
 	auto regESP = data.getArch()->translate->getRegister("ESP");
