@@ -885,3 +885,17 @@ int VmpOpAdd::BuildInstruction(ghidra::Funcdata& data)
 
 	return 0x1;
 }
+
+int VmpOpJmpConst::BuildInstruction(ghidra::Funcdata& data)
+{
+	if(!isBuildJmp){
+		return 0x0;
+	}
+	auto regEIP = data.getArch()->translate->getRegister("EIP");
+	ghidra::Address pc = ghidra::Address(data.getArch()->getDefaultCodeSpace(), addr.vmdata);
+
+	ghidra::PcodeOp* opBranch = data.newOp(1, pc);
+	data.opSetOpcode(opBranch, ghidra::CPUI_BRANCH);
+	data.opSetInput(opBranch, data.newVarnode(0x1, data.getArch()->getSpaceByName("ram"), targetAddr), 0);
+	return 0x1;
+}

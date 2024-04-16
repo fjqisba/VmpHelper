@@ -105,6 +105,14 @@ void VmpOpJmp::PrintRaw(std::ostream& ss)
 	ss << "\n";
 }
 
+void VmpOpJmpConst::PrintRaw(std::ostream& ss)
+{
+	printAddress(ss);
+	ss << "\t";
+	colorString(ss, "vJmpConst", SCOLOR_INSN);
+	ss << "\n";
+}
+
 void VmpOpWriteVSP::PrintRaw(std::ostream& ss)
 {
 	printAddress(ss);

@@ -230,7 +230,13 @@ bool VmpBlockBuilder::tryMatch_vJmpConst(ghidra::Funcdata* fd, VmpNode& nodeInpu
 			return false;
 		}
 		if (eipResult[0].bAccessMem ^ eipResult[1].bAccessMem) {
-			//jmpconst
+			//寄存器还尚未得知
+			if (!buildCtx->vmreg.isSelected) {
+				return true;
+			}
+			std::unique_ptr<VmpOpJmpConst> vOpJmpConst = std::make_unique<VmpOpJmpConst>();
+			vOpJmpConst->addr = nodeInput.readVmAddress(buildCtx->vmreg.reg_code);
+			executeVmpOp(nodeInput, std::move(vOpJmpConst));
 			return true;
 		}
 		return false;
@@ -346,6 +352,20 @@ bool VmpBlockBuilder::executeVmExit(VmpNode& nodeInput, VmpInstruction* inst)
 	return true;
 }
 
+bool VmpBlockBuilder::executeVmJmpConst(VmpNode& nodeInput, VmpOpJmpConst* inst)
+{
+	VmpUnicorn unicornEngine;
+	unicornEngine.StartVmpTrace(*buildCtx->ctx, walker.CurrentIndex() + nodeInput.addrList.size() + 1);
+	auto nextContext = unicornEngine.CopyCurrentUnicornContext();
+	auto newBuildTask = std::make_unique<VmpFlowBuildContext>();
+	newBuildTask->ctx = std::move(nextContext);
+	newBuildTask->btype = VmpFlowBuildContext::HANDLE_VMP_JMP;
+	newBuildTask->from_addr = inst->addr;
+	flow.anaQueue.push(std::move(newBuildTask));
+	buildCtx->status = VmpFlowBuildContext::FINISH_MATCH;
+	return true;
+}
+
 bool VmpBlockBuilder::executeVmJmp(VmpNode& nodeInput, VmpOpJmp* inst)
 {
 	VmpUnicorn unicornEngine;
@@ -370,6 +390,34 @@ bool VmpBlockBuilder::executeVmJmp(VmpNode& nodeInput, VmpOpJmp* inst)
 	}
 	else if (branchList.size() == 2) {
 
+		//先运行到执行vmJmp之前
+		unicornEngine.StartVmpTrace(*buildCtx->ctx, walker.CurrentIndex() + 1);
+
+		//拷贝出两份环境
+		auto nextContext1 = unicornEngine.CopyCurrentUnicornContext();
+		auto nextContext2 = unicornEngine.CopyCurrentUnicornContext();
+
+		//模拟执行环境1
+		nextContext1->ChangeVmJmpVal(buildCtx->vmreg.reg_stack, branchList[0]);
+		unicornEngine.StartVmpTrace(*nextContext1, nodeInput.addrList.size() + 1);
+
+		auto newTask1 = std::make_unique<VmpFlowBuildContext>();
+		newTask1->ctx = unicornEngine.CopyCurrentUnicornContext();
+		newTask1->btype = VmpFlowBuildContext::HANDLE_VMP_JMP;
+		newTask1->from_addr = inst->addr;
+		flow.anaQueue.push(std::move(newTask1));
+
+		//模拟执行环境2
+		nextContext2->ChangeVmJmpVal(buildCtx->vmreg.reg_stack, branchList[1]);
+		unicornEngine.StartVmpTrace(*nextContext2, nodeInput.addrList.size() + 1);
+
+		auto newTask2 = std::make_unique<VmpFlowBuildContext>();
+		newTask2->ctx = unicornEngine.CopyCurrentUnicornContext();
+		newTask2->btype = VmpFlowBuildContext::HANDLE_VMP_JMP;
+		newTask2->from_addr = inst->addr;
+		flow.anaQueue.push(std::move(newTask2));
+		buildCtx->status = VmpFlowBuildContext::FINISH_MATCH;
+		return true;
 	}
 	buildCtx->status = VmpFlowBuildContext::FINISH_MATCH;
 	return true;
@@ -381,25 +429,26 @@ bool VmpBlockBuilder::executeVmpOp(VmpNode& nodeInput,std::unique_ptr<VmpInstruc
 	if (vmInst->opType == VM_INIT) {
 		buildCtx->status = VmpFlowBuildContext::FINISH_VM_INIT;
 	}
-	else if (vmInst->opType == VM_JMP) {
-		buildCtx->vmreg.ClearStatus();
-	}
 
 	if (!curBlock) {
+		if (buildCtx->btype == VmpFlowBuildContext::HANDLE_VMP_JMP) {
+			flow.linkBlockEdge(buildCtx->from_addr, vmInst->addr);
+		}
 		if (flow.visited.count(vmInst->addr)) {
 			buildCtx->status = VmpFlowBuildContext::FINISH_MATCH;
 			return true;
 		}
 		flow.visited.insert(vmInst->addr);
 		curBlock = flow.createNewBlock(vmInst->addr, true);
-		if (buildCtx->btype == VmpFlowBuildContext::HANDLE_VMP_JMP) {
-			flow.linkBlockEdge(buildCtx->from_addr, vmInst->addr);
-		}
 	}
 	curBlock->insList.push_back(std::move(inst));
 
 	if (vmInst->opType == VM_JMP) {
 		executeVmJmp(nodeInput, (VmpOpJmp*)vmInst);
+		buildCtx->vmreg.ClearStatus();
+	}
+	else if (vmInst->opType == VM_JMP_CONST) {
+		executeVmJmpConst(nodeInput, (VmpOpJmpConst*)vmInst);
 	}
 	else if (vmInst->opType == VM_EXIT) {
 		executeVmExit(nodeInput, vmInst);

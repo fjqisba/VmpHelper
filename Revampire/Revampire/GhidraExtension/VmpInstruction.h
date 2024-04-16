@@ -209,6 +209,18 @@ public:
 	bool isBuildJmp = false;
 };
 
+class VmpOpJmpConst :public VmpInstruction
+{
+public:
+	VmpOpJmpConst() { opType = VM_JMP_CONST; };
+	~VmpOpJmpConst() {};
+	void PrintRaw(std::ostream& ss) override;
+	int BuildInstruction(ghidra::Funcdata& data) override;
+public:
+	size_t targetAddr = 0x0;
+	bool isBuildJmp = false;
+};
+
 class VmpOpReadMem :public VmpInstruction
 {
 public:
@@ -246,13 +258,13 @@ public:
 	void PrintRaw(std::ostream& ss) override;
 };
 
-//mov eax, dword ptr ds:[vmstack + 4]
-//mov edx, dword ptr ds:[vmstack]
+//mov eax, dword ptr ds:[VSP + 4]
+//mov edx, dword ptr ds:[VSP]
 //imul edx
-//mov dword ptr ds:[vmstack+0x4], edx
-//mov dword ptr ds:[vmstack+0x8], eax
+//mov dword ptr ds:[VSP+0x4], edx
+//mov dword ptr ds:[VSP+0x8], eax
 //pushfd
-//pop dword ptr ds:[vmstack]
+//pop dword ptr ds:[VSP]
 
 class VmpOpImul :public VmpInstruction
 {

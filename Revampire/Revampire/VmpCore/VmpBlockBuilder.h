@@ -14,6 +14,7 @@ class VmpNode;
 class VmpBasicBlock;
 class VmpTraceFlowGraph;
 class VmpOpJmp;
+class VmpOpJmpConst;
 
 class VmpBlockWalker
 {
@@ -66,6 +67,7 @@ private:
 	//执行每条op指令
 	bool executeVmpOp(VmpNode& nodeInput, std::unique_ptr<VmpInstruction> inst);
 	bool executeVmJmp(VmpNode& nodeInput, VmpOpJmp* inst);
+	bool executeVmJmpConst(VmpNode& nodeInput, VmpOpJmpConst* inst);
 	bool executeVmExit(VmpNode& nodeInput, VmpInstruction* inst);
 private:
 	VmpControlFlowBuilder& flow;

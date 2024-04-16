@@ -220,6 +220,15 @@ std::unique_ptr<VmpUnicornContext> VmpUnicornContext::DefaultContext()
     return retContext;
 }
 
+void VmpUnicornContext::ChangeVmJmpVal(const std::string& reg_stack, size_t newVal)
+{
+    size_t vmStack = context.ReadReg(reg_stack);
+    int stackOffset = vmStack - stackCodeBase;
+	if (stackOffset >= 0 && stackOffset < 0x10000) {
+		*(unsigned int*)&stackBuffer[stackOffset] = newVal;
+	}
+}
+
 size_t VmpUnicornContext::DefaultEsp()
 {
     const unsigned int magicEsp = 0x1A000;

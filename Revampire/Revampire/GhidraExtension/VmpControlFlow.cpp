@@ -277,6 +277,13 @@ void VmpControlFlowBuilder::buildJmps()
 					vOpJmp->branchList.push_back(eOutBlock->blockEntry.vmdata);
 				}
 			}
+			else if (vmIns->opType == VM_JMP_CONST) {
+				VmpOpJmpConst* vOpJmpConst = (VmpOpJmpConst*)vmIns;
+				if (basicBlock->outBlocks.size() == 1) {
+					vOpJmpConst->isBuildJmp = true;
+					vOpJmpConst->targetAddr = basicBlock->outBlocks[0]->blockEntry.vmdata;
+				}
+			}
 			else if (vmIns->opType == VM_EXIT) {
 				VmpOpExit* vOpExit = (VmpOpExit*)vmIns;
 				if (basicBlock->outBlocks.size() != 0) {
