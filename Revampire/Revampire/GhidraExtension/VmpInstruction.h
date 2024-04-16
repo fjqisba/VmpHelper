@@ -95,6 +95,7 @@ public:
 public:
 	//ÍË³öµÄ¼Ä´æÆ÷
 	std::vector<ghidra::VarnodeData> exitContext;
+	size_t exitAddress = 0x0;
 };
 
 class VmpOpPopReg :public VmpInstruction

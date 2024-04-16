@@ -5352,7 +5352,7 @@ void ActionDatabase::buildVmpHandlerAction(Architecture* conf)
     act = new ActionRestartGroup(Action::rule_onceperfunc, "vmphandler", 1);
     registerAction("vmphandler", act);
 
-    act->addAction(new ActionStart("base"));
+    act->addAction(new ActionVmpStart("base"));
     act->addAction(new ActionConstbase("base"));
     act->addAction(new ActionDefaultParams("base"));
     {
@@ -5608,7 +5608,7 @@ void ActionDatabase::universalAction(Architecture *conf)
     act = new ActionRestartGroup(Action::rule_onceperfunc, "universal", 1);
     registerAction(universalname, act);
 
-    act->addAction(new ActionStart("base"));
+    act->addAction(new ActionVmpStart("base"));
     act->addAction(new ActionConstbase("base"));
     act->addAction(new ActionNormalizeSetup("normalanalysis"));
     act->addAction(new ActionDefaultParams("base"));

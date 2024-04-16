@@ -260,6 +260,9 @@ void ghidra::Funcdata::startVmpProcessing(void)
     else if (vm_basicblock) {
         followVmpBasicBlock(vm_basicblock);
     }
+	else if (vm_func) {
+        followVmpFunction(vm_func);
+	}
     else {
         followFlow(baddr, eaddr);
     }

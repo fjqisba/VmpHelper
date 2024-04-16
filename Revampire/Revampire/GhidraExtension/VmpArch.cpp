@@ -98,7 +98,7 @@ ghidra::Funcdata* VmpArchitecture::AnaVmpFunction(VmpFunction* func)
 	ghidra::Address startAddr(getDefaultCodeSpace(), func->startAddr);
 	ghidra::Funcdata* fd = symboltab->getGlobalScope()->findFunction(startAddr);
 	if (!fd) {
-		fd = symboltab->getGlobalScope()->addFunction(startAddr, "")->getFunction();
+		fd = symboltab->getGlobalScope()->addFunction(startAddr, std::to_string(func->startAddr))->getFunction();
 	}
 	clearAnalysis(fd);
 	fd->clearExtensionData();

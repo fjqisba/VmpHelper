@@ -243,6 +243,11 @@ int VmpOpExit::BuildInstruction(ghidra::Funcdata& data)
 		data.opSetInput(opAdd, data.newVarnode(regESP.size, regESP.space, regESP.offset), 0);
 		data.opSetInput(opAdd, data.newConstant(4, 0x4), 1);
 	}
+	if (exitAddress) {
+		ghidra::PcodeOp* opBranch = data.newOp(1, pc);
+		data.opSetOpcode(opBranch, ghidra::CPUI_BRANCH);
+		data.opSetInput(opBranch, data.newVarnode(0x1, data.getArch()->getSpaceByName("ram"), exitAddress), 0);
+	}
 	return exitContext.size();
 }
 

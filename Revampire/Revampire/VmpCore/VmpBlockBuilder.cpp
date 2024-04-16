@@ -358,7 +358,6 @@ bool VmpBlockBuilder::executeVmJmp(VmpNode& nodeInput, VmpOpJmp* inst)
 		if (vmCall) {
 			//To do...	
 		}
-		inst->branchList = branchList;
 		unicornEngine.StartVmpTrace(*buildCtx->ctx, walker.CurrentIndex()+ nodeInput.addrList.size() + 1);
 		auto nextContext = unicornEngine.CopyCurrentUnicornContext();
 		auto newBuildTask = std::make_unique<VmpFlowBuildContext>();
