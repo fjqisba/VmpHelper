@@ -73,15 +73,7 @@ public:
 	void PrintRaw(std::ostream& ss) override;
 };
 
-class VmpOpExitCall : public VmpInstruction
-{
-public:
-	VmpOpExitCall() { opType = VM_EXIT_CALL; };
-	~VmpOpExitCall() {};
-	void PrintRaw(std::ostream& ss) override;
-public:
-	size_t callAddr;
-};
+
 
 class VmpOpInit :public VmpInstruction
 {
@@ -105,6 +97,18 @@ public:
 public:
 	//ÍË³öµÄ¼Ä´æÆ÷
 	std::vector<ghidra::VarnodeData> exitContext;
+	size_t exitAddress = 0x0;
+};
+
+class VmpOpExitCall : public VmpInstruction
+{
+public:
+	VmpOpExitCall() { opType = VM_EXIT_CALL; };
+	~VmpOpExitCall() {};
+	void PrintRaw(std::ostream& ss) override;
+	int BuildInstruction(ghidra::Funcdata& data) override;
+public:
+	size_t callAddr = 0x0;
 	size_t exitAddress = 0x0;
 };
 

@@ -292,6 +292,12 @@ void VmpControlFlowBuilder::buildFinalFunction()
 					vOpExit->exitAddress = basicBlock->outBlocks[0]->blockEntry.raw;
 				}
 			}
+			else if (vmIns->opType == VM_EXIT_CALL) {
+				VmpOpExitCall* vOpExitCall = (VmpOpExitCall*)vmIns;
+				if (basicBlock->outBlocks.size() != 0) {
+					vOpExitCall->exitAddress = basicBlock->outBlocks[0]->blockEntry.raw;
+				}
+			}
 		}
 		else {
 			RawInstruction* rawIns = (RawInstruction*)(endIns);

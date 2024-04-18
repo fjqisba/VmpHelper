@@ -1,6 +1,10 @@
 #include "VmpInstruction.h"
 #include "../GhidraExtension/FuncBuildHelper.h"
 
+#ifdef DeveloperMode
+#pragma optimize("", off) 
+#endif
+
 int VmpInstruction::BuildInstruction(ghidra::Funcdata& data)
 {
 	return 0x0;
@@ -231,6 +235,9 @@ int VmpOpExit::BuildInstruction(ghidra::Funcdata& data)
 	auto regESP = data.getArch()->translate->getRegister("ESP");
 	ghidra::Address pc = ghidra::Address(data.getArch()->getDefaultCodeSpace(), addr.vmdata);
 	for (unsigned int n = 0; n < exitContext.size(); ++n) {
+		if (exitContext[n] == regESP) {
+			continue;
+		}
 		ghidra::PcodeOp* opLoad = data.newOp(2, pc);
 		data.opSetOpcode(opLoad, ghidra::CPUI_LOAD);
 		data.newVarnodeOut(exitContext[n].size, exitContext[n].getAddr(), opLoad);
@@ -248,7 +255,7 @@ int VmpOpExit::BuildInstruction(ghidra::Funcdata& data)
 		data.opSetOpcode(opBranch, ghidra::CPUI_BRANCH);
 		data.opSetInput(opBranch, data.newVarnode(0x1, data.getArch()->getSpaceByName("ram"), exitAddress), 0);
 	}
-	return exitContext.size();
+	return 0x1;
 }
 
 //vReadMem4
@@ -899,3 +906,30 @@ int VmpOpJmpConst::BuildInstruction(ghidra::Funcdata& data)
 	data.opSetInput(opBranch, data.newVarnode(0x1, data.getArch()->getSpaceByName("ram"), targetAddr), 0);
 	return 0x1;
 }
+
+int VmpOpExitCall::BuildInstruction(ghidra::Funcdata& data)
+{
+	ghidra::Address pc = ghidra::Address(data.getArch()->getDefaultCodeSpace(), addr.vmdata);
+	auto regESP = data.getArch()->translate->getRegister("ESP");
+
+	//弹出压入的返回值,esp = esp + 0x4
+	ghidra::PcodeOp* opAdd = data.newOp(2, pc);
+	data.opSetOpcode(opAdd, ghidra::CPUI_INT_ADD);
+	data.newVarnodeOut(regESP.size, regESP.getAddr(), opAdd);
+	data.opSetInput(opAdd, data.newVarnode(regESP.size, regESP.space, regESP.offset), 0);
+	data.opSetInput(opAdd, data.newConstant(4, 0x4), 1);
+
+	ghidra::PcodeOp* opCall = data.newOp(1, pc);
+	data.opSetOpcode(opCall, ghidra::CPUI_CALL);
+	data.opSetInput(opCall, data.newVarnode(0x1, data.getArch()->getSpaceByName("ram"), callAddr), 0);
+	if (exitAddress) {
+		ghidra::PcodeOp* opBranch = data.newOp(1, pc);
+		data.opSetOpcode(opBranch, ghidra::CPUI_BRANCH);
+		data.opSetInput(opBranch, data.newVarnode(0x1, data.getArch()->getSpaceByName("ram"), exitAddress), 0);
+	}
+	return 0x1;
+}
+
+#ifdef DeveloperMode
+#pragma optimize("", on) 
+#endif
