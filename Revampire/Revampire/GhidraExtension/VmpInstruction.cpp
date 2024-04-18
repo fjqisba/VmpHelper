@@ -113,6 +113,16 @@ void VmpOpJmpConst::PrintRaw(std::ostream& ss)
 	ss << "\n";
 }
 
+void VmpOpExitCall::PrintRaw(std::ostream& ss)
+{
+	printAddress(ss);
+	ss << "\t";
+	colorString(ss, SCOLOR_INSN, [this, &ss]() {
+		ss << "vExitCall" << " 0x" << std::hex << callAddr;
+	});
+	ss << "\n";
+}
+
 void VmpOpWriteVSP::PrintRaw(std::ostream& ss)
 {
 	printAddress(ss);

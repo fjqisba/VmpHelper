@@ -24,7 +24,7 @@ enum VmpOpType
 	VM_PUSH_VSP,
 	VM_WRITE_VSP,
 	VM_IMUL,
-
+	VM_EXIT_CALL,
 	USER_CONNECT,
 };
 
@@ -71,6 +71,16 @@ public:
 	VmpOpUnknown() { opType = VM_UNKNOWN; };
 	~VmpOpUnknown() {};
 	void PrintRaw(std::ostream& ss) override;
+};
+
+class VmpOpExitCall : public VmpInstruction
+{
+public:
+	VmpOpExitCall() { opType = VM_EXIT_CALL; };
+	~VmpOpExitCall() {};
+	void PrintRaw(std::ostream& ss) override;
+public:
+	size_t callAddr;
 };
 
 class VmpOpInit :public VmpInstruction

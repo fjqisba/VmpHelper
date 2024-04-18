@@ -59,10 +59,11 @@ private:
 class SleighBase : public Translate {
   static const int4 SLA_FORMAT_VERSION;	///< Current version of the .sla file read/written by SleighBash
   vector<string> userop;		///< Names of user-define p-code ops for \b this Translate object
-  map<VarnodeData,string> varnode_xref;	///< A map from Varnodes in the \e register space to register names
+public:
+	map<VarnodeData, string> varnode_xref;	///< A map from Varnodes in the \e register space to register names
+	SymbolTable symtab;		///< The SLEIGH symbol table
 protected:
   SubtableSymbol *root;		///< The root SLEIGH decoding symbol
-  SymbolTable symtab;		///< The SLEIGH symbol table
   uint4 maxdelayslotbytes;	///< Maximum number of bytes in a delay-slot directive
   uint4 unique_allocatemask;	///< Bits that are guaranteed to be zero in the unique allocation scheme
   uint4 numSections;		///< Number of \e named sections

@@ -30,6 +30,21 @@ public:
 	bool isSelected = false;
 };
 
+struct VmpSaveRegContext
+{
+	void eraseSaveReg(int key) { contextMap.erase(key); };
+	void updateSaveReg(int key, const std::string& regName) { contextMap[key] = regName; };
+	void copySaveReg(int dstKey, int srcKey) {
+		auto it = contextMap.find(srcKey);
+		if (it != contextMap.end()) {
+			contextMap[dstKey] = it->second;
+		}
+	};
+	//如果key大于0 则表示 R0-R15 -> eax,ebx...eflags寄存器
+	//如果key小于0 则表示 stack -> eax,ebx... eflags寄存器
+	std::map<int, std::string> contextMap;
+};
+
 class VmpFlowBuildContext
 {
 public:
@@ -61,6 +76,8 @@ public:
 	VmAddress from_addr;
 	//模拟状态
 	VM_MATCH_STATUS status;
+	//存储上下文
+	VmpSaveRegContext save_reg_context;
 };
 
 class VmpControlFlowBuilder
@@ -72,7 +89,7 @@ public:
 	bool BuildCFG(size_t startAddr);
 protected:
 	VmpBasicBlock* createNewBlock(VmAddress startAddr,bool isVmBlock);
-	void addVmpEntryBuildTask(VmAddress startAddr);
+	void addVmpEntryBuildTask(VmAddress fromAddr,VmAddress vmEntryAddr);
 	void addNormalBuildTask(VmAddress startAddr);
 private:
 	VmpArchitecture* Arch();
@@ -80,7 +97,7 @@ private:
 	void fallthruNormal(VmpFlowBuildContext& task);
 	void linkBlockEdge(VmAddress from, VmAddress to);
 	void buildEdges();
-	void buildJmps();
+	void buildFinalFunction();
 public:
 	VmpTraceFlowGraph tfg;
 protected:

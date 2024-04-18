@@ -18,7 +18,30 @@ VmpArchitecture::VmpArchitecture() :ghidra::SleighArchitecture("", "", 0x0)
     if (!initVmpArchitecture()) {
         throw Exception("InitVmpArchitecture error.");
     }
+	ghidra::Sleigh* sleigh = (ghidra::Sleigh*)translate;
+
     gArch = this;
+    if (arch_type == ARCH_X86) {
+		for (unsigned int n = 0; n < 16; n++) {
+			std::string vmRegName = "R" + std::to_string(n);
+			ghidra::VarnodeData tmpVarnode;
+			tmpVarnode.space = sleigh->getSpaceByName("register");
+			tmpVarnode.offset = 0x10000 + (n * 4);
+			tmpVarnode.size = 0x4;
+			sleigh->varnode_xref[tmpVarnode] = vmRegName;
+
+			ghidra::VarnodeSymbol* symbol = new ghidra::VarnodeSymbol(vmRegName, tmpVarnode.space, tmpVarnode.offset, 0x4);
+			sleigh->symtab.getGlobalScope()->addSymbol(symbol);
+
+			//µÍ1Î»
+			symbol = new ghidra::VarnodeSymbol(vmRegName + "b", tmpVarnode.space, tmpVarnode.offset, 0x1);
+			sleigh->symtab.getGlobalScope()->addSymbol(symbol);
+
+			//µÍ2Î»
+			symbol = new ghidra::VarnodeSymbol(vmRegName + "w", tmpVarnode.space, tmpVarnode.offset, 0x2);
+			sleigh->symtab.getGlobalScope()->addSymbol(symbol);
+		}
+    }
 }
 
 VmpArchitecture::~VmpArchitecture()
@@ -144,7 +167,7 @@ ghidra::Funcdata* VmpArchitecture::AnaVmpBasicBlock(VmpBasicBlock* basicBlock)
 ghidra::Funcdata* VmpArchitecture::AnaVmpHandler(VmpNode* nodeInput)
 {
     //²âÊÔ´úÂë
-    if (nodeInput->addrList[0] == 0x4933e6) {
+    if (nodeInput->addrList[0] == 0x004b861f) {
         int a = 0;
     }
     ghidra::Address startAddr(getDefaultCodeSpace(), 0x0);

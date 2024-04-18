@@ -64,11 +64,15 @@ private:
 	bool tryMatch_vWriteVsp(ghidra::Funcdata* fd, VmpNode& nodeInput);
 	bool tryMatch_vJmpConst(ghidra::Funcdata* fd, VmpNode& nodeInput);
 private:
+	bool updateVmRegOffset(ghidra::Funcdata* fd);
 	//执行每条op指令
 	bool executeVmpOp(VmpNode& nodeInput, std::unique_ptr<VmpInstruction> inst);
 	bool executeVmJmp(VmpNode& nodeInput, VmpOpJmp* inst);
 	bool executeVmJmpConst(VmpNode& nodeInput, VmpOpJmpConst* inst);
 	bool executeVmExit(VmpNode& nodeInput, VmpInstruction* inst);
+	void updateSaveRegContext(ghidra::Funcdata* fd);
+public:
+	static int vmRegStartAddr;
 private:
 	VmpControlFlowBuilder& flow;
 	VmpBasicBlock* curBlock;

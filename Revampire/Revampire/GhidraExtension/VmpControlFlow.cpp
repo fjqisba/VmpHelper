@@ -168,11 +168,12 @@ void VmpControlFlowBuilder::fallthruNormal(VmpFlowBuildContext& task)
 	VmpBasicBlock* curBasicBlock = nullptr;
 	while (true) {
 		if (IDAWrapper::isVmpEntry(curAddr)) {
+			size_t fromAddr = 0x0;
 			if (curBasicBlock != nullptr) {
 				RawInstruction* rawIns = static_cast<RawInstruction*>(curBasicBlock->insList.back().get());
-				linkBlockEdge(rawIns->raw->address,curAddr);
+				fromAddr = rawIns->raw->address;
 			}
-			addVmpEntryBuildTask(curAddr);
+			addVmpEntryBuildTask(fromAddr, curAddr);
 			return;
 		}
 		if (curBasicBlock == nullptr) {
@@ -199,11 +200,12 @@ void VmpControlFlowBuilder::fallthruNormal(VmpFlowBuildContext& task)
 	}
 }
 
-void VmpControlFlowBuilder::addVmpEntryBuildTask(VmAddress startAddr)
+void VmpControlFlowBuilder::addVmpEntryBuildTask(VmAddress fromAddr, VmAddress vmEntryAddr)
 {
 	auto newTask = std::make_unique<VmpFlowBuildContext>();
 	newTask->btype = VmpFlowBuildContext::HANDLE_VMP_ENTRY;
-	newTask->start_addr = startAddr;
+	newTask->start_addr = vmEntryAddr;
+	newTask->from_addr = fromAddr;
 	anaQueue.push(std::move(newTask));
 }
 
@@ -244,7 +246,7 @@ bool VmpControlFlowBuilder::BuildCFG(size_t startAddr)
 		}
 	}
 	buildEdges();
-	buildJmps();
+	buildFinalFunction();
 	return true;
 }
 
@@ -260,7 +262,7 @@ bool IsConnectedInstruction(cs_insn* ins)
 	return false;
 }
 
-void VmpControlFlowBuilder::buildJmps()
+void VmpControlFlowBuilder::buildFinalFunction()
 {
 	for (auto& eBlock : data.cfg.blocksMap) {
 		VmpBasicBlock* basicBlock = &eBlock.second;
