@@ -16,6 +16,7 @@ enum VmpOpType
 	VM_NOR,
 	VM_NAND,
 	VM_SHR,
+	VM_SHRD,
 	VM_SHL,
 	VM_JMP,
 	VM_JMP_CONST,
@@ -24,6 +25,7 @@ enum VmpOpType
 	VM_PUSH_VSP,
 	VM_WRITE_VSP,
 	VM_IMUL,
+	VM_CPUID,
 	VM_EXIT_CALL,
 	USER_CONNECT,
 };
@@ -73,7 +75,14 @@ public:
 	void PrintRaw(std::ostream& ss) override;
 };
 
-
+class VmpOpCpuid :public VmpInstruction
+{
+public:
+	VmpOpCpuid() { opType = VM_CPUID; };
+	~VmpOpCpuid() {};
+	void PrintRaw(std::ostream& ss) override;
+	int BuildInstruction(ghidra::Funcdata& data) override;
+};
 
 class VmpOpInit :public VmpInstruction
 {
@@ -194,6 +203,15 @@ private:
 	int BuildShr1(ghidra::Funcdata& data);
 	int BuildShr2(ghidra::Funcdata& data);
 	int BuildShr4(ghidra::Funcdata& data);
+};
+
+class VmpOpShrd : public VmpInstruction
+{
+public:
+	VmpOpShrd() { opType = VM_SHRD; };
+	~VmpOpShrd() {};
+	int BuildInstruction(ghidra::Funcdata& data) override;
+	void PrintRaw(std::ostream& ss) override;
 };
 
 class VmpOpShl : public VmpInstruction

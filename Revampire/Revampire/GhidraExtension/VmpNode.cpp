@@ -417,8 +417,10 @@ ghidra::int4 ghidra::Action::debugApply(Funcdata& data)
     logFilePath = logFilePath + std::to_string(data.actIdx++) + "_" + this->getGroup() + "_" + this->getName() + ".txt";
     std::fstream outFile;
     outFile.open(logFilePath, std::ios::out | std::ios::trunc);
-    outFile << rawResult;
-    outFile.close();
+    if (outFile.is_open()) {
+		outFile << rawResult;
+		outFile.close();
+    }
 #endif
     return ret;
 }

@@ -51,9 +51,11 @@ private:
 	bool Execute_FINISH_VM_INIT();
 
 	bool tryMatch_vPopReg(ghidra::Funcdata* fd, VmpNode& nodeInput);
+	bool tryMatch_vCpuid(ghidra::Funcdata* fd, VmpNode& nodeInput);
 	bool tryMatch_vPushImm(ghidra::Funcdata* fd, VmpNode& nodeInput);
 	bool tryMatch_vPushReg(ghidra::Funcdata* fd, VmpNode& nodeInput);
 	bool tryMatch_vLogicalOp(ghidra::Funcdata* fd, VmpNode& nodeInput);
+	bool tryMatch_vShrd(ghidra::Funcdata* fd, VmpNode& nodeInput);
 	bool tryMatch_vMemAccess(ghidra::Funcdata* fd, VmpNode& nodeInput);
 	bool tryMatch_vCheckEsp(ghidra::Funcdata* fd, VmpNode& nodeInput);
 	bool tryMatch_vJunkCode(ghidra::Funcdata* fd, VmpNode& nodeInput);

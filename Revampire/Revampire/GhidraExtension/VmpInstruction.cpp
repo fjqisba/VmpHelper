@@ -216,3 +216,19 @@ void VmpOpReadMem::PrintRaw(std::ostream& ss)
 		});
 	ss << "\n";
 }
+
+void VmpOpCpuid::PrintRaw(std::ostream& ss)
+{
+	printAddress(ss);
+	ss << "\t";
+	colorString(ss, "vCpuid", SCOLOR_INSN);
+	ss << "\n";
+}
+
+void VmpOpShrd::PrintRaw(std::ostream& ss)
+{
+	printAddress(ss);
+	ss << "\t";
+	colorString(ss, "vShrd", SCOLOR_INSN);
+	ss << "\n";
+}

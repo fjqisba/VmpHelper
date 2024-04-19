@@ -1,6 +1,7 @@
 #include "VmpInstruction.h"
 #include "../GhidraExtension/FuncBuildHelper.h"
 
+
 #ifdef DeveloperMode
 #pragma optimize("", off) 
 #endif
@@ -574,6 +575,15 @@ int VmpOpShr::BuildShr4(ghidra::Funcdata& data)
 	return 0x1;
 }
 
+//vShr1
+//movzx ax, byte ptr ds:[VSP]
+//mov cl, byte ptr ds:[VSP+0x2]
+//VSP = VSP - 0x2
+//shr al, cl
+//mov word ptr ds:[VSP+0x4], ax
+//pushfd
+//pop dword ptr ds:[esi]
+
 int VmpOpShr::BuildInstruction(ghidra::Funcdata& data)
 {
 	if (opSize == 0x4) {
@@ -930,6 +940,62 @@ int VmpOpExitCall::BuildInstruction(ghidra::Funcdata& data)
 	return 0x1;
 }
 
+
+//vCpuid
+//mov eax, dword ptr ds:[VSP]
+//cpuid
+//VSP = VSP - 0xC
+//mov dword ptr ds:[VSP+0xC], eax
+//mov dword ptr ds:[VSP+0x8], ebx
+//mov dword ptr ds:[VSP+0x4], ecx
+//mov dword ptr ds:[VSP], edx
+
+
+int VmpOpCpuid::BuildInstruction(ghidra::Funcdata& data)
+{
+	auto regEIP = data.getArch()->translate->getRegister("EIP");
+	auto regESP = data.getArch()->translate->getRegister("ESP");
+
+	ghidra::Address pc = ghidra::Address(data.getArch()->getDefaultCodeSpace(), addr.vmdata);
+
+	//To do...
+
+	//esp = esp - 0xC
+	ghidra::PcodeOp* opSub = data.newOp(2, pc);
+	data.opSetOpcode(opSub, ghidra::CPUI_INT_ADD);
+	data.newVarnodeOut(regESP.size, regESP.getAddr(), opSub);
+	data.opSetInput(opSub, data.newVarnode(regESP.size, regESP.space, regESP.offset), 0);
+	data.opSetInput(opSub, data.newConstant(4, 0xC), 1);
+
+	return 0x1;
+}
+
+//vShrd
+//mov eax, dword ptr ds:[VSP]
+//mov edx, dword ptr ds:[VSP+0x4]
+//mov cl, byte ptr ds:[VSP+0x8]
+//VSP = VSP + 0x2
+//shrd eax, edx, cl
+//mov dword ptr ds:[VSP+0x4], eax
+
+int VmpOpShrd::BuildInstruction(ghidra::Funcdata& data)
+{
+	auto regEIP = data.getArch()->translate->getRegister("EIP");
+	auto regESP = data.getArch()->translate->getRegister("ESP");
+	ghidra::Address pc = ghidra::Address(data.getArch()->getDefaultCodeSpace(), addr.vmdata);
+
+	//To do...
+	//esp = esp + 0x2
+	ghidra::PcodeOp* opAdd = data.newOp(2, pc);
+	data.opSetOpcode(opAdd, ghidra::CPUI_INT_ADD);
+	data.newVarnodeOut(regESP.size, regESP.getAddr(), opAdd);
+	data.opSetInput(opAdd, data.newVarnode(regESP.size, regESP.space, regESP.offset), 0);
+	data.opSetInput(opAdd, data.newConstant(4, 0x2), 1);
+
+	return 0x1;
+}
+
 #ifdef DeveloperMode
 #pragma optimize("", on) 
 #endif
+

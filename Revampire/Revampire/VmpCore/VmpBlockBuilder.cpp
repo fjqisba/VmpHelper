@@ -547,17 +547,17 @@ void VmpBlockBuilder::updateSaveRegContext(ghidra::Funcdata* fd)
 bool VmpBlockBuilder::executeVmJmp(VmpNode& nodeInput, VmpOpJmp* inst)
 {
 	VmpUnicorn unicornEngine;
+	GhidraHelper::VmpBranchExtractor branchExt;
+
 	ghidra::Funcdata* fd = flow.Arch()->AnaVmpBasicBlock(curBlock);
 	updateSaveRegContext(fd);
-
-	GhidraHelper::VmpBranchExtractor branchExt;
 	std::vector<size_t> branchList = branchExt.ExtractVmAllBranch(fd);
 	if (branchList.size() == 1) {
-		size_t vmCall = tryGetVmCallExitAddress(fd, 0x28);
+		//size_t vmCall = tryGetVmCallExitAddress(fd, 0x28);
 		//判断vJmp是不是vmCall
-		if (vmCall) {
+		//if (vmCall) {
 			//To do...	
-		}
+		//}
 		unicornEngine.StartVmpTrace(*buildCtx->ctx, walker.CurrentIndex()+ nodeInput.addrList.size() + 1);
 		auto nextContext = unicornEngine.CopyCurrentUnicornContext();
 		auto newBuildTask = std::make_unique<VmpFlowBuildContext>();
@@ -746,6 +746,44 @@ bool VmpBlockBuilder::tryMatch_vMemAccess(ghidra::Funcdata* fd, VmpNode& nodeInp
 	return true;
 }
 
+bool VmpBlockBuilder::tryMatch_vShrd(ghidra::Funcdata* fd, VmpNode& nodeInput)
+{
+	size_t storeCount = fd->obank.storelist.size();
+	size_t loadCount = fd->obank.loadlist.size();
+	if (storeCount != 2 || loadCount != 4) {
+		return false;
+	}
+	auto itStore = fd->obank.storelist.begin();
+	auto itLoad = fd->obank.loadlist.begin();
+	ghidra::PcodeOp* storeOp1 = *itStore++;
+	ghidra::PcodeOp* storeOp2 = *itStore++;
+	ghidra::PcodeOp* loadOp1 = *itLoad++;
+	GhidraHelper::PcodeOpTracer opTracer(fd);
+	auto dstResult = opTracer.TraceInput(storeOp1->getAddr().getOffset(), storeOp1->getIn(1));
+	auto srcResult = opTracer.TraceInput(storeOp1->getAddr().getOffset(), storeOp1->getIn(2));
+	//dstResult来源于vmStack
+	if (dstResult.size() != 1 || dstResult[0].bAccessMem || dstResult[0].name != buildCtx->vmreg.reg_stack) {
+		return false;
+	}
+	//src全部来源于stack
+	for (unsigned int n = 0; n < srcResult.size(); ++n) {
+		if (srcResult[n].bAccessMem) {
+			if (srcResult[n].name == buildCtx->vmreg.reg_stack) {
+				continue;
+			}
+			return false;
+		}
+	}
+	auto asmData = DisasmManager::Main().DecodeInstruction(storeOp1->getIn(2)->getDef()->getAddr().getOffset());
+	if (asmData->raw->id == X86_INS_SHRD) {
+		std::unique_ptr<VmpOpShrd> vOpShrd = std::make_unique<VmpOpShrd>();
+		vOpShrd->addr = nodeInput.readVmAddress(buildCtx->vmreg.reg_code);
+		executeVmpOp(nodeInput, std::move(vOpShrd));
+		return true;
+	}
+	return false;
+}
+
 bool VmpBlockBuilder::tryMatch_vLogicalOp(ghidra::Funcdata* fd, VmpNode& nodeInput)
 {
 	size_t storeCount = fd->obank.storelist.size();
@@ -776,10 +814,10 @@ bool VmpBlockBuilder::tryMatch_vLogicalOp(ghidra::Funcdata* fd, VmpNode& nodeInp
 	}
 	//src全部来源于stack
 	for (unsigned int n = 0; n < srcResult.size(); ++n) {
-		if (!srcResult[n].bAccessMem) {
-			return false;
-		}
-		if (srcResult[n].name != buildCtx->vmreg.reg_stack) {
+		if (srcResult[n].bAccessMem) {
+			if (srcResult[n].name == buildCtx->vmreg.reg_stack) {
+				continue;
+			}
 			return false;
 		}
 	}
@@ -857,6 +895,31 @@ bool VmpBlockBuilder::tryMatch_vCheckEsp(ghidra::Funcdata* fd, VmpNode& nodeInpu
 		}
 	}
 	return false;
+}
+
+bool VmpBlockBuilder::tryMatch_vCpuid(ghidra::Funcdata* fd, VmpNode& nodeInput)
+{
+	size_t storeCount = fd->obank.storelist.size();
+	if (storeCount < 4) {
+		return false;
+	}
+	auto itStoreBegin = fd->obank.storelist.begin();
+	auto itStoreEnd = fd->obank.storelist.end();
+	while (itStoreBegin != itStoreEnd) {
+		ghidra::PcodeOp* curStore = *itStoreBegin++;
+		GhidraHelper::PcodeOpTracer opTracer(fd);
+		auto srcResult = opTracer.TraceInput(curStore->getAddr().getOffset(), curStore->getIn(2));
+		if (!srcResult.size()) {
+			return false;
+		}
+		if (srcResult[0].name.find("cpuid") == -1) {
+			return false;
+		}
+	}
+	std::unique_ptr<VmpOpCpuid> vOpCpuid = std::make_unique<VmpOpCpuid>();
+	vOpCpuid->addr = nodeInput.readVmAddress(buildCtx->vmreg.reg_code);
+	executeVmpOp(nodeInput, std::move(vOpCpuid));
+	return true;
 }
 
 bool VmpBlockBuilder::tryMatch_vPopReg(ghidra::Funcdata* fd, VmpNode& nodeInput)
@@ -953,6 +1016,12 @@ bool VmpBlockBuilder::Execute_FINISH_VM_INIT()
 		return true;
 	}
 	if (tryMatch_vLogicalOp(fd, nodeInput)) {
+		return true;
+	}
+	if (tryMatch_vShrd(fd, nodeInput)) {
+		return true;
+	}
+	if (tryMatch_vCpuid(fd, nodeInput)) {
 		return true;
 	}
 	if (tryMatch_Mul(fd, nodeInput)) {
