@@ -1,0 +1,55 @@
+[project]
+name = "Revampire"
+
+[fetch-content.capstone]
+git = "https://github.com/capstone-engine/capstone"
+tag = "5.0.1"
+
+[fetch-content.unicorn]
+git = "https://github.com/unicorn-engine/unicorn"
+tag = "2.0.1"
+
+[target.Revampire]
+type = "shared"
+sources = [
+	"Revampire/*.cpp", 
+	"Revampire/Ghidra/*.cc",
+	"Revampire/GhidraExtension/*.cpp",
+	"Revampire/Common/*.cpp",
+	"Revampire/Helper/*.cpp",
+	"Revampire/Manager/*.cpp",
+	"Revampire/VmpCore/*.cpp",
+]
+headers = [
+	"Revampire/*.h", 
+	"Revampire/Ghidra/*.h",
+	"Revampire/Ghidra/*.hh",
+	"Revampire/GhidraExtension/*.h",
+	"Revampire/Common/*.h",
+	"Revampire/Helper/*.h",
+	"Revampire/Manager/*.h",
+	"Revampire/VmpCore/*.h",
+]
+compile-definitions = ["_WINDOWS","_CRT_SECURE_NO_WARNINGS","USE_STANDARD_FILE_FUNCTIONS"]
+link-libraries = ["capstone::capstone" , "unicorn"]
+
+[options]
+CAPSTONE_BPF_SUPPORT = false
+CAPSTONE_EVM_SUPPORT = false
+CAPSTONE_MIPS_SUPPORT = false
+CAPSTONE_BUILD_STATIC_RUNTIME = true
+CAPSTONE_M680X_SUPPORT = false
+CAPSTONE_M68K_SUPPORT = false
+CAPSTONE_MOS65XX_SUPPORT = false
+CAPSTONE_PPC_SUPPORT = false
+CAPSTONE_RISCV_SUPPORT = false
+CAPSTONE_SH_SUPPORT = false
+CAPSTONE_SPARC_SUPPORT = false
+CAPSTONE_SYSZ_SUPPORT = false
+CAPSTONE_TMS320C64X_SUPPORT = false
+CAPSTONE_TRICORE_SUPPORT = false
+CAPSTONE_WASM_SUPPORT = false
+CAPSTONE_XCORE_SUPPORT = false
+
+
+

@@ -456,7 +456,6 @@ bool VmpBlockBuilder::executeVmJmpConst(VmpNode& nodeInput, VmpOpJmpConst* inst)
 	ghidra::Funcdata* fd = flow.Arch()->AnaVmpBasicBlock(curBlock);
 	updateSaveRegContext(fd);
 
-	
 	unicornEngine.StartVmpTrace(*buildCtx->ctx, walker.CurrentIndex() + nodeInput.addrList.size() + 1);
 	auto nextContext = unicornEngine.CopyCurrentUnicornContext();
 	auto newBuildTask = std::make_unique<VmpFlowBuildContext>();
