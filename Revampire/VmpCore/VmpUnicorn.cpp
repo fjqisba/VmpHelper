@@ -2,7 +2,7 @@
 #include <sstream>
 #include "../Manager/DisasmManager.h"
 #include "../Manager/SectionManager.h"
-#include "../Common/Utils/Public.h"
+#include "../Common/Public.h"
 
 VmpUnicorn::VmpUnicorn()
 {

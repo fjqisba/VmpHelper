@@ -1,5 +1,5 @@
 #include "IDAPlugin.h"
-#include "../Common/Utils/StringUtils.h"
+#include "./Common/StringUtils.h"
 #include "./VmpCore/VmpReEngine.h"
 #include "./Manager/VmpVersionManager.h"
 

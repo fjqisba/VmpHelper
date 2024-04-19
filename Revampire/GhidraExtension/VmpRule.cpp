@@ -1,7 +1,7 @@
 #include "VmpRule.h"
 #include "../Ghidra/funcdata.hh"
 #include "../Helper/IDAWrapper.h"
-#include "../Common/Utils/Public.h"
+#include "../Common/Public.h"
 
 using namespace ghidra;
 

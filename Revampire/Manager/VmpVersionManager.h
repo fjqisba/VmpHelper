@@ -1,5 +1,5 @@
 #pragma once
-#include "../Common/Utils/Public.h"
+#include "../Common/Public.h"
 
 //管理vmp的版本
 //对于目前来说，比起编写通用的去vmp化脚本,或许针对vmp的版本编写特定脚本会更好

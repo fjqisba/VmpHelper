@@ -51,7 +51,7 @@ if(POLICY CMP0135)
 	cmake_policy(SET CMP0135 NEW)
 endif()
 message(STATUS "Fetching capstone (5.0.1)...")
-FetchContent_Declare(capstone
+FetchContent_Declare(capstone SYSTEM
 	GIT_REPOSITORY
 		"https://github.com/capstone-engine/capstone"
 	GIT_TAG
@@ -60,7 +60,7 @@ FetchContent_Declare(capstone
 FetchContent_MakeAvailable(capstone)
 
 message(STATUS "Fetching unicorn (2.0.1)...")
-FetchContent_Declare(unicorn
+FetchContent_Declare(unicorn SYSTEM
 	GIT_REPOSITORY
 		"https://github.com/unicorn-engine/unicorn"
 	GIT_TAG
