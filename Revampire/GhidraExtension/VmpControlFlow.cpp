@@ -10,6 +10,10 @@
 #include "../VmpCore/VmpReEngine.h"
 #include "../VmpCore/VmpBlockBuilder.h"
 
+#ifdef DeveloperMode
+#pragma optimize("", off) 
+#endif
+
 VmpControlFlow::VmpControlFlow() :graph(this)
 {
 
@@ -85,11 +89,6 @@ ptrdiff_t __stdcall VmpControlFlowShowGraph::graph_callback(void* ud, int code, 
 	{
 		mutable_graph_t* g = va_arg(va, mutable_graph_t*);
 		showGraph->refresh_graph(g);
-		return true;
-	}
-	case grcode_user_gentext:
-	{
-		mutable_graph_t* g = va_arg(va, mutable_graph_t*);
 		showGraph->gen_graph_text(g);
 		return true;
 	}
@@ -339,3 +338,7 @@ void VmpControlFlowBuilder::buildEdges()
 		}
 	}
 }
+
+#ifdef DeveloperMode
+#pragma optimize("", on) 
+#endif
