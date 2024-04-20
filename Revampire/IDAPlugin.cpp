@@ -108,7 +108,6 @@ IDAPlugin::IDAPlugin() :gMenu_Revampire(this)
 
 IDAPlugin::~IDAPlugin()
 {
-    term_hexrays_plugin();
 	unhook_from_notification_point(HT_UI, PluginUI_Callback, this);
 }
 

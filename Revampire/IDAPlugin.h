@@ -1,5 +1,8 @@
 #pragma once
-#include <hexrays.hpp>
+
+#include <pro.h>
+#include <idp.hpp>
+#include <loader.hpp>
 
 class IDAPlugin;
 class MenuRevampire :public action_handler_t
