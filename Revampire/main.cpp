@@ -10,9 +10,6 @@ static plugmod_t* idaapi init()
     if (!is_idaq()) {
         return nullptr;
     }
-    if (!init_hexrays_plugin()) {
-        return nullptr;
-    }
     //only support x86 currently
     std::string procName = inf.procname;
     if (procName != "metapc") {
