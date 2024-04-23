@@ -9,6 +9,10 @@ tag = "5.0.1"
 git = "https://github.com/unicorn-engine/unicorn"
 tag = "2.0.1"
 
+[fetch-content.keystone]
+git = "https://github.com/keystone-engine/keystone"
+tag = "0.9.2"
+
 [target.Revampire]
 type = "shared"
 sources = [
@@ -31,7 +35,7 @@ headers = [
 	"Revampire/VmpCore/*.h",
 ]
 compile-definitions = ["_WINDOWS","_CRT_SECURE_NO_WARNINGS","USE_STANDARD_FILE_FUNCTIONS"]
-link-libraries = ["capstone::capstone" , "unicorn"]
+link-libraries = ["capstone::capstone" , "unicorn", "keystone"]
 
 [options]
 CAPSTONE_BPF_SUPPORT = false

@@ -2621,98 +2621,98 @@ void Heritage::buildInfoList(void)
 void Heritage::heritage(void)
 
 {
-  VarnodeLocSet::const_iterator iter,enditer;
-  HeritageInfo *info;
-  Varnode *vn;
-  bool needwarning;
-  Varnode *warnvn = (Varnode *)0;
-  int4 reprocessStackCount = 0;
-  AddrSpace *stackSpace = (AddrSpace *)0;
-  vector<PcodeOp *> freeStores;
-  PreferSplitManager splitmanage;
+	VarnodeLocSet::const_iterator iter, enditer;
+	HeritageInfo* info;
+	Varnode* vn;
+	bool needwarning;
+	Varnode* warnvn = (Varnode*)0;
+	int4 reprocessStackCount = 0;
+	AddrSpace* stackSpace = (AddrSpace*)0;
+	vector<PcodeOp*> freeStores;
+	PreferSplitManager splitmanage;
 
-  if (maxdepth == -1)		// Has a restructure been forced
-    buildADT();
+	if (maxdepth == -1)		// Has a restructure been forced
+		buildADT();
 
-  processJoins();
-  if (pass == 0) {
-    splitmanage.init(fd,&fd->getArch()->splitrecords);
-    splitmanage.split();
-  }
-  for(int4 i=0;i<infolist.size();++i) {
-    info = &infolist[i];
-    if (!info->isHeritaged()) continue;
-    if (pass < info->delay) continue; // It is too soon to heritage this space
-    if (info->hasCallPlaceholders)
-      clearStackPlaceholders(info);
-
-    if (!info->loadGuardSearch) {
-      info->loadGuardSearch = true;
-      if (discoverIndexedStackPointers(info->space,freeStores,true)) {
-	    reprocessStackCount += 1;
-	    stackSpace = info->space;
-      }
-    }
-    needwarning = false;
-    iter = fd->beginLoc(info->space);
-    enditer = fd->endLoc(info->space);
-
-    while(iter != enditer) {
-      vn = *iter++;
-      if ((!vn->isWritten())&&vn->hasNoDescend()&&(!vn->isUnaffected())&&(!vn->isInput()))
-	continue;
-      if (vn->isWriteMask()) continue;
-      int4 prev = 0;
-      LocationMap::iterator liter = globaldisjoint.add(vn->getAddr(),vn->getSize(),pass,prev);
-      if (prev == 0)		// All new location being heritaged, or intersecting with something new
-	disjoint.add((*liter).first,(*liter).second.size,pass,prev);
-      else if (prev==2) { // If completely contained in range from previous pass
-	if (vn->isHeritageKnown()) continue; // Don't heritage if we don't have to 
-	if (vn->hasNoDescend()) continue;
-	if ((!needwarning)&&(info->deadremoved>0)&&!fd->isJumptableRecoveryOn()) {
-	  needwarning = true;
-	  bumpDeadcodeDelay(vn->getSpace());
-	  warnvn = vn;
+	processJoins();
+	if (pass == 0) {
+		splitmanage.init(fd, &fd->getArch()->splitrecords);
+		splitmanage.split();
 	}
-	disjoint.add((*liter).first,(*liter).second.size,(*liter).second.pass,prev);
-      }
-      else {	// Partially contained in old range, but may contain new stuff
-	disjoint.add((*liter).first,(*liter).second.size,(*liter).second.pass,prev);
-	if ((!needwarning)&&(info->deadremoved>0)&&!fd->isJumptableRecoveryOn()) {
-	  // TODO: We should check if this varnode is tiled by previously heritaged ranges
-	  if (vn->isHeritageKnown()) continue;		// Assume that it is tiled and produced by merging
-		  // In most cases, a truly new overlapping read will hit the bumpDeadcodeDelay either here or in prev==2
-	  needwarning = true;
-	  bumpDeadcodeDelay(vn->getSpace());
-	  warnvn = vn;
-	}
-      }
-    }
+	for (int4 i = 0; i < infolist.size(); ++i) {
+		info = &infolist[i];
+		if (!info->isHeritaged()) continue;
+		if (pass < info->delay) continue; // It is too soon to heritage this space
+		if (info->hasCallPlaceholders)
+			clearStackPlaceholders(info);
 
-    if (needwarning) {
-      if (!info->warningissued) {
-	info->warningissued = true;
-	ostringstream errmsg;
-	errmsg << "Heritage AFTER dead removal. Example location: ";
-	warnvn->printRawNoMarkup(errmsg);
-	if (!warnvn->hasNoDescend()) {
-	  PcodeOp *warnop = *warnvn->beginDescend();
-	  errmsg << " : ";
-	  warnop->getAddr().printRaw(errmsg);
+		if (!info->loadGuardSearch) {
+			info->loadGuardSearch = true;
+			if (discoverIndexedStackPointers(info->space, freeStores, true)) {
+				reprocessStackCount += 1;
+				stackSpace = info->space;
+			}
+		}
+		needwarning = false;
+		iter = fd->beginLoc(info->space);
+		enditer = fd->endLoc(info->space);
+
+		while (iter != enditer) {
+			vn = *iter++;
+			if ((!vn->isWritten()) && vn->hasNoDescend() && (!vn->isUnaffected()) && (!vn->isInput()))
+				continue;
+			if (vn->isWriteMask()) continue;
+			int4 prev = 0;
+			LocationMap::iterator liter = globaldisjoint.add(vn->getAddr(), vn->getSize(), pass, prev);
+			if (prev == 0)		// All new location being heritaged, or intersecting with something new
+				disjoint.add((*liter).first, (*liter).second.size, pass, prev);
+			else if (prev == 2) { // If completely contained in range from previous pass
+				if (vn->isHeritageKnown()) continue; // Don't heritage if we don't have to 
+				if (vn->hasNoDescend()) continue;
+				if ((!needwarning) && (info->deadremoved > 0) && !fd->isJumptableRecoveryOn()) {
+					needwarning = true;
+					bumpDeadcodeDelay(vn->getSpace());
+					warnvn = vn;
+				}
+				disjoint.add((*liter).first, (*liter).second.size, (*liter).second.pass, prev);
+			}
+			else {	// Partially contained in old range, but may contain new stuff
+				disjoint.add((*liter).first, (*liter).second.size, (*liter).second.pass, prev);
+				if ((!needwarning) && (info->deadremoved > 0) && !fd->isJumptableRecoveryOn()) {
+					// TODO: We should check if this varnode is tiled by previously heritaged ranges
+					if (vn->isHeritageKnown()) continue;		// Assume that it is tiled and produced by merging
+					// In most cases, a truly new overlapping read will hit the bumpDeadcodeDelay either here or in prev==2
+					needwarning = true;
+					bumpDeadcodeDelay(vn->getSpace());
+					warnvn = vn;
+				}
+			}
+		}
+
+		if (needwarning) {
+			if (!info->warningissued) {
+				info->warningissued = true;
+				ostringstream errmsg;
+				errmsg << "Heritage AFTER dead removal. Example location: ";
+				warnvn->printRawNoMarkup(errmsg);
+				if (!warnvn->hasNoDescend()) {
+					PcodeOp* warnop = *warnvn->beginDescend();
+					errmsg << " : ";
+					warnop->getAddr().printRaw(errmsg);
+				}
+				fd->warningHeader(errmsg.str());
+			}
+		}
 	}
-	fd->warningHeader(errmsg.str());
-      }
-    }
-  }
-  placeMultiequals();
-  rename();
-  if (reprocessStackCount > 0)
-    reprocessFreeStores(stackSpace, freeStores);
-  analyzeNewLoadGuards();
-  handleNewLoadCopies();
-  if (pass == 0)
-    splitmanage.splitAdditional();
-  pass += 1;
+	placeMultiequals();
+	rename();
+	if (reprocessStackCount > 0)
+		reprocessFreeStores(stackSpace, freeStores);
+	analyzeNewLoadGuards();
+	handleNewLoadCopies();
+	if (pass == 0)
+		splitmanage.splitAdditional();
+	pass += 1;
 }
 
 /// \param op is the given PcodeOp

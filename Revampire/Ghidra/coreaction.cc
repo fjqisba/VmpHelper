@@ -5337,6 +5337,39 @@ void ActionDatabase::buildDefaultGroups(void)
   isDefaultGroups = true;
 }
 
+void ActionDatabase::buildVmpBlockAction(Architecture* conf)
+{
+	vector<Rule*>::iterator iter;
+	ActionGroup* act;
+	ActionPool* actprop, * actprop2;
+	ActionPool* actcleanup;
+	ActionGroup* actstackstall;
+	AddrSpace* stackspace = conf->getStackSpace();
+
+	act = new ActionRestartGroup(Action::rule_onceperfunc, "vmpblock", 1);
+	registerAction("vmpblock", act);
+
+	act->addAction(new ActionVmpStart("base"));
+	act->addAction(new ActionConstbase("base"));
+    act->addAction(new ActionUnreachable("base"));
+    act->addAction(new ActionVarnodeProps("base"));
+    act->addAction(new ActionHeritage("base"));
+	act->addAction(new ActionParamDouble("protorecovery"));
+	act->addAction(new ActionSegmentize("base"));
+	act->addAction(new ActionForceGoto("blockrecovery"));
+	act->addAction(new ActionDirectWrite("protorecovery_a", true));
+	act->addAction(new ActionDirectWrite("protorecovery_b", false));
+	act->addAction(new ActionActiveParam("protorecovery"));
+	act->addAction(new ActionReturnRecovery("protorecovery"));
+	act->addAction(new ActionRestrictLocal("localrecovery")); // Do before dead code removed
+	act->addAction(new ActionVmpHandlerDeadCode("deadcode", stackspace));
+	act->addAction(new ActionDynamicMapping("dynamic")); // Must come before restructurevarnode and infertypes
+	act->addAction(new ActionRestructureVarnode("localrecovery"));
+	act->addAction(new ActionSpacebase("base"));	// Must come before infertypes and nonzeromask
+	act->addAction(new ActionNonzeroMask("analysis"));
+	act->addAction(new ActionInferTypes("typerecovery"));
+	act->addAction(new ActionStop("base"));
+}
 
 void ActionDatabase::buildVmpHandlerAction(Architecture* conf)
 {
@@ -5566,6 +5599,7 @@ void ActionDatabase::buildVmpHandlerAction(Architecture* conf)
     act->addAction(new ActionPreferComplement("blockrecovery"));
     act->addAction(new ActionStructureTransform("blockrecovery"));
     act->addAction(new ActionNormalizeBranches("normalizebranches"));
+
     act->addAction(new ActionAssignHigh("merge"));
     act->addAction(new ActionMergeRequired("merge"));
     act->addAction(new ActionMarkExplicit("merge"));

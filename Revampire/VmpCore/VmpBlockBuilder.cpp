@@ -145,9 +145,12 @@ size_t tryGetVmCallExitAddress(ghidra::Funcdata* fd,int callOffset)
 		if (stackOff != callOffset) {
 			continue;
 		}
-		if (curOp->getIn(1)->isConstant()) {
-			return curOp->getIn(1)->getOffset();
+		if (curOp->code() == ghidra::CPUI_COPY) {
+			if (curOp->getIn(1)->isConstant()) {
+				return curOp->getIn(1)->getOffset();
+			}
 		}
+		//To do...
 		return 0x0;
 	}
 	return 0x0;
@@ -515,6 +518,7 @@ void VmpBlockBuilder::updateSaveRegContext(ghidra::Funcdata* fd)
 		if (curOp->code() == ghidra::CPUI_COPY) {
 			ghidra::Varnode* vInput = curOp->getIn(0);
 			if (vInput->isConstant()) {
+				buildCtx->save_reg_context.eraseSaveReg(saveIdx);
 				continue;
 			}
 			if (vInput->isInput()) {

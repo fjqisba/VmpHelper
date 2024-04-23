@@ -68,6 +68,15 @@ FetchContent_Declare(unicorn SYSTEM
 )
 FetchContent_MakeAvailable(unicorn)
 
+message(STATUS "Fetching keystone (0.9.2)...")
+FetchContent_Declare(keystone SYSTEM
+	GIT_REPOSITORY
+		"https://github.com/keystone-engine/keystone"
+	GIT_TAG
+		0.9.2
+)
+FetchContent_MakeAvailable(keystone)
+
 # Target: Revampire
 set(Revampire_SOURCES
 	"Revampire/IDAPlugin.cpp"
@@ -180,6 +189,7 @@ set(Revampire_SOURCES
 	"Revampire/Common/Public.cpp"
 	"Revampire/Common/StringUtils.cpp"
 	"Revampire/Common/VmpCommon.cpp"
+	"Revampire/Helper/AsmBuilder.cpp"
 	"Revampire/Helper/GhidraHelper.cpp"
 	"Revampire/Helper/IDAWrapper.cpp"
 	"Revampire/Helper/UnicornHelper.cpp"
@@ -302,6 +312,7 @@ set(Revampire_SOURCES
 	"Revampire/Common/Public.h"
 	"Revampire/Common/StringUtils.h"
 	"Revampire/Common/VmpCommon.h"
+	"Revampire/Helper/AsmBuilder.h"
 	"Revampire/Helper/GhidraHelper.h"
 	"Revampire/Helper/IDAWrapper.h"
 	"Revampire/Helper/UnicornHelper.h"
@@ -330,4 +341,5 @@ target_compile_definitions(Revampire PUBLIC
 target_link_libraries(Revampire PUBLIC
 	capstone::capstone
 	unicorn
+	keystone
 )
