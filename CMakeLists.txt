@@ -41,6 +41,7 @@ option(CAPSTONE_TMS320C64X_SUPPORT "" OFF)
 option(CAPSTONE_TRICORE_SUPPORT "" OFF)
 option(CAPSTONE_WASM_SUPPORT "" OFF)
 option(CAPSTONE_XCORE_SUPPORT "" OFF)
+option(KEYSTONE_BUILD_STATIC_RUNTIME "" ON)
 
 project(Revampire)
 
@@ -336,6 +337,10 @@ target_compile_definitions(Revampire PUBLIC
 	_WINDOWS
 	_CRT_SECURE_NO_WARNINGS
 	USE_STANDARD_FILE_FUNCTIONS
+)
+
+target_include_directories(Revampire PUBLIC
+	"${keystone_SOURCE_DIR}/include"
 )
 
 target_link_libraries(Revampire PUBLIC

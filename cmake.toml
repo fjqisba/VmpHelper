@@ -24,6 +24,7 @@ sources = [
 	"Revampire/Manager/*.cpp",
 	"Revampire/VmpCore/*.cpp",
 ]
+
 headers = [
 	"Revampire/*.h", 
 	"Revampire/Ghidra/*.h",
@@ -35,6 +36,7 @@ headers = [
 	"Revampire/VmpCore/*.h",
 ]
 compile-definitions = ["_WINDOWS","_CRT_SECURE_NO_WARNINGS","USE_STANDARD_FILE_FUNCTIONS"]
+include-directories = ["${keystone_SOURCE_DIR}/include"]
 link-libraries = ["capstone::capstone" , "unicorn", "keystone"]
 
 [options]
@@ -54,6 +56,7 @@ CAPSTONE_TMS320C64X_SUPPORT = false
 CAPSTONE_TRICORE_SUPPORT = false
 CAPSTONE_WASM_SUPPORT = false
 CAPSTONE_XCORE_SUPPORT = false
+KEYSTONE_BUILD_STATIC_RUNTIME = true
 
 
 

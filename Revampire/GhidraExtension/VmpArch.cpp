@@ -157,7 +157,7 @@ ghidra::Funcdata* VmpArchitecture::AnaVmpBasicBlock(VmpBasicBlock* basicBlock)
 		return nullptr;
 	}
 #ifdef DeveloperMode
-	std::stringstream ss;
+	std::stringstream ss; 
 	fd->printRaw(ss);
 	std::string rawResult = ss.str();
 #endif
