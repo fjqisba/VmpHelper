@@ -1,17 +1,40 @@
 [project]
 name = "Revampire"
+languages = ["C", "CXX"]
+
+cmake-after = """
+if (MSVC)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MT")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MT")
+	# Statically compile runtime
+	string(REGEX REPLACE "/MD" "/MT" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+	string(REGEX REPLACE "/MD" "/MT" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+	string(REGEX REPLACE "/MD" "/MT" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+	string(REGEX REPLACE "/MD" "/MT" CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
+	message(NOTICE "Building in MT mode")
+endif(MSVC)
+"""
 
 [fetch-content.capstone]
 git = "https://github.com/capstone-engine/capstone"
 tag = "5.0.1"
 
-[fetch-content.unicorn]
-git = "https://github.com/unicorn-engine/unicorn"
-tag = "2.0.1"
+[vcpkg]
+version = "2024.03.25"
+packages = ["keystone","unicorn","z3"]
 
-[fetch-content.keystone]
-git = "https://github.com/keystone-engine/keystone"
-tag = "0.9.2"
+[find-package]
+z3 = {}
+
+[variables]
+CMAKE_CXX_COMPILER = "cl"
+CMAKE_C_COMPILER = "cl"
+
+VCPKG_TARGET_TRIPLET = "x64-windows-static"
+
+CMAKE_CONFIGURATION_TYPES = "Release;RelWithDebInfo"
+LLVM_USE_CRT_RELEASE = "MT"
+LLVM_USE_CRT_RELWITHDEBINFO = "MT"
 
 [target.Revampire]
 type = "shared"
@@ -35,9 +58,17 @@ headers = [
 	"Revampire/Manager/*.h",
 	"Revampire/VmpCore/*.h",
 ]
+
 compile-definitions = ["_WINDOWS","_CRT_SECURE_NO_WARNINGS","USE_STANDARD_FILE_FUNCTIONS"]
-include-directories = ["${keystone_SOURCE_DIR}/include"]
-link-libraries = ["capstone::capstone" , "unicorn", "keystone"]
+include-directories = ["${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/include"]
+link-directories = ["${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/lib"]
+link-libraries = ["capstone::capstone" , "keystone" , "unicorn", "libz3"]
+
+cmake-after = """
+set_property(TARGET Revampire PROPERTY
+  MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+"""
+
 
 [options]
 CAPSTONE_BPF_SUPPORT = false
@@ -56,7 +87,3 @@ CAPSTONE_TMS320C64X_SUPPORT = false
 CAPSTONE_TRICORE_SUPPORT = false
 CAPSTONE_WASM_SUPPORT = false
 CAPSTONE_XCORE_SUPPORT = false
-KEYSTONE_BUILD_STATIC_RUNTIME = true
-
-
-

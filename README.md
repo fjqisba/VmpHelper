@@ -1,6 +1,6 @@
 # VmpHelper
 
-a vmp-analysis ida-plugin based on Ghidra, currently under development...
+a vmp-analysis ida plugin, currently under development...
 
 only supports Vmp3.5 x86
 
@@ -31,8 +31,6 @@ capstone:https://github.com/capstone-engine/capstone
 keystone:https://github.com/keystone-engine/keystone
 
 z3:https://github.com/Z3Prover/z3
-
-
 
 开发者交流QQ群:569821835
 

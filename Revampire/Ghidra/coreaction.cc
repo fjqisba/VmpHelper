@@ -5341,6 +5341,8 @@ void ActionDatabase::buildVmpBlockAction(Architecture* conf)
 {
 	vector<Rule*>::iterator iter;
 	ActionGroup* act;
+	ActionGroup* actmainloop;
+	ActionGroup* actfullloop;
 	ActionPool* actprop, * actprop2;
 	ActionPool* actcleanup;
 	ActionGroup* actstackstall;
@@ -5351,9 +5353,9 @@ void ActionDatabase::buildVmpBlockAction(Architecture* conf)
 
 	act->addAction(new ActionVmpStart("base"));
 	act->addAction(new ActionConstbase("base"));
-    act->addAction(new ActionUnreachable("base"));
-    act->addAction(new ActionVarnodeProps("base"));
-    act->addAction(new ActionHeritage("base"));
+	act->addAction(new ActionUnreachable("base"));
+	act->addAction(new ActionVarnodeProps("base"));
+	act->addAction(new ActionHeritage("base"));
 	act->addAction(new ActionParamDouble("protorecovery"));
 	act->addAction(new ActionSegmentize("base"));
 	act->addAction(new ActionForceGoto("blockrecovery"));
@@ -5368,6 +5370,217 @@ void ActionDatabase::buildVmpBlockAction(Architecture* conf)
 	act->addAction(new ActionSpacebase("base"));	// Must come before infertypes and nonzeromask
 	act->addAction(new ActionNonzeroMask("analysis"));
 	act->addAction(new ActionInferTypes("typerecovery"));
+
+
+	actstackstall = new ActionGroup(Action::rule_repeatapply, "stackstall");
+	{
+		actprop = new ActionPool(Action::rule_repeatapply, "oppool1");
+		actprop->addRule(new RuleVmpLoadConst("deadcode"));
+		actprop->addRule(new RuleVmpEarlyRemoval("deadcode", stackspace));
+		actprop->addRule(new RuleTermOrder("analysis"));
+		actprop->addRule(new RuleSelectCse("analysis"));
+		actprop->addRule(new RuleCollectTerms("analysis"));
+		actprop->addRule(new RulePullsubMulti("analysis"));
+		actprop->addRule(new RulePullsubIndirect("analysis"));
+		actprop->addRule(new RulePushMulti("nodejoin"));
+		actprop->addRule(new RuleSborrow("analysis"));
+		actprop->addRule(new RuleIntLessEqual("analysis"));
+		actprop->addRule(new RuleTrivialArith("analysis"));
+		actprop->addRule(new RuleTrivialBool("analysis"));
+		actprop->addRule(new RuleTrivialShift("analysis"));
+		actprop->addRule(new RuleSignShift("analysis"));
+		actprop->addRule(new RuleTestSign("analysis"));
+		actprop->addRule(new RuleIdentityEl("analysis"));
+		actprop->addRule(new RuleOrMask("analysis"));
+		actprop->addRule(new RuleAndMask("analysis"));
+		actprop->addRule(new RuleOrConsume("analysis"));
+		actprop->addRule(new RuleOrCollapse("analysis"));
+		actprop->addRule(new RuleAndOrLump("analysis"));
+		actprop->addRule(new RuleShiftBitops("analysis"));
+		actprop->addRule(new RuleRightShiftAnd("analysis"));
+		actprop->addRule(new RuleNotDistribute("analysis"));
+		actprop->addRule(new RuleHighOrderAnd("analysis"));
+		actprop->addRule(new RuleAndDistribute("analysis"));
+		actprop->addRule(new RuleAndCommute("analysis"));
+		actprop->addRule(new RuleAndPiece("analysis"));
+		actprop->addRule(new RuleAndZext("analysis"));
+		actprop->addRule(new RuleAndCompare("analysis"));
+		actprop->addRule(new RuleDoubleSub("analysis"));
+		actprop->addRule(new RuleDoubleShift("analysis"));
+		actprop->addRule(new RuleDoubleArithShift("analysis"));
+		actprop->addRule(new RuleConcatShift("analysis"));
+		actprop->addRule(new RuleLeftRight("analysis"));
+		actprop->addRule(new RuleShiftCompare("analysis"));
+		actprop->addRule(new RuleShift2Mult("analysis"));
+		actprop->addRule(new RuleShiftPiece("analysis"));
+		actprop->addRule(new RuleMultiCollapse("analysis"));
+		actprop->addRule(new RuleIndirectCollapse("analysis"));
+		actprop->addRule(new Rule2Comp2Mult("analysis"));
+		actprop->addRule(new RuleSub2Add("analysis"));
+		actprop->addRule(new RuleCarryElim("analysis"));
+		actprop->addRule(new RuleBxor2NotEqual("analysis"));
+		actprop->addRule(new RuleLess2Zero("analysis"));
+		actprop->addRule(new RuleLessEqual2Zero("analysis"));
+		actprop->addRule(new RuleSLess2Zero("analysis"));
+		actprop->addRule(new RuleEqual2Zero("analysis"));
+		actprop->addRule(new RuleEqual2Constant("analysis"));
+		actprop->addRule(new RuleThreeWayCompare("analysis"));
+		actprop->addRule(new RuleXorCollapse("analysis"));
+		actprop->addRule(new RuleAddMultCollapse("analysis"));
+		actprop->addRule(new RuleCollapseConstants("analysis"));
+		actprop->addRule(new RuleTransformCpool("analysis"));
+		actprop->addRule(new RulePropagateCopy("analysis"));
+		actprop->addRule(new RuleZextEliminate("analysis"));
+		actprop->addRule(new RuleSlessToLess("analysis"));
+		actprop->addRule(new RuleZextSless("analysis"));
+		actprop->addRule(new RuleBitUndistribute("analysis"));
+		actprop->addRule(new RuleBoolZext("analysis"));
+		actprop->addRule(new RuleBooleanNegate("analysis"));
+		actprop->addRule(new RuleLogic2Bool("analysis"));
+		actprop->addRule(new RuleSubExtComm("analysis"));
+		actprop->addRule(new RuleSubCommute("analysis"));
+		actprop->addRule(new RuleConcatCommute("analysis"));
+		actprop->addRule(new RuleConcatZext("analysis"));
+		actprop->addRule(new RuleZextCommute("analysis"));
+		actprop->addRule(new RuleZextShiftZext("analysis"));
+		actprop->addRule(new RuleShiftAnd("analysis"));
+		actprop->addRule(new RuleConcatZero("analysis"));
+		actprop->addRule(new RuleConcatLeftShift("analysis"));
+		actprop->addRule(new RuleSubZext("analysis"));
+		actprop->addRule(new RuleSubCancel("analysis"));
+		actprop->addRule(new RuleShiftSub("analysis"));
+		actprop->addRule(new RuleHumptyDumpty("analysis"));
+		actprop->addRule(new RuleDumptyHump("analysis"));
+		actprop->addRule(new RuleHumptyOr("analysis"));
+		actprop->addRule(new RuleNegateIdentity("analysis"));
+		actprop->addRule(new RuleSubNormal("analysis"));
+		actprop->addRule(new RulePositiveDiv("analysis"));
+		actprop->addRule(new RuleDivTermAdd("analysis"));
+		actprop->addRule(new RuleDivTermAdd2("analysis"));
+		actprop->addRule(new RuleDivOpt("analysis"));
+		actprop->addRule(new RuleSignForm("analysis"));
+		actprop->addRule(new RuleSignForm2("analysis"));
+		actprop->addRule(new RuleSignDiv2("analysis"));
+		actprop->addRule(new RuleDivChain("analysis"));
+		actprop->addRule(new RuleSignNearMult("analysis"));
+		actprop->addRule(new RuleModOpt("analysis"));
+		actprop->addRule(new RuleSignMod2nOpt("analysis"));
+		actprop->addRule(new RuleSignMod2nOpt2("analysis"));
+		actprop->addRule(new RuleSignMod2Opt("analysis"));
+		actprop->addRule(new RuleSwitchSingle("analysis"));
+		actprop->addRule(new RuleCondNegate("analysis"));
+		actprop->addRule(new RuleBoolNegate("analysis"));
+		actprop->addRule(new RuleLessEqual("analysis"));
+		actprop->addRule(new RuleLessNotEqual("analysis"));
+		actprop->addRule(new RuleLessOne("analysis"));
+		actprop->addRule(new RuleRangeMeld("analysis"));
+		actprop->addRule(new RuleFloatRange("analysis"));
+		actprop->addRule(new RulePiece2Zext("analysis"));
+		actprop->addRule(new RulePiece2Sext("analysis"));
+		actprop->addRule(new RulePopcountBoolXor("analysis"));
+		actprop->addRule(new RuleOrMultiBool("analysis"));
+		actprop->addRule(new RuleXorSwap("analysis"));
+		actprop->addRule(new RuleLzcountShiftBool("analysis"));
+		//这个规则不适用于二进制混淆流分析
+		//actprop->addRule(new RuleSubvarAnd("subvar"));
+		actprop->addRule(new RuleSubvarSubpiece("subvar"));
+		actprop->addRule(new RuleSplitFlow("subvar"));
+		actprop->addRule(new RulePtrFlow("subvar", conf));
+		actprop->addRule(new RuleSubvarCompZero("subvar"));
+		actprop->addRule(new RuleSubvarShift("subvar"));
+		actprop->addRule(new RuleSubvarZext("subvar"));
+		actprop->addRule(new RuleSubvarSext("subvar"));
+		actprop->addRule(new RuleNegateNegate("analysis"));
+		actprop->addRule(new RuleConditionalMove("conditionalexe"));
+		actprop->addRule(new RuleOrPredicate("conditionalexe"));
+		actprop->addRule(new RuleFuncPtrEncoding("analysis"));
+		actprop->addRule(new RuleSubfloatConvert("floatprecision"));
+		actprop->addRule(new RuleFloatCast("floatprecision"));
+		actprop->addRule(new RuleIgnoreNan("floatprecision"));
+		actprop->addRule(new RulePtraddUndo("typerecovery"));
+		actprop->addRule(new RulePtrsubUndo("typerecovery"));
+		actprop->addRule(new RuleSegment("segment"));
+		actprop->addRule(new RulePiecePathology("protorecovery"));
+		actprop->addRule(new RuleDoubleLoad("doubleload"));
+		actprop->addRule(new RuleDoubleStore("doubleprecis"));
+		actprop->addRule(new RuleDoubleIn("doubleprecis"));
+	}
+	actstackstall->addAction(actprop);
+	actstackstall->addAction(new ActionLaneDivide("base"));
+	actstackstall->addAction(new ActionMultiCse("analysis"));
+	actstackstall->addAction(new ActionShadowVar("analysis"));
+	actstackstall->addAction(new ActionDeindirect("deindirect"));
+	actstackstall->addAction(new ActionStackPtrFlow("stackptrflow", stackspace));
+    act->addAction(actstackstall);
+
+	act->addAction(new ActionRedundBranch("deadcontrolflow")); // dead code removal
+    act->addAction(new ActionBlockStructure("blockrecovery"));
+    act->addAction(new ActionConstantPtr("typerecovery"));
+	{
+		actprop2 = new ActionPool(Action::rule_repeatapply, "oppool2");
+		actprop2->addRule(new RulePushPtr("typerecovery"));
+		actprop2->addRule(new RuleStructOffset0("typerecovery"));
+		actprop2->addRule(new RulePtrArith("typerecovery"));
+		actprop2->addRule(new RuleLoadVarnode("stackvars"));
+		actprop2->addRule(new RuleStoreVarnode("stackvars"));
+	}
+    act->addAction(actprop2);
+
+    act->addAction(new ActionNodeJoin("nodejoin"));
+    act->addAction(new ActionConditionalExe("conditionalexe"));
+    act->addAction(new ActionConditionalConst("analysis"));
+    act->addAction(new ActionLikelyTrash("protorecovery"));
+    act->addAction(new ActionDirectWrite("protorecovery_a", true));
+    act->addAction(new ActionDirectWrite("protorecovery_b", false));
+    act->addAction(new ActionVmpHandlerDeadCode("deadcode", stackspace));
+    act->addAction(new ActionDoNothing("deadcontrolflow"));
+    act->addAction(new ActionSwitchNorm("switchnorm"));
+    act->addAction(new ActionReturnSplit("returnsplit"));
+    act->addAction(new ActionUnjustifiedParams("protorecovery"));
+	act->addAction(new ActionStartTypes("typerecovery"));
+
+	//act->addAction(new ActionStartCleanUp("cleanup"));
+	//{
+	//	actcleanup = new ActionPool(Action::rule_repeatapply, "cleanup");
+	//	actcleanup->addRule(new RuleMultNegOne("cleanup"));
+	//	actcleanup->addRule(new RuleAddUnsigned("cleanup"));
+	//	actcleanup->addRule(new Rule2Comp2Sub("cleanup"));
+	//	actcleanup->addRule(new RuleSubRight("cleanup"));
+	//	actcleanup->addRule(new RulePtrsubCharConstant("cleanup"));
+	//	actcleanup->addRule(new RuleExtensionPush("cleanup"));
+	//	actcleanup->addRule(new RulePieceStructure("cleanup"));
+	//	actcleanup->addRule(new RuleSplitCopy("splitcopy"));
+	//	actcleanup->addRule(new RuleSplitLoad("splitpointer"));
+	//	actcleanup->addRule(new RuleSplitStore("splitpointer"));
+	//}
+	//act->addAction(actcleanup);
+
+	//act->addAction(new ActionPreferComplement("blockrecovery"));
+	//act->addAction(new ActionStructureTransform("blockrecovery"));
+	//act->addAction(new ActionNormalizeBranches("normalizebranches"));
+
+	//act->addAction(new ActionAssignHigh("merge"));
+	//act->addAction(new ActionMergeRequired("merge"));
+	//act->addAction(new ActionMarkExplicit("merge"));
+	//act->addAction(new ActionMarkImplied("merge")); // This must come BEFORE general merging
+	//act->addAction(new ActionMergeMultiEntry("merge"));
+	//act->addAction(new ActionMergeCopy("merge"));
+	//act->addAction(new ActionDominantCopy("merge"));
+	//act->addAction(new ActionDynamicSymbols("dynamic"));
+	//act->addAction(new ActionMarkIndirectOnly("merge")); // Must come after required merges but before speculative
+	//act->addAction(new ActionMergeAdjacent("merge"));
+	//act->addAction(new ActionMergeType("merge"));
+	//act->addAction(new ActionHideShadow("merge"));
+	//act->addAction(new ActionCopyMarker("merge"));
+	//act->addAction(new ActionOutputPrototype("localrecovery"));
+	//act->addAction(new ActionInputPrototype("fixateproto"));
+	//act->addAction(new ActionRestructureHigh("localrecovery"));
+	//act->addAction(new ActionMapGlobals("fixateglobals"));
+	//act->addAction(new ActionDynamicSymbols("dynamic"));
+	//act->addAction(new ActionNameVars("merge"));
+	////act->addAction(new ActionSetCasts("casts"));
+	//act->addAction(new ActionFinalStructure("blockrecovery"));
+	//act->addAction(new ActionPrototypeWarnings("protorecovery"));
 	act->addAction(new ActionStop("base"));
 }
 

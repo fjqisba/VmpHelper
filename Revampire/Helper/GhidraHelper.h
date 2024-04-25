@@ -73,4 +73,6 @@ namespace GhidraHelper
 	};
 
 	std::string GetVarnodeRegName(ghidra::Varnode* vn);
+
+	std::string GetVarnodeRegName(const ghidra::VarnodeData& vn);
 }

@@ -136,3 +136,8 @@ std::string GhidraHelper::GetVarnodeRegName(ghidra::Varnode* vn)
 	}
 	return gArch->translate->getRegisterName(vn->getSpace(), vn->getOffset(), vn->getSize());
 }
+
+std::string GhidraHelper::GetVarnodeRegName(const ghidra::VarnodeData& vn)
+{
+	return gArch->translate->getRegisterName(vn.space, vn.offset, vn.size);
+}

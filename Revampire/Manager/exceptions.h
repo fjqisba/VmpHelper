@@ -24,6 +24,20 @@ public:
     DisasmException(const std::string& message) :Exception(message) {};
 };
 
+class KeystoneException :public Exception
+{
+public:
+    KeystoneException(const char* message) :Exception(message) {};
+    KeystoneException(const std::string& message) :Exception(message) {};
+};
+
+class AsmBuilderException :public Exception
+{
+public:
+    AsmBuilderException(const char* message) :Exception(message) {};
+    AsmBuilderException(const std::string& message) :Exception(message) {};
+};
+
 class VmpTraceException :public Exception
 {
 public:

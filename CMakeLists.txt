@@ -41,16 +41,55 @@ option(CAPSTONE_TMS320C64X_SUPPORT "" OFF)
 option(CAPSTONE_TRICORE_SUPPORT "" OFF)
 option(CAPSTONE_WASM_SUPPORT "" OFF)
 option(CAPSTONE_XCORE_SUPPORT "" OFF)
-option(KEYSTONE_BUILD_STATIC_RUNTIME "" ON)
 
-project(Revampire)
+# Variables
+set(CMAKE_CXX_COMPILER cl)
+set(CMAKE_C_COMPILER cl)
+set(VCPKG_TARGET_TRIPLET x64-windows-static)
+set(CMAKE_CONFIGURATION_TYPES "Release;RelWithDebInfo")
+set(LLVM_USE_CRT_RELEASE MT)
+set(LLVM_USE_CRT_RELWITHDEBINFO MT)
+
+project(Revampire
+	LANGUAGES
+		C
+		CXX
+)
+
+if (MSVC)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MT")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MT")
+	# Statically compile runtime
+	string(REGEX REPLACE "/MD" "/MT" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+	string(REGEX REPLACE "/MD" "/MT" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+	string(REGEX REPLACE "/MD" "/MT" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+	string(REGEX REPLACE "/MD" "/MT" CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
+	message(NOTICE "Building in MT mode")
+endif(MSVC)
+
+if(CMKR_ROOT_PROJECT AND NOT CMKR_DISABLE_VCPKG)
+	include(FetchContent)
+	# Fix warnings about DOWNLOAD_EXTRACT_TIMESTAMP
+	if(POLICY CMP0135)
+		cmake_policy(SET CMP0135 NEW)
+	endif()
+	message(STATUS "Fetching vcpkg (2024.03.25)...")
+	FetchContent_Declare(vcpkg URL "https://github.com/microsoft/vcpkg/archive/refs/tags/2024.03.25.tar.gz")
+	FetchContent_GetProperties(vcpkg)
+	if(NOT vcpkg_POPULATED)
+		FetchContent_Populate(vcpkg)
+		if(CMAKE_HOST_SYSTEM_NAME STREQUAL Darwin AND CMAKE_OSX_ARCHITECTURES STREQUAL "")
+			set(CMAKE_OSX_ARCHITECTURES ${CMAKE_HOST_SYSTEM_PROCESSOR} CACHE STRING "" FORCE)
+		endif()
+		include("${vcpkg_SOURCE_DIR}/scripts/buildsystems/vcpkg.cmake")
+	endif()
+endif()
+
+# Packages
+find_package(z3 REQUIRED)
 
 include(FetchContent)
 
-# Fix warnings about DOWNLOAD_EXTRACT_TIMESTAMP
-if(POLICY CMP0135)
-	cmake_policy(SET CMP0135 NEW)
-endif()
 message(STATUS "Fetching capstone (5.0.1)...")
 FetchContent_Declare(capstone SYSTEM
 	GIT_REPOSITORY
@@ -59,24 +98,6 @@ FetchContent_Declare(capstone SYSTEM
 		5.0.1
 )
 FetchContent_MakeAvailable(capstone)
-
-message(STATUS "Fetching unicorn (2.0.1)...")
-FetchContent_Declare(unicorn SYSTEM
-	GIT_REPOSITORY
-		"https://github.com/unicorn-engine/unicorn"
-	GIT_TAG
-		2.0.1
-)
-FetchContent_MakeAvailable(unicorn)
-
-message(STATUS "Fetching keystone (0.9.2)...")
-FetchContent_Declare(keystone SYSTEM
-	GIT_REPOSITORY
-		"https://github.com/keystone-engine/keystone"
-	GIT_TAG
-		0.9.2
-)
-FetchContent_MakeAvailable(keystone)
 
 # Target: Revampire
 set(Revampire_SOURCES
@@ -184,6 +205,7 @@ set(Revampire_SOURCES
 	"Revampire/GhidraExtension/VmpControlFlow.cpp"
 	"Revampire/GhidraExtension/VmpFunction.cpp"
 	"Revampire/GhidraExtension/VmpInstruction.cpp"
+	"Revampire/GhidraExtension/VmpInstructionAsm.cpp"
 	"Revampire/GhidraExtension/VmpInstructionBuilder.cpp"
 	"Revampire/GhidraExtension/VmpNode.cpp"
 	"Revampire/GhidraExtension/VmpRule.cpp"
@@ -194,6 +216,7 @@ set(Revampire_SOURCES
 	"Revampire/Helper/GhidraHelper.cpp"
 	"Revampire/Helper/IDAWrapper.cpp"
 	"Revampire/Helper/UnicornHelper.cpp"
+	"Revampire/Helper/VmpBlockTracker.cpp"
 	"Revampire/Manager/DisasmManager.cpp"
 	"Revampire/Manager/SectionManager.cpp"
 	"Revampire/Manager/VmpVersionManager.cpp"
@@ -317,6 +340,7 @@ set(Revampire_SOURCES
 	"Revampire/Helper/GhidraHelper.h"
 	"Revampire/Helper/IDAWrapper.h"
 	"Revampire/Helper/UnicornHelper.h"
+	"Revampire/Helper/VmpBlockTracker.h"
 	"Revampire/Manager/DisasmManager.h"
 	"Revampire/Manager/SectionManager.h"
 	"Revampire/Manager/VmpVersionManager.h"
@@ -340,11 +364,20 @@ target_compile_definitions(Revampire PUBLIC
 )
 
 target_include_directories(Revampire PUBLIC
-	"${keystone_SOURCE_DIR}/include"
+	"${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/include"
+)
+
+target_link_directories(Revampire PUBLIC
+	"${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/lib"
 )
 
 target_link_libraries(Revampire PUBLIC
 	capstone::capstone
-	unicorn
 	keystone
+	unicorn
+	libz3
 )
+
+set(CMKR_TARGET Revampire)
+set_property(TARGET Revampire PROPERTY
+  MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")

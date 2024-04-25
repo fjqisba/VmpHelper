@@ -3,7 +3,6 @@
 #include "./VmpCore/VmpReEngine.h"
 #include "./Manager/VmpVersionManager.h"
 
-
 #define ACTION_MarkVmpEntry "Revampire::MarkVmpEntry"
 #define ACTION_VMP350		"Revampire::VMP350"
 #define ACTION_DECOMPILE    "Revampire::Decompile"

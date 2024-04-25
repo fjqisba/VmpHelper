@@ -38,6 +38,13 @@ enum VmJmpType
 	V_CASE = 0x3,
 };
 
+namespace triton
+{
+	class Context;
+}
+class X86AsmBuilder;
+
+
 class VmpInstruction :public vm_inst
 {
 public:
@@ -45,6 +52,7 @@ public:
 	virtual ~VmpInstruction() {};
 	bool IsRawInstruction() override { return false; };
 	virtual int BuildInstruction(ghidra::Funcdata& data);
+	virtual void BuildX86Asm(triton::Context* ctx);
 	void PrintRaw(std::ostream& ss);
 	void printAddress(std::ostream& ss);
 	VmAddress GetAddress() override { return addr; };
@@ -91,6 +99,7 @@ public:
 	~VmpOpInit() {};
 	int BuildInstruction(ghidra::Funcdata& data) override;
 	void PrintRaw(std::ostream& ss) override;
+	void BuildX86Asm(triton::Context* ctx) override;
 public:
 	//Ñ¹ÈëµÄ¶ÑÕ»
 	std::vector<ghidra::VarnodeData> storeContext;
@@ -103,6 +112,7 @@ public:
 	~VmpOpExit() {};
 	int BuildInstruction(ghidra::Funcdata& data) override;
 	void PrintRaw(std::ostream& ss) override;
+	void BuildX86Asm(triton::Context* ctx) override;
 public:
 	//ÍË³öµÄ¼Ä´æÆ÷
 	std::vector<ghidra::VarnodeData> exitContext;
@@ -128,6 +138,7 @@ public:
 	~VmpOpPopReg() {};
 	void PrintRaw(std::ostream& ss) override;
 	int BuildInstruction(ghidra::Funcdata& data) override;
+	void BuildX86Asm(triton::Context* ctx) override;
 public:
 	//¼Ä´æÆ÷Æ«ÒÆ
 	int vmRegOffset = 0x0;
@@ -140,6 +151,7 @@ public:
 	~VmpOpPushReg() {};
 	void PrintRaw(std::ostream& ss) override;
 	int BuildInstruction(ghidra::Funcdata& data) override;
+	void BuildX86Asm(triton::Context* ctx) override;
 public:
 	//¼Ä´æÆ÷Æ«ÒÆ
 	int vmRegOffset = 0x0;
@@ -152,6 +164,7 @@ public:
 	~VmpOpPushImm() {};
 	void PrintRaw(std::ostream& ss) override;
 	int BuildInstruction(ghidra::Funcdata& data) override;
+	void BuildX86Asm(triton::Context* ctx) override;
 public:
 	size_t immVal = 0x0;
 };
@@ -171,6 +184,7 @@ public:
 	~VmpOpAdd() {};
 	void PrintRaw(std::ostream& ss) override;
 	int BuildInstruction(ghidra::Funcdata& data) override;
+	void BuildX86Asm(triton::Context* ctx) override;
 };
 
 
@@ -181,6 +195,7 @@ public:
 	~VmpOpNand() {};
 	int BuildInstruction(ghidra::Funcdata& data) override;
 	void PrintRaw(std::ostream& ss) override;
+	void BuildX86Asm(triton::Context* ctx) override;
 };
 
 class VmpOpNor :public VmpInstruction
@@ -190,6 +205,7 @@ public:
 	~VmpOpNor() {};
 	void PrintRaw(std::ostream& ss) override;
 	int BuildInstruction(ghidra::Funcdata& data);
+	void BuildX86Asm(triton::Context* ctx) override;
 };
 
 class VmpOpShr : public VmpInstruction
@@ -199,6 +215,7 @@ public:
 	~VmpOpShr() {};
 	int BuildInstruction(ghidra::Funcdata& data) override;
 	void PrintRaw(std::ostream& ss) override;
+	void BuildX86Asm(triton::Context* ctx) override;
 private:
 	int BuildShr1(ghidra::Funcdata& data);
 	int BuildShr2(ghidra::Funcdata& data);
@@ -234,6 +251,7 @@ public:
 	~VmpOpJmp() {};
 	int BuildInstruction(ghidra::Funcdata& data) override;
 	void PrintRaw(std::ostream& ss) override;
+	void BuildX86Asm(triton::Context* ctx) override;
 public:
 	//VmJmpType jmpType;
 	std::vector<size_t> branchList;
@@ -260,6 +278,7 @@ public:
 	~VmpOpReadMem() {};
 	int BuildInstruction(ghidra::Funcdata& data) override;
 	void PrintRaw(std::ostream& ss) override;
+	void BuildX86Asm(triton::Context* ctx) override;
 };
 
 class VmpOpWriteMem :public VmpInstruction
@@ -269,6 +288,7 @@ public:
 	~VmpOpWriteMem() {};
 	int BuildInstruction(ghidra::Funcdata& data) override;
 	void PrintRaw(std::ostream& ss) override;
+	void BuildX86Asm(triton::Context* ctx) override;
 public:
 };
 
@@ -279,6 +299,7 @@ public:
 	~VmpOpPushVSP() {};
 	int BuildInstruction(ghidra::Funcdata& data) override;
 	void PrintRaw(std::ostream& ss) override;
+	void BuildX86Asm(triton::Context* ctx) override;
 };
 
 class VmpOpWriteVSP :public VmpInstruction
@@ -288,6 +309,7 @@ public:
 	~VmpOpWriteVSP() {};
 	int BuildInstruction(ghidra::Funcdata& data) override;
 	void PrintRaw(std::ostream& ss) override;
+	void BuildX86Asm(triton::Context* ctx) override;
 };
 
 //mov eax, dword ptr ds:[VSP + 4]

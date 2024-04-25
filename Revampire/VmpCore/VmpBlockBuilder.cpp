@@ -4,6 +4,7 @@
 #include "../GhidraExtension/VmpArch.h"
 #include "../Helper/GhidraHelper.h"
 #include "../Helper/IDAWrapper.h"
+#include "../Helper/AsmBuilder.h"
 #include "../Manager/exceptions.h"
 #include <sstream>
 
@@ -146,8 +147,8 @@ size_t tryGetVmCallExitAddress(ghidra::Funcdata* fd,int callOffset)
 			continue;
 		}
 		if (curOp->code() == ghidra::CPUI_COPY) {
-			if (curOp->getIn(1)->isConstant()) {
-				return curOp->getIn(1)->getOffset();
+			if (curOp->getIn(0)->isConstant()) {
+				return curOp->getIn(0)->getOffset();
 			}
 		}
 		//To do...
@@ -433,7 +434,6 @@ bool VmpBlockBuilder::executeVmExit(VmpNode& nodeInput, VmpInstruction* inst)
 			vOpExitCall->addr = inst->addr;
 			vOpExitCall->callAddr = branchList[0];
 			curBlock->insList.push_back(std::move(vOpExitCall));
-
 			auto newBuildTask = std::make_unique<VmpFlowBuildContext>();
 			newBuildTask->btype = VmpFlowBuildContext::HANDLE_VMP_ENTRY;
 			newBuildTask->from_addr = inst->addr;
@@ -456,8 +456,8 @@ bool VmpBlockBuilder::executeVmExit(VmpNode& nodeInput, VmpInstruction* inst)
 bool VmpBlockBuilder::executeVmJmpConst(VmpNode& nodeInput, VmpOpJmpConst* inst)
 {
 	VmpUnicorn unicornEngine;
-	ghidra::Funcdata* fd = flow.Arch()->AnaVmpBasicBlock(curBlock);
-	updateSaveRegContext(fd);
+	//ghidra::Funcdata* fd = flow.Arch()->AnaVmpBasicBlock(curBlock);
+	//updateSaveRegContext(fd);
 
 	unicornEngine.StartVmpTrace(*buildCtx->ctx, walker.CurrentIndex() + nodeInput.addrList.size() + 1);
 	auto nextContext = unicornEngine.CopyCurrentUnicornContext();
@@ -551,7 +551,6 @@ bool VmpBlockBuilder::executeVmJmp(VmpNode& nodeInput, VmpOpJmp* inst)
 {
 	VmpUnicorn unicornEngine;
 	GhidraHelper::VmpBranchExtractor branchExt;
-
 	ghidra::Funcdata* fd = flow.Arch()->AnaVmpBasicBlock(curBlock);
 	updateSaveRegContext(fd);
 	std::vector<size_t> branchList = branchExt.ExtractVmAllBranch(fd);
@@ -561,7 +560,7 @@ bool VmpBlockBuilder::executeVmJmp(VmpNode& nodeInput, VmpOpJmp* inst)
 		//if (vmCall) {
 			//To do...	
 		//}
-		unicornEngine.StartVmpTrace(*buildCtx->ctx, walker.CurrentIndex()+ nodeInput.addrList.size() + 1);
+		unicornEngine.StartVmpTrace(*buildCtx->ctx, walker.CurrentIndex() + nodeInput.addrList.size() + 1);
 		auto nextContext = unicornEngine.CopyCurrentUnicornContext();
 		auto newBuildTask = std::make_unique<VmpFlowBuildContext>();
 		newBuildTask->ctx = std::move(nextContext);

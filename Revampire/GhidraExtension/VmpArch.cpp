@@ -2,11 +2,13 @@
 #include "IDALoadImage.h"
 #include "../Ghidra/libdecomp.hh"
 #include "../Helper/IDAWrapper.h"
+#include "../Helper/AsmBuilder.h"
 #include "../Manager/exceptions.h"
 #include "../GhidraExtension/VmpNode.h"
 #include "../GhidraExtension/VmpControlFlow.h"
 #include "../GhidraExtension/VmpFunction.h"
 #include "../Ghidra/funcdata.hh"
+
 #ifdef DeveloperMode
 #pragma optimize("", off) 
 #endif
@@ -53,7 +55,6 @@ VmpArchitecture::architecture_e VmpArchitecture::ArchType()
 {
     return arch_type;
 }
-
 
 void VmpArchitecture::buildLoader(ghidra::DocumentStorage& store)
 {
@@ -147,17 +148,17 @@ ghidra::Funcdata* VmpArchitecture::AnaVmpBasicBlock(VmpBasicBlock* basicBlock)
 	if (!fd) {
 		fd = symboltab->getGlobalScope()->addFunction(startAddr, "")->getFunction();
 	}
-    clearAnalysis(fd);
-    fd->clearExtensionData();
-    fd->followVmpBasicBlock(basicBlock);
-	ghidra::Action* rootAction = allacts.setCurrent("vmphandler");
+	clearAnalysis(fd);
+	fd->clearExtensionData();
+	fd->followVmpBasicBlock(basicBlock);
+	ghidra::Action* rootAction = allacts.setCurrent("vmpblock");
 	rootAction->reset(*fd);
 	auto res = rootAction->perform(*fd);
 	if (res < 0) {
 		return nullptr;
 	}
 #ifdef DeveloperMode
-	std::stringstream ss; 
+	std::stringstream ss;
 	fd->printRaw(ss);
 	std::string rawResult = ss.str();
 #endif
