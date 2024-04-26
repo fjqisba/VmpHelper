@@ -1,17 +1,14 @@
 #include "VmpBlockAnalyzer.h"
 #include "../Ghidra/funcdata.hh"
 #include "./GhidraHelper.h"
+#include "../Manager/exceptions.h"
 
 #ifdef DeveloperMode
 #pragma optimize("", off) 
 #endif
 
-VmpBlockAnalyzer::VmpBlockAnalyzer()
-{
 
-}
-
-z3::expr VmpBlockAnalyzer::EvaluatePcodeOp(z3::context& ctx, ghidra::PcodeOp* defOp)
+z3::expr DeepStackFix::EvaluatePcodeOp(z3::context& ctx, ghidra::PcodeOp* defOp)
 {
 	if (!defOp) {
 		return ctx.bv_const("empty", 32);
@@ -24,8 +21,6 @@ z3::expr VmpBlockAnalyzer::EvaluatePcodeOp(z3::context& ctx, ghidra::PcodeOp* de
 		return EvaluateVarnode(ctx, defOp, defOp->getIn(0)) - EvaluateVarnode(ctx, defOp, defOp->getIn(1));
 	case ghidra::CPUI_COPY:
 		return EvaluateVarnode(ctx, defOp, defOp->getIn(0));
-	case ghidra::CPUI_LOAD:
-		//暂时不处理
 		break;
 	case ghidra::CPUI_INT_AND:
 		return EvaluateVarnode(ctx, defOp, defOp->getIn(0)) & EvaluateVarnode(ctx, defOp, defOp->getIn(1));
@@ -33,30 +28,15 @@ z3::expr VmpBlockAnalyzer::EvaluatePcodeOp(z3::context& ctx, ghidra::PcodeOp* de
 		return EvaluateVarnode(ctx, defOp, defOp->getIn(0)) | EvaluateVarnode(ctx, defOp, defOp->getIn(1));
 	case ghidra::CPUI_INT_NEGATE:
 		return ~EvaluateVarnode(ctx, defOp, defOp->getIn(0));
-	case ghidra::CPUI_INT_RIGHT:
-		return z3::lshr(EvaluateVarnode(ctx, defOp, defOp->getIn(0)), EvaluateVarnode(ctx, defOp, defOp->getIn(1)));
 	case ghidra::CPUI_INT_MULT:
 		return EvaluateVarnode(ctx, defOp, defOp->getIn(0)) * EvaluateVarnode(ctx, defOp, defOp->getIn(1));
-	case ghidra::CPUI_INT_ZEXT:
-	{
-		std::string regName = GhidraHelper::GetVarnodeRegName(defOp->getIn(0));
-		//临时寄存器
-		if (regName.length() == 2) {
-			return ctx.bv_const(regName.c_str(), 32);
-		}
-		break;
-	}
-		return z3::zext(EvaluateVarnode(ctx, defOp, defOp->getIn(0)),defOp->getOut()->getSize() - defOp->getIn(0)->getSize());
-	case ghidra::CPUI_INT_EQUAL:
-		return EvaluateVarnode(ctx, defOp, defOp->getIn(0)) == EvaluateVarnode(ctx, defOp, defOp->getIn(1));
 	default:
-		int a = 0;
 		break;
 	}
-	return ctx.bv_const(defOp->getOpName().c_str(), 32);
+	throw Exception("bad defcode");
 }
 
-z3::expr VmpBlockAnalyzer::EvalutaeStackVarnode(z3::context& ctx, ghidra::PcodeOp* op, ghidra::Varnode* vn)
+z3::expr DeepStackFix::EvalutaeStackVarnode(z3::context& ctx, ghidra::PcodeOp* op, ghidra::Varnode* vn)
 {
 	//定位到原始op
 	std::list<ghidra::PcodeOp*>::iterator it = bb->endOp();
@@ -83,11 +63,10 @@ z3::expr VmpBlockAnalyzer::EvalutaeStackVarnode(z3::context& ctx, ghidra::PcodeO
 		}
 		return EvaluatePcodeOp(ctx, curOp);
 	}
-	std::string stackOffset = "stack_" + std::to_string(vn->getOffset());
-	return ctx.bv_const(stackOffset.c_str(), vn->getSize());
+	throw Exception("bad stack varnode");
 }
 
-z3::expr VmpBlockAnalyzer::EvaluateVarnode(z3::context& ctx, ghidra::PcodeOp* op, ghidra::Varnode* vn)
+z3::expr DeepStackFix::EvaluateVarnode(z3::context& ctx, ghidra::PcodeOp* op, ghidra::Varnode* vn)
 {
 	ghidra::PcodeOp* defOp = vn->getDef();
 	if (defOp) {
@@ -105,52 +84,22 @@ z3::expr VmpBlockAnalyzer::EvaluateVarnode(z3::context& ctx, ghidra::PcodeOp* op
 	if (vn->getSpace()->getName() == "stack") {
 		return EvalutaeStackVarnode(ctx, op, vn);
 	}
-	return ctx.bv_const(0x0, 0x0);
+	throw Exception("bad varnode");
 }
 
-std::vector<size_t> VmpBlockAnalyzer::AnaVmpBranchAddr(ghidra::Funcdata* func)
-{
-	std::vector<size_t> branchList;
-	fd = func;
-	bb = (ghidra::BlockBasic*)fd->getBasicBlocks().getStartBlock();
-	if (!bb) {
-		return branchList;
-	}
-	ghidra::PcodeOp* retOp = fd->getFirstReturnOp();
-	if (!retOp) {
-		return branchList;
-	}
-	ghidra::Varnode* vEIP = nullptr;
-	for (unsigned int n = 0; n < retOp->numInput(); ++n) {
-		ghidra::Varnode* vn = retOp->getIn(n);
-		std::string retRegName = fd->getArch()->translate->getRegisterName(vn->getSpace(), vn->getOffset(), vn->getSize());
-		if (retRegName != "EIP") {
-			continue;
-		}
-		vEIP = vn;
-		break;
-	}
-	if (!vEIP) {
-		return branchList;
-	}
-	z3::context ctx;
-	z3::expr retExpr = EvaluateVarnode(ctx, retOp, vEIP);
-	z3::params params(ctx);
-	params.set("bv_not_simpl", true);
-	retExpr = retExpr.simplify(params);
-	std::string sss = retExpr.to_string();
-	if (retExpr.is_const()) {
-		branchList.push_back(retExpr.as_uint64());
-		return branchList;
-	}
-	int a = 0;
-	return branchList;
-}
 
 bool DeepStackFix::FixLoadRam(ghidra::PcodeOp* curOp)
 {
 	z3::context ctx;
-	z3::expr formula = EvaluateVarnode(ctx, curOp, curOp->getIn(1));
+	z3::expr formula(ctx);
+	try
+	{
+		formula = EvaluateVarnode(ctx, curOp, curOp->getIn(1));
+	}
+	catch(Exception& ex)
+	{
+		return false;
+	}
 	z3::params params(ctx);
 	params.set("bv_not_simpl", true);
 	formula = formula.simplify(params);
@@ -182,7 +131,15 @@ bool DeepStackFix::FixLoadRam(ghidra::PcodeOp* curOp)
 bool DeepStackFix::FixStoreRam(ghidra::PcodeOp* curOp)
 {
 	z3::context ctx;
-	z3::expr formula = EvaluateVarnode(ctx, curOp, curOp->getIn(1));
+	z3::expr formula(ctx);
+	try
+	{
+		formula = EvaluateVarnode(ctx, curOp, curOp->getIn(1));
+	}
+	catch (Exception& ex)
+	{
+		return false;
+	}
 	std::string ss1 = formula.to_string();
 	z3::params params(ctx);
 	params.set("bv_not_simpl", true);
@@ -216,10 +173,11 @@ int DeepStackFix::FixAllRam(ghidra::Funcdata* func)
 	//从上往下逐个修复
 	bool bFixSuccess = true;
 	auto itBeginOp = bb->beginOp();
+	auto itEndOp = bb->endOp();
 	while (bFixSuccess) {
 		bFixSuccess = false;
 		auto itOp = itBeginOp;
-		while (itOp != bb->endOp()) {
+		while (itOp != itEndOp) {
 			ghidra::PcodeOp* curOp = *itOp;
 			if (curOp->code() == ghidra::CPUI_STORE) {
 				bFixSuccess = FixStoreRam(curOp);

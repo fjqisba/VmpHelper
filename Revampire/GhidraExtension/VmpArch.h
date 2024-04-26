@@ -28,6 +28,7 @@ public:
 	ghidra::Funcdata* AnaVmpHandler(VmpNode* nodeInput);
 	ghidra::Funcdata* AnaVmpBasicBlock(VmpBasicBlock* basicBlock);
 	ghidra::Funcdata* AnaVmpFunction(VmpFunction* func);
+	ghidra::Funcdata* OptimizeBlock(ghidra::Funcdata* fd);
 protected:
 	void buildLoader(ghidra::DocumentStorage& store) override;
 	void resolveArchitecture(void) override;

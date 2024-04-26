@@ -141,6 +141,22 @@ ghidra::Funcdata* VmpArchitecture::AnaVmpFunction(VmpFunction* func)
 	return fd;
 }
 
+ghidra::Funcdata* VmpArchitecture::OptimizeBlock(ghidra::Funcdata* fd)
+{
+	ghidra::Action* rootAction = allacts.setCurrent("blockoptimize");
+	rootAction->reset(*fd);
+	auto res = rootAction->perform(*fd);
+	if (res < 0) {
+		return nullptr;
+	}
+#ifdef DeveloperMode
+	std::stringstream ss;
+	fd->printRaw(ss);
+	std::string rawResult = ss.str();
+#endif
+	return fd;
+}
+
 ghidra::Funcdata* VmpArchitecture::AnaVmpBasicBlock(VmpBasicBlock* basicBlock)
 {
 	ghidra::Address startAddr(getDefaultCodeSpace(), 0x0);

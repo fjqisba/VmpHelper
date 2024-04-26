@@ -329,7 +329,7 @@ public:
   //用于进行vmp handler基础分析
   void buildVmpHandlerAction(Architecture* glb);
   void buildVmpBlockAction(Architecture* glb);
-
+  void buildVmpBlockOptimize(Architecture* glb);
 
 };
 

@@ -71,6 +71,7 @@ private:
 	bool executeVmpOp(VmpNode& nodeInput, std::unique_ptr<VmpInstruction> inst);
 	bool executeVmJmp(VmpNode& nodeInput, VmpOpJmp* inst);
 	bool executeVmJmpConst(VmpNode& nodeInput, VmpOpJmpConst* inst);
+	bool executeVmInit(VmpNode& nodeInput, VmpInstruction* inst);
 	bool executeVmExit(VmpNode& nodeInput, VmpInstruction* inst);
 	void updateSaveRegContext(ghidra::Funcdata* fd);
 public:

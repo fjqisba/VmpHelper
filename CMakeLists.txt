@@ -91,7 +91,7 @@ find_package(z3 REQUIRED)
 include(FetchContent)
 
 message(STATUS "Fetching capstone (5.0.1)...")
-FetchContent_Declare(capstone SYSTEM
+FetchContent_Declare(capstone
 	GIT_REPOSITORY
 		"https://github.com/capstone-engine/capstone"
 	GIT_TAG
@@ -216,7 +216,7 @@ set(Revampire_SOURCES
 	"Revampire/Helper/GhidraHelper.cpp"
 	"Revampire/Helper/IDAWrapper.cpp"
 	"Revampire/Helper/UnicornHelper.cpp"
-	"Revampire/Helper/VmpBlockTracker.cpp"
+	"Revampire/Helper/VmpBlockAnalyzer.cpp"
 	"Revampire/Manager/DisasmManager.cpp"
 	"Revampire/Manager/SectionManager.cpp"
 	"Revampire/Manager/VmpVersionManager.cpp"
@@ -340,7 +340,7 @@ set(Revampire_SOURCES
 	"Revampire/Helper/GhidraHelper.h"
 	"Revampire/Helper/IDAWrapper.h"
 	"Revampire/Helper/UnicornHelper.h"
-	"Revampire/Helper/VmpBlockTracker.h"
+	"Revampire/Helper/VmpBlockAnalyzer.h"
 	"Revampire/Manager/DisasmManager.h"
 	"Revampire/Manager/SectionManager.h"
 	"Revampire/Manager/VmpVersionManager.h"

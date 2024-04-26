@@ -422,9 +422,24 @@ bool FastCheckVmpEntry(size_t startAddr)
 	return true;
 }
 
+bool VmpBlockBuilder::executeVmInit(VmpNode& nodeInput, VmpInstruction* inst)
+{
+	VmpUnicorn unicornEngine;
+	unicornEngine.StartVmpTrace(*buildCtx->ctx, walker.CurrentIndex() + nodeInput.addrList.size() + 1);
+	auto nextContext = unicornEngine.CopyCurrentUnicornContext();
+	auto newBuildTask = std::make_unique<VmpFlowBuildContext>();
+	newBuildTask->ctx = std::move(nextContext);
+	newBuildTask->btype = VmpFlowBuildContext::HANDLE_VMP_JMP;
+	newBuildTask->from_addr = inst->addr;
+	flow.anaQueue.push(std::move(newBuildTask));
+	buildCtx->status = VmpFlowBuildContext::FINISH_MATCH;
+	return true;
+}
+
 bool VmpBlockBuilder::executeVmExit(VmpNode& nodeInput, VmpInstruction* inst)
 {
 	ghidra::Funcdata* fd = flow.Arch()->AnaVmpBasicBlock(curBlock);
+	fd = flow.Arch()->OptimizeBlock(fd);
 	GhidraHelper::VmpBranchExtractor branchExt;
 	std::vector<size_t> branchList = branchExt.ExtractVmAllBranch(fd);
 	if (branchList.size() == 1) {
@@ -458,7 +473,6 @@ bool VmpBlockBuilder::executeVmJmpConst(VmpNode& nodeInput, VmpOpJmpConst* inst)
 	VmpUnicorn unicornEngine;
 	//ghidra::Funcdata* fd = flow.Arch()->AnaVmpBasicBlock(curBlock);
 	//updateSaveRegContext(fd);
-
 	unicornEngine.StartVmpTrace(*buildCtx->ctx, walker.CurrentIndex() + nodeInput.addrList.size() + 1);
 	auto nextContext = unicornEngine.CopyCurrentUnicornContext();
 	auto newBuildTask = std::make_unique<VmpFlowBuildContext>();
@@ -552,10 +566,8 @@ bool VmpBlockBuilder::executeVmJmp(VmpNode& nodeInput, VmpOpJmp* inst)
 	VmpUnicorn unicornEngine;
 	GhidraHelper::VmpBranchExtractor branchExt;
 	ghidra::Funcdata* fd = flow.Arch()->AnaVmpBasicBlock(curBlock);
-	VmpBlockAnalyzer blockAna;
-	std::vector<size_t> branchList = blockAna.AnaVmpBranchAddr(fd);
-	updateSaveRegContext(fd);
-	//std::vector<size_t> branchList = branchExt.ExtractVmAllBranch(fd);
+	fd = flow.Arch()->OptimizeBlock(fd);
+	std::vector<size_t> branchList = branchExt.ExtractVmAllBranch(fd);
 	if (branchList.size() == 1) {
 		//size_t vmCall = tryGetVmCallExitAddress(fd, 0x28);
 		//≈–∂œvJmp «≤ª «vmCall
@@ -631,7 +643,10 @@ bool VmpBlockBuilder::executeVmpOp(VmpNode& nodeInput,std::unique_ptr<VmpInstruc
 	}
 	curBlock->insList.push_back(std::move(inst));
 
-	if (vmInst->opType == VM_JMP) {
+	if (vmInst->opType == VM_INIT) {
+		executeVmInit(nodeInput, vmInst);
+	}
+	else if (vmInst->opType == VM_JMP) {
 		executeVmJmp(nodeInput, (VmpOpJmp*)vmInst);
 		buildCtx->vmreg.ClearStatus();
 	}
