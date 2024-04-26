@@ -26,4 +26,14 @@ namespace ghidra
 		}
         virtual int4 apply(Funcdata& data);
 	};
+
+	class ActionFixStack : public Action {
+	public:
+		ActionFixStack(const string& g) : Action(0, "fixstack", g) {}		///< Constructor
+		virtual Action* clone(const ActionGroupList& grouplist) const {
+			if (!grouplist.contains(getGroup())) return (Action*)0;
+			return new ActionFixStack(getGroup());
+		}
+		virtual int4 apply(Funcdata& data);
+	};
 }

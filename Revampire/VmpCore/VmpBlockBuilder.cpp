@@ -5,6 +5,7 @@
 #include "../Helper/GhidraHelper.h"
 #include "../Helper/IDAWrapper.h"
 #include "../Helper/AsmBuilder.h"
+#include "../Helper/VmpBlockAnalyzer.h"
 #include "../Manager/exceptions.h"
 #include <sstream>
 
@@ -403,7 +404,6 @@ bool FastCheckVmpEntry(size_t startAddr)
 	walker.StartWalk(*ctx, 0x1000);
 	tfg.AddTraceFlow(walker.GetTraceList());
 	tfg.MergeAllNodes();
-
 	if (walker.IsWalkToEnd()) {
 		return false;
 	}
@@ -552,8 +552,10 @@ bool VmpBlockBuilder::executeVmJmp(VmpNode& nodeInput, VmpOpJmp* inst)
 	VmpUnicorn unicornEngine;
 	GhidraHelper::VmpBranchExtractor branchExt;
 	ghidra::Funcdata* fd = flow.Arch()->AnaVmpBasicBlock(curBlock);
+	VmpBlockAnalyzer blockAna;
+	std::vector<size_t> branchList = blockAna.AnaVmpBranchAddr(fd);
 	updateSaveRegContext(fd);
-	std::vector<size_t> branchList = branchExt.ExtractVmAllBranch(fd);
+	//std::vector<size_t> branchList = branchExt.ExtractVmAllBranch(fd);
 	if (branchList.size() == 1) {
 		//size_t vmCall = tryGetVmCallExitAddress(fd, 0x28);
 		//≈–∂œvJmp «≤ª «vmCall

@@ -1,6 +1,7 @@
 #include "VmpAction.h"
 #include "../Ghidra/funcdata.hh"
 #include "../Ghidra/coreaction.hh"
+#include "../Helper/VmpBlockAnalyzer.h"
 #include <set>
 
 using namespace ghidra;
@@ -152,4 +153,11 @@ int4 ActionVmpHandlerDeadCode::apply(Funcdata& data)
     data.clearDeadVarnodes();
     data.clearDeadOps();
     return 0;
+}
+
+
+int4 ActionFixStack::apply(Funcdata& data)
+{
+	DeepStackFix fixStack;
+	return fixStack.FixAllRam(&data);
 }

@@ -216,10 +216,6 @@ public:
 	int BuildInstruction(ghidra::Funcdata& data) override;
 	void PrintRaw(std::ostream& ss) override;
 	void BuildX86Asm(triton::Context* ctx) override;
-private:
-	int BuildShr1(ghidra::Funcdata& data);
-	int BuildShr2(ghidra::Funcdata& data);
-	int BuildShr4(ghidra::Funcdata& data);
 };
 
 class VmpOpShrd : public VmpInstruction

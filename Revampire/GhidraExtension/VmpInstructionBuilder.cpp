@@ -125,10 +125,8 @@ int VmpOpPushImm::BuildInstruction(ghidra::Funcdata& data)
 	auto regESP = data.getArch()->translate->getRegister("ESP");
 	ghidra::Address pc = ghidra::Address(data.getArch()->getDefaultCodeSpace(), addr.vmdata);
 	PCodeBuildHelper opBuilder(data, pc);
-
 	//uniqReg = constant
 	ghidra::Varnode* uniqReg = opBuilder.CPUI_COPY(data.newConstant(opSize, immVal), opSize);
-
 	//regESP = regESP - valSize
 	ghidra::PcodeOp* opSub = data.newOp(2, pc);
 	data.opSetOpcode(opSub, ghidra::CPUI_INT_SUB);
@@ -140,11 +138,9 @@ int VmpOpPushImm::BuildInstruction(ghidra::Funcdata& data)
 	else {
 		data.opSetInput(opSub, data.newConstant(4, 0x2), 1);
 	}
-
 	//*(ram,ESP(free)) = uniqReg
 	opBuilder.CPUI_STORE(data.newVarnode(regESP.size, regESP.space, regESP.offset), uniqReg);
-
-	return 0x3;
+	return 0x1;
 }
 
 //mov edx, dword ptr ss:[vmstack]
@@ -452,129 +448,6 @@ int VmpOpWriteVSP::BuildInstruction(ghidra::Funcdata& data)
 }
 
 
-int VmpOpShr::BuildShr1(ghidra::Funcdata& data)
-{
-	auto regESP = data.getArch()->translate->getRegister("ESP");
-	auto regEFlags = data.getArch()->translate->getRegister("eflags");
-	ghidra::Address pc = ghidra::Address(data.getArch()->getDefaultCodeSpace(), addr.vmdata);
-
-	PCodeBuildHelper opBuilder(data, pc);
-
-	//uEax = *(ram,ESP)
-	ghidra::Varnode* uEax = opBuilder.CPUI_LOAD(data.newVarnode(regESP.size, regESP.space, regESP.offset), opSize);
-
-	//uEsp4 = #0x2 + ESP
-	ghidra::Varnode* uEsp4 = opBuilder.CPUI_INT_ADD(data.newVarnode(regESP.size, regESP.space, regESP.offset), data.newConstant(4, 0x2), 0x4);
-
-	//uCL = *(ram,uEsp4)
-	ghidra::Varnode* uCL = opBuilder.CPUI_LOAD(uEsp4, 0x1);
-
-	//ESP = ESP(free) - #0x2
-	ghidra::PcodeOp* opSub = data.newOp(2, pc);
-	data.opSetOpcode(opSub, ghidra::CPUI_INT_SUB);
-	data.newVarnodeOut(regESP.size, regESP.getAddr(), opSub);
-	data.opSetInput(opSub, data.newVarnode(regESP.size, regESP.space, regESP.offset), 0);
-	data.opSetInput(opSub, data.newConstant(4, 0x2), 1);
-
-	//转换SHR指令
-	ghidra::Varnode* uResult = FuncBuildHelper::BuildShr(data, addr.vmdata, uEax, uCL);
-
-	//uEsp4 = #0x4 + ESP
-	uEsp4 = opBuilder.CPUI_INT_ADD(data.newConstant(0x4, 0x4), data.newVarnode(regESP.size, regESP.space, regESP.offset), 0x4);
-
-	//*(ram,uEsp4) = uResult
-	opBuilder.CPUI_STORE(uEsp4, uResult);
-
-	//pushfd
-	//pop[esp]
-	FuncBuildHelper::BuildEflags(data, addr.vmdata);
-	opBuilder.CPUI_STORE(data.newVarnode(regESP.size, regESP.space, regESP.offset), data.newVarnode(regEFlags.size, regEFlags.space, regEFlags.offset));
-
-	return 0x1;
-}
-
-int VmpOpShr::BuildShr2(ghidra::Funcdata& data)
-{
-	auto regESP = data.getArch()->translate->getRegister("ESP");
-	auto regEFlags = data.getArch()->translate->getRegister("eflags");
-	ghidra::Address pc = ghidra::Address(data.getArch()->getDefaultCodeSpace(), addr.vmdata);
-
-	PCodeBuildHelper opBuilder(data, pc);
-
-	//uEax = *(ram,ESP)
-	ghidra::Varnode* uEax = opBuilder.CPUI_LOAD(data.newVarnode(regESP.size, regESP.space, regESP.offset), opSize);
-
-	//uEsp4 = #0x2 + ESP
-	ghidra::Varnode* uEsp4 = opBuilder.CPUI_INT_ADD(data.newVarnode(regESP.size, regESP.space, regESP.offset), data.newConstant(4, 0x2), 0x4);
-
-	//uCL = *(ram,uEsp4)
-	ghidra::Varnode* uCL = opBuilder.CPUI_LOAD(uEsp4, 0x1);
-
-	//ESP = ESP(free) - #0x2
-	ghidra::PcodeOp* opSub = data.newOp(2, pc);
-	data.opSetOpcode(opSub, ghidra::CPUI_INT_SUB);
-	data.newVarnodeOut(regESP.size, regESP.getAddr(), opSub);
-	data.opSetInput(opSub, data.newVarnode(regESP.size, regESP.space, regESP.offset), 0);
-	data.opSetInput(opSub, data.newConstant(4, 0x2), 1);
-
-	//转换SHR指令
-	ghidra::Varnode* uResult = FuncBuildHelper::BuildShr(data, addr.vmdata, uEax, uCL);
-
-	//uEsp4 = #0x4 + ESP
-	uEsp4 = opBuilder.CPUI_INT_ADD(data.newConstant(0x4, 0x4), data.newVarnode(regESP.size, regESP.space, regESP.offset), 0x4);
-
-	//*(ram,uEsp4) = uResult
-	opBuilder.CPUI_STORE(uEsp4, uResult);
-
-	//pushfd
-	//pop[esp]
-	FuncBuildHelper::BuildEflags(data, addr.vmdata);
-	opBuilder.CPUI_STORE(data.newVarnode(regESP.size, regESP.space, regESP.offset), data.newVarnode(regEFlags.size, regEFlags.space, regEFlags.offset));
-
-	return 0x1;
-}
-
-int VmpOpShr::BuildShr4(ghidra::Funcdata& data)
-{
-	auto regESP = data.getArch()->translate->getRegister("ESP");
-	auto regEFlags = data.getArch()->translate->getRegister("eflags");
-	ghidra::Address pc = ghidra::Address(data.getArch()->getDefaultCodeSpace(), addr.vmdata);
-
-	PCodeBuildHelper opBuilder(data, pc);
-
-	//uEax = *(ram,ESP)
-	ghidra::Varnode* uEax = opBuilder.CPUI_LOAD(data.newVarnode(regESP.size, regESP.space, regESP.offset), opSize);
-
-	//uEsp4 = #0x4 + ESP
-	ghidra::Varnode* uEsp4 = opBuilder.CPUI_INT_ADD(data.newVarnode(regESP.size, regESP.space, regESP.offset), data.newConstant(4, 0x4), 0x4);
-
-	//uCL = *(ram,uEsp4)
-	ghidra::Varnode* uCL = opBuilder.CPUI_LOAD(uEsp4, 0x1);
-
-	//ESP = ESP(free) - #0x2
-	ghidra::PcodeOp* opSub = data.newOp(2, pc);
-	data.opSetOpcode(opSub, ghidra::CPUI_INT_SUB);
-	data.newVarnodeOut(regESP.size, regESP.getAddr(), opSub);
-	data.opSetInput(opSub, data.newVarnode(regESP.size, regESP.space, regESP.offset), 0);
-	data.opSetInput(opSub, data.newConstant(4, 0x2), 1);
-
-	//转换SHR指令
-	ghidra::Varnode* uResult = FuncBuildHelper::BuildShr(data, addr.vmdata, uEax, uCL);
-
-	//uEsp4 = #0x4 + ESP
-	uEsp4 = opBuilder.CPUI_INT_ADD(data.newConstant(0x4, 0x4), data.newVarnode(regESP.size, regESP.space, regESP.offset), 0x4);
-
-	//*(ram,uEsp4) = uResult
-	opBuilder.CPUI_STORE(uEsp4, uResult);
-
-	//pushfd
-	//pop[esp]
-	FuncBuildHelper::BuildEflags(data, addr.vmdata);
-	opBuilder.CPUI_STORE(data.newVarnode(regESP.size, regESP.space, regESP.offset), data.newVarnode(regEFlags.size, regEFlags.space, regEFlags.offset));
-
-	return 0x1;
-}
-
 //vShr1
 //movzx ax, byte ptr ds:[VSP]
 //mov cl, byte ptr ds:[VSP+0x2]
@@ -584,18 +457,59 @@ int VmpOpShr::BuildShr4(ghidra::Funcdata& data)
 //pushfd
 //pop dword ptr ds:[esi]
 
+//vShr4
+//mov edx, dword ptr ss:[VSP]
+//mov cl, byte ptr ss:[VSP+0x4]
+//VSP = VSP - 0x2
+//shr edx, cl
+//mov dword ptr ss:[VSP+0x4], edx
+//pushfd
+//pop dword ptr ss:[ebp]
+
 int VmpOpShr::BuildInstruction(ghidra::Funcdata& data)
 {
+	auto regESP = data.getArch()->translate->getRegister("ESP");
+	auto regEFlags = data.getArch()->translate->getRegister("eflags");
+	ghidra::Address pc = ghidra::Address(data.getArch()->getDefaultCodeSpace(), addr.vmdata);
+
+	PCodeBuildHelper opBuilder(data, pc);
+
+	//uEax = *(ram,ESP)
+	ghidra::Varnode* uEax = opBuilder.CPUI_LOAD(data.newVarnode(regESP.size, regESP.space, regESP.offset), opSize);
+	ghidra::Varnode* uEsp4;
 	if (opSize == 0x4) {
-		return BuildShr4(data);
+		//uEsp4 = #0x4 + ESP
+		uEsp4 = opBuilder.CPUI_INT_ADD(data.newVarnode(regESP.size, regESP.space, regESP.offset), data.newConstant(4, 0x4), 0x4);
 	}
-	if (opSize == 0x2) {
-		return BuildShr2(data);
+	else {
+		//uEsp4 = #0x2 + ESP
+		uEsp4 = opBuilder.CPUI_INT_ADD(data.newVarnode(regESP.size, regESP.space, regESP.offset), data.newConstant(4, 0x2), 0x4);
 	}
-	if (opSize == 0x1) {
-		return BuildShr1(data);
-	}
-	return 0x0;
+	//uCL = *(ram,uEsp4)
+	ghidra::Varnode* uCL = opBuilder.CPUI_LOAD(uEsp4, 0x1);
+
+	//ESP = ESP(free) - #0x2
+	ghidra::PcodeOp* opSub = data.newOp(2, pc);
+	data.opSetOpcode(opSub, ghidra::CPUI_INT_SUB);
+	data.newVarnodeOut(regESP.size, regESP.getAddr(), opSub);
+	data.opSetInput(opSub, data.newVarnode(regESP.size, regESP.space, regESP.offset), 0);
+	data.opSetInput(opSub, data.newConstant(4, 0x2), 1);
+
+	//转换SHR指令
+	ghidra::Varnode* uResult = FuncBuildHelper::BuildShr(data, addr.vmdata, uEax, uCL);
+
+	//uEsp4 = #0x4 + ESP
+	uEsp4 = opBuilder.CPUI_INT_ADD(data.newConstant(0x4, 0x4), data.newVarnode(regESP.size, regESP.space, regESP.offset), 0x4);
+
+	//*(ram,uEsp4) = uResult
+	opBuilder.CPUI_STORE(uEsp4, uResult);
+
+	//pushfd
+	//pop[esp]
+	FuncBuildHelper::BuildEflags(data, addr.vmdata);
+	opBuilder.CPUI_STORE(data.newVarnode(regESP.size, regESP.space, regESP.offset), data.newVarnode(regEFlags.size, regEFlags.space, regEFlags.offset));
+
+	return 0x1;
 }
 
 int VmpOpShl::BuildShl1(ghidra::Funcdata& data)
