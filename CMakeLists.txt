@@ -91,7 +91,7 @@ find_package(z3 REQUIRED)
 include(FetchContent)
 
 message(STATUS "Fetching capstone (5.0.1)...")
-FetchContent_Declare(capstone
+FetchContent_Declare(capstone SYSTEM
 	GIT_REPOSITORY
 		"https://github.com/capstone-engine/capstone"
 	GIT_TAG
@@ -365,10 +365,12 @@ target_compile_definitions(Revampire PUBLIC
 
 target_include_directories(Revampire PUBLIC
 	"${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/include"
+	"IDA83_SDK/include"
 )
 
 target_link_directories(Revampire PUBLIC
 	"${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/lib"
+	"IDA83_SDK/lib/x64_win_vc_32_pro"
 )
 
 target_link_libraries(Revampire PUBLIC
@@ -376,6 +378,7 @@ target_link_libraries(Revampire PUBLIC
 	keystone
 	unicorn
 	libz3
+	ida
 )
 
 set(CMKR_TARGET Revampire)

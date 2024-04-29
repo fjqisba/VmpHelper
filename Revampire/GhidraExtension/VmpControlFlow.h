@@ -32,17 +32,9 @@ public:
 
 struct VmpSaveRegContext
 {
-	void eraseSaveReg(int key) { contextMap.erase(key); };
-	void updateSaveReg(int key, const std::string& regName) { contextMap[key] = regName; };
-	void copySaveReg(int dstKey, int srcKey) {
-		auto it = contextMap.find(srcKey);
-		if (it != contextMap.end()) {
-			contextMap[dstKey] = it->second;
-		}
-	};
 	//如果key大于0 则表示 R0-R15 -> eax,ebx...eflags寄存器
 	//如果key小于0 则表示 stack -> eax,ebx... eflags寄存器
-	std::map<int, std::string> contextMap;
+	std::map<int, ghidra::VarnodeData> contextMap;
 };
 
 class VmpFlowBuildContext

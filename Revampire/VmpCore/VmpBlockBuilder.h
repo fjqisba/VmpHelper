@@ -49,7 +49,6 @@ public:
 private:
 	bool Execute_FIND_VM_INIT();
 	bool Execute_FINISH_VM_INIT();
-
 	bool tryMatch_vPopReg(ghidra::Funcdata* fd, VmpNode& nodeInput);
 	bool tryMatch_vCpuid(ghidra::Funcdata* fd, VmpNode& nodeInput);
 	bool tryMatch_vPushImm(ghidra::Funcdata* fd, VmpNode& nodeInput);
@@ -71,7 +70,7 @@ private:
 	bool executeVmpOp(VmpNode& nodeInput, std::unique_ptr<VmpInstruction> inst);
 	bool executeVmJmp(VmpNode& nodeInput, VmpOpJmp* inst);
 	bool executeVmJmpConst(VmpNode& nodeInput, VmpOpJmpConst* inst);
-	bool executeVmInit(VmpNode& nodeInput, VmpInstruction* inst);
+	bool executeVmInit(VmpNode& nodeInput, VmpOpInit* inst);
 	bool executeVmExit(VmpNode& nodeInput, VmpInstruction* inst);
 	void updateSaveRegContext(ghidra::Funcdata* fd);
 public:

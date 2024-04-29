@@ -7,7 +7,6 @@
 #pragma optimize("", off) 
 #endif
 
-
 z3::expr DeepStackFix::EvaluatePcodeOp(z3::context& ctx, ghidra::PcodeOp* defOp)
 {
 	if (!defOp) {
@@ -60,6 +59,9 @@ z3::expr DeepStackFix::EvalutaeStackVarnode(z3::context& ctx, ghidra::PcodeOp* o
 		}
 		if (vOut->getOffset() != vn->getOffset()) {
 			continue;
+		}
+		if(vOut->getSize() != vn->getSize()){
+			//To do...
 		}
 		return EvaluatePcodeOp(ctx, curOp);
 	}

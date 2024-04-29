@@ -422,8 +422,13 @@ bool FastCheckVmpEntry(size_t startAddr)
 	return true;
 }
 
-bool VmpBlockBuilder::executeVmInit(VmpNode& nodeInput, VmpInstruction* inst)
+bool VmpBlockBuilder::executeVmInit(VmpNode& nodeInput, VmpOpInit* inst)
 {
+	int stackOffset = 0x0;
+	for (const auto& storeData : inst->storeContext) {
+		this->buildCtx->save_reg_context.contextMap[stackOffset] = storeData;
+		stackOffset = stackOffset - 1;
+	}
 	VmpUnicorn unicornEngine;
 	unicornEngine.StartVmpTrace(*buildCtx->ctx, walker.CurrentIndex() + nodeInput.addrList.size() + 1);
 	auto nextContext = unicornEngine.CopyCurrentUnicornContext();
@@ -500,64 +505,64 @@ bool isSaveContextOffset(int stackOffset)
 
 void VmpBlockBuilder::updateSaveRegContext(ghidra::Funcdata* fd)
 {
-	ghidra::BlockBasic* bb = (ghidra::BlockBasic*)fd->getBasicBlocks().getStartBlock();
-	if (!bb) {
-		return;
-	}
-	//遍历基本块
-	auto itEnd = bb->endOp();
-	for (auto itBegin = bb->beginOp(); itBegin != itEnd; itBegin++) {
-		ghidra::PcodeOp* curOp = *itBegin;
-		if (!curOp->isAssignment()) {
-			continue;
-		}
-		ghidra::Varnode* vOut = curOp->getOut();
-		if (!vOut) {
-			continue;
-		}
-		if (vOut->getSpace()->getName() != "stack") {
-			continue;
-		}
-		//位于存储堆栈之间
-		int stackOffset = vOut->getAddr().getOffset();
-		int offKey = 0x0;
-		if (!isSaveContextOffset(stackOffset)) {
-			continue;
-		}
-		int saveIdx = stackOffset / 4;
-		if (stackOffset % 4) {
-			buildCtx->save_reg_context.eraseSaveReg(saveIdx);
-			continue;
-		}
-		if (curOp->code() == ghidra::CPUI_COPY) {
-			ghidra::Varnode* vInput = curOp->getIn(0);
-			if (vInput->isConstant()) {
-				buildCtx->save_reg_context.eraseSaveReg(saveIdx);
-				continue;
-			}
-			if (vInput->isInput()) {
-				std::string regName = GhidraHelper::GetVarnodeRegName(vInput);
-				if (!regName.empty()) {
-					buildCtx->save_reg_context.updateSaveReg(saveIdx, regName);
-					continue;
-				}
-			}
-			if (vInput->getSpace()->getName() == "stack") {
-				int inputOffset = vInput->getAddr().getOffset();
-				if (!isSaveContextOffset(inputOffset)) {
-					continue;
-				}
-				if (inputOffset % 4) {
-					buildCtx->save_reg_context.eraseSaveReg(saveIdx);
-					continue;
-				}
-				buildCtx->save_reg_context.copySaveReg(saveIdx, inputOffset / 4);
-				continue;
-			}
-			//什么都没识别出来,直接干掉
-			buildCtx->save_reg_context.eraseSaveReg(saveIdx);
-		}
-	}
+	//ghidra::BlockBasic* bb = (ghidra::BlockBasic*)fd->getBasicBlocks().getStartBlock();
+	//if (!bb) {
+	//	return;
+	//}
+	////遍历基本块
+	//auto itEnd = bb->endOp();
+	//for (auto itBegin = bb->beginOp(); itBegin != itEnd; itBegin++) {
+	//	ghidra::PcodeOp* curOp = *itBegin;
+	//	if (!curOp->isAssignment()) {
+	//		continue;
+	//	}
+	//	ghidra::Varnode* vOut = curOp->getOut();
+	//	if (!vOut) {
+	//		continue;
+	//	}
+	//	if (vOut->getSpace()->getName() != "stack") {
+	//		continue;
+	//	}
+	//	//位于存储堆栈之间
+	//	int stackOffset = vOut->getAddr().getOffset();
+	//	int offKey = 0x0;
+	//	if (!isSaveContextOffset(stackOffset)) {
+	//		continue;
+	//	}
+	//	int saveIdx = stackOffset / 4;
+	//	if (stackOffset % 4) {
+	//		buildCtx->save_reg_context.eraseSaveReg(saveIdx);
+	//		continue;
+	//	}
+	//	if (curOp->code() == ghidra::CPUI_COPY) {
+	//		ghidra::Varnode* vInput = curOp->getIn(0);
+	//		if (vInput->isConstant()) {
+	//			buildCtx->save_reg_context.eraseSaveReg(saveIdx);
+	//			continue;
+	//		}
+	//		if (vInput->isInput()) {
+	//			std::string regName = GhidraHelper::GetVarnodeRegName(vInput);
+	//			if (!regName.empty()) {
+	//				buildCtx->save_reg_context.updateSaveReg(saveIdx, regName);
+	//				continue;
+	//			}
+	//		}
+	//		if (vInput->getSpace()->getName() == "stack") {
+	//			int inputOffset = vInput->getAddr().getOffset();
+	//			if (!isSaveContextOffset(inputOffset)) {
+	//				continue;
+	//			}
+	//			if (inputOffset % 4) {
+	//				buildCtx->save_reg_context.eraseSaveReg(saveIdx);
+	//				continue;
+	//			}
+	//			buildCtx->save_reg_context.copySaveReg(saveIdx, inputOffset / 4);
+	//			continue;
+	//		}
+	//		//什么都没识别出来,直接干掉
+	//		buildCtx->save_reg_context.eraseSaveReg(saveIdx);
+	//	}
+	//}
 	return;
 }
 
@@ -644,7 +649,7 @@ bool VmpBlockBuilder::executeVmpOp(VmpNode& nodeInput,std::unique_ptr<VmpInstruc
 	curBlock->insList.push_back(std::move(inst));
 
 	if (vmInst->opType == VM_INIT) {
-		executeVmInit(nodeInput, vmInst);
+		executeVmInit(nodeInput, (VmpOpInit*)vmInst);
 	}
 	else if (vmInst->opType == VM_JMP) {
 		executeVmJmp(nodeInput, (VmpOpJmp*)vmInst);

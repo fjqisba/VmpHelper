@@ -60,9 +60,9 @@ headers = [
 ]
 
 compile-definitions = ["_WINDOWS","_CRT_SECURE_NO_WARNINGS","USE_STANDARD_FILE_FUNCTIONS"]
-include-directories = ["${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/include"]
-link-directories = ["${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/lib"]
-link-libraries = ["capstone::capstone" , "keystone" , "unicorn", "libz3"]
+include-directories = ["${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/include","IDA83_SDK/include"]
+link-directories = ["${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/lib","IDA83_SDK/lib/x64_win_vc_32_pro"]
+link-libraries = ["capstone::capstone" , "keystone" , "unicorn", "libz3","ida"]
 
 cmake-after = """
 set_property(TARGET Revampire PROPERTY
