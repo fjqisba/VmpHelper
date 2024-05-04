@@ -30,10 +30,11 @@ public:
 	bool isSelected = false;
 };
 
-struct VmpSaveRegContext
+//vmp轮转寄存器
+
+struct VmpRotateContext
 {
-	//如果key大于0 则表示 R0-R15 -> eax,ebx...eflags寄存器
-	//如果key小于0 则表示 stack -> eax,ebx... eflags寄存器
+	//range [0,11)
 	std::map<int, ghidra::VarnodeData> contextMap;
 };
 
@@ -68,8 +69,6 @@ public:
 	VmAddress from_addr;
 	//模拟状态
 	VM_MATCH_STATUS status;
-	//存储上下文
-	VmpSaveRegContext save_reg_context;
 };
 
 class VmpControlFlowBuilder

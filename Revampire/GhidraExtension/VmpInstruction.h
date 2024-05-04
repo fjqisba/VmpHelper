@@ -18,6 +18,7 @@ enum VmpOpType
 	VM_SHR,
 	VM_SHRD,
 	VM_SHL,
+	VM_SHLD,
 	VM_JMP,
 	VM_JMP_CONST,
 	VM_READ_MEM,
@@ -240,6 +241,15 @@ private:
 	int BuildShl4(ghidra::Funcdata& data);
 };
 
+class VmpOpShld : public VmpInstruction
+{
+public:
+	VmpOpShld() { opType = VM_SHLD; };
+	~VmpOpShld() {};
+	int BuildInstruction(ghidra::Funcdata& data) override;
+	void PrintRaw(std::ostream& ss) override;
+};
+
 class VmpOpJmp :public VmpInstruction
 {
 public:
@@ -275,6 +285,8 @@ public:
 	int BuildInstruction(ghidra::Funcdata& data) override;
 	void PrintRaw(std::ostream& ss) override;
 	void BuildX86Asm(triton::Context* ctx) override;
+public:
+	std::string seg;
 };
 
 class VmpOpWriteMem :public VmpInstruction

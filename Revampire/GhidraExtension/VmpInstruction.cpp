@@ -213,7 +213,10 @@ void VmpOpReadMem::PrintRaw(std::ostream& ss)
 	ss << "\t";
 	colorString(ss, SCOLOR_INSN, [this, &ss]() {
 		ss << "vReadMem" << this->opSize;
-		});
+		if (!seg.empty()) {
+			ss << "_" << seg;
+		}
+	});
 	ss << "\n";
 }
 
@@ -230,5 +233,13 @@ void VmpOpShrd::PrintRaw(std::ostream& ss)
 	printAddress(ss);
 	ss << "\t";
 	colorString(ss, "vShrd", SCOLOR_INSN);
+	ss << "\n";
+}
+
+void VmpOpShld::PrintRaw(std::ostream& ss)
+{
+	printAddress(ss);
+	ss << "\t";
+	colorString(ss, "vShld", SCOLOR_INSN);
 	ss << "\n";
 }

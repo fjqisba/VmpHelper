@@ -884,6 +884,32 @@ int VmpOpCpuid::BuildInstruction(ghidra::Funcdata& data)
 	return 0x1;
 }
 
+//mov eax, dword ptr ds:[VSP]
+//mov edx, dword ptr ds:[VSP+0x4]
+//mov cl, byte ptr ds:[VSP+0x8]
+//VSP = VSP + 0x2
+//shld eax, edx, cl
+//mov dword ptr ds:[VSP+0x4], eax
+//pushfd
+//pop dword ptr ds:[VSP]
+
+int VmpOpShld::BuildInstruction(ghidra::Funcdata& data)
+{
+	auto regEIP = data.getArch()->translate->getRegister("EIP");
+	auto regESP = data.getArch()->translate->getRegister("ESP");
+	ghidra::Address pc = ghidra::Address(data.getArch()->getDefaultCodeSpace(), addr.vmdata);
+
+	//To do...
+	//esp = esp + 0x2
+	ghidra::PcodeOp* opAdd = data.newOp(2, pc);
+	data.opSetOpcode(opAdd, ghidra::CPUI_INT_ADD);
+	data.newVarnodeOut(regESP.size, regESP.getAddr(), opAdd);
+	data.opSetInput(opAdd, data.newVarnode(regESP.size, regESP.space, regESP.offset), 0);
+	data.opSetInput(opAdd, data.newConstant(4, 0x2), 1);
+
+	return 0x1;
+}
+
 //vShrd
 //mov eax, dword ptr ds:[VSP]
 //mov edx, dword ptr ds:[VSP+0x4]
@@ -891,6 +917,8 @@ int VmpOpCpuid::BuildInstruction(ghidra::Funcdata& data)
 //VSP = VSP + 0x2
 //shrd eax, edx, cl
 //mov dword ptr ds:[VSP+0x4], eax
+//pushfd
+//pop dword ptr ds:[VSP]
 
 int VmpOpShrd::BuildInstruction(ghidra::Funcdata& data)
 {

@@ -5814,6 +5814,7 @@ void ActionDatabase::buildVmpBlockAction(Architecture* conf)
 	act->addAction(new ActionPreferComplement("blockrecovery"));
 	act->addAction(new ActionStructureTransform("blockrecovery"));
 	act->addAction(new ActionNormalizeBranches("normalizebranches"));
+    act->addAction(new ActionFinalStructure("blockrecovery"));
 	act->addAction(new ActionStop("base"));
 }
 
@@ -6045,29 +6046,7 @@ void ActionDatabase::buildVmpHandlerAction(Architecture* conf)
     act->addAction(new ActionPreferComplement("blockrecovery"));
     act->addAction(new ActionStructureTransform("blockrecovery"));
     act->addAction(new ActionNormalizeBranches("normalizebranches"));
-
-    act->addAction(new ActionAssignHigh("merge"));
-    act->addAction(new ActionMergeRequired("merge"));
-    act->addAction(new ActionMarkExplicit("merge"));
-    act->addAction(new ActionMarkImplied("merge")); // This must come BEFORE general merging
-    act->addAction(new ActionMergeMultiEntry("merge"));
-    act->addAction(new ActionMergeCopy("merge"));
-    act->addAction(new ActionDominantCopy("merge"));
-    act->addAction(new ActionDynamicSymbols("dynamic"));
-    act->addAction(new ActionMarkIndirectOnly("merge")); // Must come after required merges but before speculative
-    act->addAction(new ActionMergeAdjacent("merge"));
-    act->addAction(new ActionMergeType("merge"));
-    act->addAction(new ActionHideShadow("merge"));
-    act->addAction(new ActionCopyMarker("merge"));
-    act->addAction(new ActionOutputPrototype("localrecovery"));
-    act->addAction(new ActionInputPrototype("fixateproto"));
-    act->addAction(new ActionRestructureHigh("localrecovery"));
-    act->addAction(new ActionMapGlobals("fixateglobals"));
-    act->addAction(new ActionDynamicSymbols("dynamic"));
-    act->addAction(new ActionNameVars("merge"));
-    //act->addAction(new ActionSetCasts("casts"));
-    act->addAction(new ActionFinalStructure("blockrecovery"));
-    act->addAction(new ActionPrototypeWarnings("protorecovery"));
+	act->addAction(new ActionFinalStructure("blockrecovery"));
     act->addAction(new ActionStop("base"));
 }
 

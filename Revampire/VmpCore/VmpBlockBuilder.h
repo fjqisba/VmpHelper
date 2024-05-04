@@ -72,7 +72,6 @@ private:
 	bool executeVmJmpConst(VmpNode& nodeInput, VmpOpJmpConst* inst);
 	bool executeVmInit(VmpNode& nodeInput, VmpOpInit* inst);
 	bool executeVmExit(VmpNode& nodeInput, VmpInstruction* inst);
-	void updateSaveRegContext(ghidra::Funcdata* fd);
 public:
 	static int vmRegStartAddr;
 private:
