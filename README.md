@@ -18,7 +18,11 @@ Then you may get a flow chart like the following:
 
 ![graph](graph.png)
 
+## Current Target
 
+1、Identify all handlers of vmp
+
+2、Print out the complete flow chart of vmp
 
 ## Reference
 
@@ -33,6 +37,8 @@ keystone:https://github.com/keystone-engine/keystone
 z3:https://github.com/Z3Prover/z3
 
 开发者交流QQ群:569821835
+
+
 
 ## Sponsor this project
 
