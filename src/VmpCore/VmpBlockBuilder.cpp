@@ -126,39 +126,6 @@ VmpBlockBuilder::VmpBlockBuilder(VmpControlFlowBuilder& cfg) :flow(cfg), walker(
 	buildCtx = nullptr;
 }
 
-size_t tryGetVmCallExitAddress(ghidra::Funcdata* fd, int callOffset)
-{
-	ghidra::BlockBasic* bb = (ghidra::BlockBasic*)fd->getBasicBlocks().getStartBlock();
-	if (!bb) {
-		return 0x0;
-	}
-	//µ¹Ðð±éÀú»ù±¾¿é
-	auto itEnd = bb->endOp();
-	while (itEnd != bb->beginOp()) {
-		--itEnd;
-		ghidra::PcodeOp* curOp = *itEnd;
-		ghidra::Varnode* vOut = curOp->getOut();
-		if (!vOut) {
-			continue;
-		}
-		if (vOut->getSpace()->getName() != "stack") {
-			continue;
-		}
-		int stackOff = vOut->getAddr().getOffset();
-		if (stackOff != callOffset) {
-			continue;
-		}
-		if (curOp->code() == ghidra::CPUI_COPY) {
-			if (curOp->getIn(0)->isConstant()) {
-				return curOp->getIn(0)->getOffset();
-			}
-		}
-		//To do...
-		return 0x0;
-	}
-	return 0x0;
-}
-
 std::unique_ptr<VmpInstruction> VmpBlockBuilder::tryMatch_vPushReg(ghidra::Funcdata* fd, VmpNode& nodeInput)
 {
 	size_t storeCount = fd->obank.storelist.size();
@@ -451,35 +418,36 @@ bool VmpBlockBuilder::executeVmExit(VmpNode& nodeInput, VmpInstruction* inst)
 	ghidra::Funcdata* fd = flow.Arch()->AnaVmpBasicBlock(curBlock);
 	VmpBranchAnalyzer branchAna(fd);
 	std::vector<size_t> branchList = branchAna.GuessVmpBranch();
-	if (branchList.size() == 1) {
-		//deadcode
-		if (branchList[0] == 0x0) {
-			buildCtx->status = VmpFlowBuildContext::FINISH_MATCH;
-			return true;
-		}
-		//To do... fix
-		//size_t vmCallExit = tryGetVmCallExitAddress(fd, 0x20);
-		//if (vmCallExit && FastCheckVmpEntry(vmCallExit)) {
-		//	std::unique_ptr<VmpOpExitCall> vOpExitCall = std::make_unique<VmpOpExitCall>();
-		//	vOpExitCall->addr = inst->addr;
-		//	vOpExitCall->callAddr = branchList[0];
-		//	curBlock->insList.push_back(std::move(vOpExitCall));
-		//	auto newBuildTask = std::make_unique<VmpFlowBuildContext>();
-		//	newBuildTask->btype = VmpFlowBuildContext::HANDLE_VMP_ENTRY;
-		//	newBuildTask->from_addr = inst->addr;
-		//	newBuildTask->start_addr = vmCallExit;
-		//	flow.anaQueue.push(std::move(newBuildTask));
-		//	buildCtx->status = VmpFlowBuildContext::FINISH_MATCH;
-		//	return true;
-		//}
-		if (!IDAWrapper::isVmpEntry(branchList[0])) {
-			flow.addNormalBuildTask(branchList[0]);
-			flow.linkBlockEdge(inst->addr, branchList[0]);
-			buildCtx->status = VmpFlowBuildContext::FINISH_MATCH;
-			return true;
-		}
+	if (branchList.size() != 1) {
+		buildCtx->status = VmpFlowBuildContext::FINISH_MATCH;
+		return true;
 	}
-	buildCtx->status = VmpFlowBuildContext::FINISH_MATCH;
+	//deadcode
+	if (branchList[0] == 0x0) {
+		buildCtx->status = VmpFlowBuildContext::FINISH_MATCH;
+		return true;
+	}
+	VmpExitCallAnalyzer exitCallAna;
+	size_t vmCallExit = exitCallAna.GuessExitCallAddr(fd);
+	if (vmCallExit && FastCheckVmpEntry(vmCallExit)) {
+		std::unique_ptr<VmpOpExitCall> vOpExitCall = std::make_unique<VmpOpExitCall>();
+		vOpExitCall->addr = inst->addr;
+		vOpExitCall->callAddr = branchList[0];
+		curBlock->insList.push_back(std::move(vOpExitCall));
+		auto newBuildTask = std::make_unique<VmpFlowBuildContext>();
+		newBuildTask->btype = VmpFlowBuildContext::HANDLE_VMP_ENTRY;
+		newBuildTask->from_addr = inst->addr;
+		newBuildTask->start_addr = vmCallExit;
+		flow.anaQueue.push(std::move(newBuildTask));
+		buildCtx->status = VmpFlowBuildContext::FINISH_MATCH;
+		return true;
+	}
+	if (!IDAWrapper::isVmpEntry(branchList[0])) {
+		flow.addNormalBuildTask(branchList[0]);
+		flow.linkBlockEdge(inst->addr, branchList[0]);
+		buildCtx->status = VmpFlowBuildContext::FINISH_MATCH;
+		return true;
+	}
 	return true;
 }
 

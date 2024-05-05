@@ -63,3 +63,14 @@ private:
 	ghidra::Funcdata* fd = nullptr;
 	ghidra::BlockBasic* bb = nullptr;
 };
+
+class VmpExitCallAnalyzer
+{
+public:
+	VmpExitCallAnalyzer() {};
+	size_t GuessExitCallAddr(ghidra::Funcdata* fd);
+private:
+	bool getEndStackOffset(int& outOffset);
+private:
+	ghidra::Funcdata* fd = nullptr;
+};

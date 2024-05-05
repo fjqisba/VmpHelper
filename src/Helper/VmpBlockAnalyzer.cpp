@@ -518,6 +518,86 @@ std::vector<size_t> VmpBranchAnalyzer::guessConditionalBranch(z3::expr& formula)
 	return retList;
 }
 
+bool VmpExitCallAnalyzer::getEndStackOffset(int& outOffset)
+{
+	ghidra::PcodeOp* retOp = fd->getFirstReturnOp();
+	if (!retOp) {
+		return false;
+	}
+	for (unsigned int n = 0; n < retOp->numInput(); ++n) {
+		ghidra::Varnode* vn = retOp->getIn(n);
+		std::string retRegName = fd->getArch()->translate->getRegisterName(vn->getSpace(), vn->getOffset(), vn->getSize());
+		if (retRegName != "ESP") {
+			continue;
+		}
+		ghidra::PcodeOp* defOp = vn->getDef();
+		if (!defOp) {
+			continue;
+		}
+		if (defOp->code() == ghidra::CPUI_COPY) {
+			ghidra::Varnode* vn = defOp->getIn(0);
+			std::string regName = fd->getArch()->translate->getRegisterName(vn->getSpace(), vn->getOffset(), vn->getSize());
+			if (vn->isInput() && regName == "ESP") {
+				outOffset = 0x0;
+				return true;
+			}
+		}
+		else if (defOp->code() == ghidra::CPUI_INT_ADD) {
+			ghidra::Varnode* v0 = defOp->getIn(0);
+			ghidra::Varnode* v1 = defOp->getIn(1);
+			std::string regName = fd->getArch()->translate->getRegisterName(v0->getSpace(), v0->getOffset(), v0->getSize());
+			if (v0->isInput() && regName == "ESP" && v1->isConstant()) {
+				outOffset = v1->getOffset();
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+size_t VmpExitCallAnalyzer::GuessExitCallAddr(ghidra::Funcdata* func)
+{
+	fd = func;
+	ghidra::BlockBasic* bb = (ghidra::BlockBasic*)fd->getBasicBlocks().getStartBlock();
+	if (!bb) {
+		return 0x0;
+	}
+	int endStackOffset = 0x0;
+	if (!getEndStackOffset(endStackOffset)) {
+		return 0x0;
+	}
+	//µ¹Ðò±éÀú»ù±¾¿é
+	auto itEnd = bb->endOp();
+	while (itEnd != bb->beginOp()) {
+		--itEnd;
+		ghidra::PcodeOp* curOp = *itEnd;
+		ghidra::Varnode* vOut = curOp->getOut();
+		if (!vOut) {
+			continue;
+		}
+		if (vOut->getSpace()->getName() != "stack") {
+			continue;
+		}
+		int stackOffset = vOut->getAddr().getOffset();
+		if (stackOffset > endStackOffset && stackOffset < endStackOffset + 0x4) {
+			return 0x0;
+		}
+		if (stackOffset != endStackOffset) {
+			continue;
+		}
+		if (vOut->getSize() != 0x4) {
+			return 0x0;
+		}
+		if (curOp->code() == ghidra::CPUI_COPY) {
+			if (curOp->getIn(0)->isConstant()) {
+				return curOp->getIn(0)->getOffset();
+			}
+		}
+		return 0x0;
+	}
+	return 0x0;
+}
+
 std::vector<size_t> VmpBranchAnalyzer::GuessVmpBranch()
 {
 	std::vector<size_t> retList;
