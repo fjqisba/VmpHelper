@@ -36,6 +36,8 @@ keystone:https://github.com/keystone-engine/keystone
 
 z3:https://github.com/Z3Prover/z3
 
+cereal:https://github.com/USCiLab/cereal
+
 开发者交流QQ群:569821835
 
 

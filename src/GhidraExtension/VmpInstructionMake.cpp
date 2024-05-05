@@ -1,12 +1,8 @@
 #pragma once
 #include "VmpInstruction.h"
 #include "../GhidraExtension/VmpNode.h"
+#include "../GhidraExtension/VmpControlFlow.h"
 #include "../Manager/exceptions.h"
-
-std::unique_ptr<VmpInstruction> VmpInstruction::MakeInstruction(VmpNode& input)
-{
-	return nullptr;
-}
 
 size_t VmpInstruction::GetMemAccessSize(size_t addr)
 {
@@ -18,13 +14,18 @@ size_t VmpInstruction::GetMemAccessSize(size_t addr)
 	return 0x0;
 }
 
-std::unique_ptr<VmpInstruction> VmpOpPopReg::MakeInstruction(VmpNode& input)
+std::unique_ptr<VmpInstruction> VmpInstruction::MakeInstruction(VmpFlowBuildContext* buildCtx, VmpNode& input)
+{
+	return nullptr;
+}
+
+std::unique_ptr<VmpInstruction> VmpOpPopReg::MakeInstruction(VmpFlowBuildContext* buildCtx, VmpNode& input)
 {
 	std::unique_ptr<VmpOpPopReg> vPopRegOp = std::make_unique<VmpOpPopReg>();
-	vPopRegOp->addr = addr;
+	vPopRegOp->addr = input.readVmAddress(reg_code);
 	vPopRegOp->reg_code = reg_code;
 	vPopRegOp->reg_stack = reg_stack;
-	vPopRegOp->opSize = GetMemAccessSize(loadAddr);
+	vPopRegOp->opSize = opSize;
 	for (unsigned int n = 0; n < input.contextList.size(); ++n) {
 		reg_context& tmpContext = input.contextList[n];
 		if (tmpContext.EIP == storeAddr) {
@@ -39,12 +40,11 @@ std::unique_ptr<VmpInstruction> VmpOpPopReg::MakeInstruction(VmpNode& input)
 	return nullptr;
 }
 
-std::unique_ptr<VmpInstruction> VmpOpPushReg::MakeInstruction(VmpNode& input)
+std::unique_ptr<VmpInstruction> VmpOpPushReg::MakeInstruction(VmpFlowBuildContext* buildCtx, VmpNode& input)
 {
 	std::unique_ptr<VmpOpPushReg> vPushRegOp = std::make_unique<VmpOpPushReg>();
-	vPushRegOp->addr = addr;
-
-	vPushRegOp->opSize = GetMemAccessSize(loadAddr);
+	vPushRegOp->addr = input.readVmAddress(buildCtx->vmreg.reg_code);
+	vPushRegOp->opSize = opSize;
 	for (unsigned int n = 0; n < input.contextList.size(); ++n) {
 		reg_context& tmpContext = input.contextList[n];
 		if (tmpContext.EIP == loadAddr) {
@@ -59,12 +59,11 @@ std::unique_ptr<VmpInstruction> VmpOpPushReg::MakeInstruction(VmpNode& input)
 	return nullptr;
 }
 
-std::unique_ptr<VmpInstruction> VmpOpPushImm::MakeInstruction(VmpNode& input)
+std::unique_ptr<VmpInstruction> VmpOpPushImm::MakeInstruction(VmpFlowBuildContext* buildCtx, VmpNode& input)
 {
 	std::unique_ptr<VmpOpPushImm> vPushImm = std::make_unique<VmpOpPushImm>();
-	vPushImm->addr = addr;
-
-	vPushImm->opSize = GetMemAccessSize(loadAddr);
+	vPushImm->addr = input.readVmAddress(buildCtx->vmreg.reg_code);
+	vPushImm->opSize = opSize;
 	for (unsigned int n = 0; n < input.contextList.size(); ++n) {
 		reg_context& tmpContext = input.contextList[n];
 		if (tmpContext.EIP == storeAddr) {
@@ -80,9 +79,66 @@ std::unique_ptr<VmpInstruction> VmpOpPushImm::MakeInstruction(VmpNode& input)
 	return nullptr;
 }
 
-std::unique_ptr<VmpInstruction> VmpOpPushVSP::MakeInstruction(VmpNode& input)
+std::unique_ptr<VmpInstruction> VmpOpPushVSP::MakeInstruction(VmpFlowBuildContext* buildCtx, VmpNode& input)
 {
 	std::unique_ptr<VmpOpPushVSP> vPushVSP = std::make_unique<VmpOpPushVSP>();
-	vPushVSP->addr = addr;
+	vPushVSP->addr = input.readVmAddress(buildCtx->vmreg.reg_code);
 	return vPushVSP;
+}
+
+std::unique_ptr<VmpInstruction> VmpOpWriteMem::MakeInstruction(VmpFlowBuildContext* buildCtx,VmpNode& input)
+{
+	std::unique_ptr<VmpOpWriteMem> vOpWriteMem = std::make_unique<VmpOpWriteMem>();
+	vOpWriteMem->addr = input.readVmAddress(buildCtx->vmreg.reg_code);
+	vOpWriteMem->opSize = opSize;
+	return vOpWriteMem;
+}
+
+std::unique_ptr<VmpInstruction> VmpOpReadMem::MakeInstruction(VmpFlowBuildContext* buildCtx, VmpNode& input)
+{
+	std::unique_ptr<VmpOpReadMem> vOpReadMem = std::make_unique<VmpOpReadMem>();
+	vOpReadMem->addr = input.readVmAddress(buildCtx->vmreg.reg_code);
+	vOpReadMem->opSize = opSize;
+	vOpReadMem->seg = seg;
+	return vOpReadMem;
+}
+
+std::unique_ptr<VmpInstruction> VmpOpAdd::MakeInstruction(VmpFlowBuildContext* buildCtx, VmpNode& input)
+{
+	std::unique_ptr<VmpOpAdd> vAddOp = std::make_unique<VmpOpAdd>();
+	vAddOp->addr = input.readVmAddress(buildCtx->vmreg.reg_code);
+	vAddOp->opSize = opSize;
+	return vAddOp;
+}
+
+std::unique_ptr<VmpInstruction> VmpOpNor::MakeInstruction(VmpFlowBuildContext* buildCtx, VmpNode& input)
+{
+	std::unique_ptr<VmpOpNor> vOpNor = std::make_unique<VmpOpNor>();
+	vOpNor->addr = input.readVmAddress(buildCtx->vmreg.reg_code);
+	vOpNor->opSize = opSize;
+	return vOpNor;
+}
+
+std::unique_ptr<VmpInstruction> VmpOpNand::MakeInstruction(VmpFlowBuildContext* buildCtx, VmpNode& input)
+{
+	std::unique_ptr<VmpOpNand> vOpNand = std::make_unique<VmpOpNand>();
+	vOpNand->addr = input.readVmAddress(buildCtx->vmreg.reg_code);
+	vOpNand->opSize = opSize;
+	return vOpNand;
+}
+
+std::unique_ptr<VmpInstruction> VmpOpShr::MakeInstruction(VmpFlowBuildContext* buildCtx, VmpNode& input)
+{
+	std::unique_ptr<VmpOpShr> vOpShr = std::make_unique<VmpOpShr>();
+	vOpShr->addr = input.readVmAddress(buildCtx->vmreg.reg_code);
+	vOpShr->opSize = opSize;
+	return vOpShr;
+}
+
+std::unique_ptr<VmpInstruction> VmpOpShl::MakeInstruction(VmpFlowBuildContext* buildCtx, VmpNode& input)
+{
+	std::unique_ptr<VmpOpShl> vOpShl = std::make_unique<VmpOpShl>();
+	vOpShl->addr = input.readVmAddress(buildCtx->vmreg.reg_code);
+	vOpShl->opSize = opSize;
+	return vOpShl;
 }

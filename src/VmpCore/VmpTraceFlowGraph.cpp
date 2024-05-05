@@ -252,6 +252,9 @@ bool VmpTraceFlowGraph::addLink(size_t fromAddr, size_t toAddr)
 
 void VmpTraceFlowGraph::AddTraceFlow(const std::vector<reg_context>& traceList)
 {
+    if (traceList.size() <= 1) {
+        return;
+    }
     for (unsigned int n = 0; n < traceList.size() - 1; n++) {
         if (!addLink(traceList[n].EIP, traceList[n + 1].EIP)) {
             return;

@@ -298,22 +298,33 @@ int VmpOpReadMem::BuildInstruction(ghidra::Funcdata& data)
 	return opCount;
 }
 
-//mov ecx,dword ptr ds:[edi]
-//mov eax,dword ptr ds:[edi+0x4]
-//mov dword ptr ss:[ecx],eax
-//lea edi,dword ptr ds:[edi+0x8]
+//vWriteMem4
+//mov eax,dword ptr ds:[VSP]
+//mov edx,dword ptr ds:[VSP+0x4]
+//VSP = VSP + 0x8
+//mov dword ptr ss:[eax],edx
+
+//vWriteMem2
+//mov eax, dword ptr ds:[VSP]
+//mov dx, word ptr ds:[VSP+0x4]
+//VSP = VSP + 0x6
+//mov word ptr ds:[eax], dx
+
+//vWriteMem1
+//mov edx, dword ptr ds:[VSP]
+//mov al, byte ptr ds:[VSP+0x4]
+//VSP = VSP + 0x6
+//mov byte ptr ds:[edx], al
 
 int VmpOpWriteMem::BuildInstruction(ghidra::Funcdata& data)
 {
 	auto regESP = data.getArch()->translate->getRegister("ESP");
 	ghidra::Address pc = ghidra::Address(data.getArch()->getDefaultCodeSpace(), addr.vmdata);
 
+	PCodeBuildHelper opBuilder(data, pc);
+
 	//writeAddr = *(ram,ESP(free))
-	ghidra::PcodeOp* opLoad1 = data.newOp(2, pc);
-	data.opSetOpcode(opLoad1, ghidra::CPUI_LOAD);
-	ghidra::Varnode* uWriteAddr = data.newUniqueOut(4, opLoad1);
-	data.opSetInput(opLoad1, data.newVarnodeSpace(data.getArch()->getSpaceByName("ram")), 0);
-	data.opSetInput(opLoad1, data.newVarnode(regESP.size, regESP.space, regESP.offset), 1);
+	ghidra::Varnode* uWriteAddr = opBuilder.CPUI_LOAD(data.newVarnode(regESP.size, regESP.space, regESP.offset), 0x4);
 
 	//ESP = #0x4 + ESP
 	ghidra::PcodeOp* opAdd = data.newOp(2, pc);
@@ -323,27 +334,28 @@ int VmpOpWriteMem::BuildInstruction(ghidra::Funcdata& data)
 	data.opSetInput(opAdd, data.newVarnode(regESP.size, regESP.space, regESP.offset), 1);
 
 	//writeVal = *(ram,ESP(free))
-	ghidra::PcodeOp* opLoad2 = data.newOp(2, pc);
-	data.opSetOpcode(opLoad2, ghidra::CPUI_LOAD);
-	ghidra::Varnode* uWriteVal = data.newUniqueOut(4, opLoad2);
-	data.opSetInput(opLoad2, data.newVarnodeSpace(data.getArch()->getSpaceByName("ram")), 0);
-	data.opSetInput(opLoad2, data.newVarnode(regESP.size, regESP.space, regESP.offset), 1);
+	ghidra::Varnode* uWriteVal = opBuilder.CPUI_LOAD(data.newVarnode(regESP.size, regESP.space, regESP.offset), opSize);
 
 	//*[writeAddr] = writeVal
-	ghidra::PcodeOp* opStore = data.newOp(3, pc);
-	data.opSetOpcode(opStore, ghidra::CPUI_STORE);
-	data.opSetInput(opStore, data.newVarnodeSpace(data.getArch()->getSpaceByName("ram")), 0);
-	data.opSetInput(opStore, uWriteAddr, 1);
-	data.opSetInput(opStore, uWriteVal, 2);
+	opBuilder.CPUI_STORE(uWriteAddr, uWriteVal);
 
-	//ESP = #0x4 + ESP
-	opAdd = data.newOp(2, pc);
-	data.opSetOpcode(opAdd, ghidra::CPUI_INT_ADD);
-	data.newVarnodeOut(regESP.size, regESP.getAddr(), opAdd);
-	data.opSetInput(opAdd, data.newConstant(0x4, 0x4), 0);
-	data.opSetInput(opAdd, data.newVarnode(regESP.size, regESP.space, regESP.offset), 1);
-
-	return 5;
+	if (opSize == 0x4) {
+		//ESP = #0x4 + ESP
+		opAdd = data.newOp(2, pc);
+		data.opSetOpcode(opAdd, ghidra::CPUI_INT_ADD);
+		data.newVarnodeOut(regESP.size, regESP.getAddr(), opAdd);
+		data.opSetInput(opAdd, data.newConstant(0x4, 0x4), 0);
+		data.opSetInput(opAdd, data.newVarnode(regESP.size, regESP.space, regESP.offset), 1);
+	}
+	else {
+		//ESP = #0x2 + ESP
+		opAdd = data.newOp(2, pc);
+		data.opSetOpcode(opAdd, ghidra::CPUI_INT_ADD);
+		data.newVarnodeOut(regESP.size, regESP.getAddr(), opAdd);
+		data.opSetInput(opAdd, data.newConstant(0x4, 0x2), 0);
+		data.opSetInput(opAdd, data.newVarnode(regESP.size, regESP.space, regESP.offset), 1);
+	}
+	return 1;
 }
 
 //vNand1
@@ -854,6 +866,26 @@ int VmpOpExitCall::BuildInstruction(ghidra::Funcdata& data)
 	return 0x1;
 }
 
+//vPopfd
+//popfd
+//就等价于popfd指令
+
+int VmpOpPopfd::BuildInstruction(ghidra::Funcdata& data)
+{
+	ghidra::Address pc = ghidra::Address(data.getArch()->getDefaultCodeSpace(), addr.vmdata);
+	auto regESP = data.getArch()->translate->getRegister("ESP");
+
+	//暂时只处理成这样,
+	//To do...
+	//esp = esp + 0x4
+	ghidra::PcodeOp* opAdd = data.newOp(2, pc);
+	data.opSetOpcode(opAdd, ghidra::CPUI_INT_ADD);
+	data.newVarnodeOut(regESP.size, regESP.getAddr(), opAdd);
+	data.opSetInput(opAdd, data.newVarnode(regESP.size, regESP.space, regESP.offset), 0);
+	data.opSetInput(opAdd, data.newConstant(4, 0x4), 1);
+
+	return 0x1;
+}
 
 //vCpuid
 //mov eax, dword ptr ds:[VSP]
