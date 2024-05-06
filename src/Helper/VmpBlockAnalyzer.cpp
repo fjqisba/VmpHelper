@@ -127,6 +127,22 @@ bool DeepStackFix::FixLoadRam(ghidra::PcodeOp* curOp)
 			return true;
 		}
 	}
+	else if (formula.is_const() && formula.decl().name().str() == "ESP") {
+		ghidra::Varnode* newvn = fd->newVarnode(curOp->getOut()->getSize(), fd->getArch()->getStackSpace(), 0x0);
+		fd->opSetInput(curOp, newvn, 0);
+		fd->opRemoveInput(curOp, 1);
+		fd->opSetOpcode(curOp, ghidra::CPUI_COPY);
+		ghidra::Varnode* refvn = curOp->getOut();
+		if (refvn->isSpacebasePlaceholder()) {
+			refvn->clearSpacebasePlaceholder();	// Clear the trigger
+			ghidra::PcodeOp* placeOp = refvn->loneDescend();
+			if (placeOp != (ghidra::PcodeOp*)0) {
+				ghidra::FuncCallSpecs* fc = fd->getCallSpecs(placeOp);
+				if (fc != (ghidra::FuncCallSpecs*)0)
+					fc->resolveSpacebaseRelative(*fd, refvn);
+			}
+		}
+	}
 	return false;
 }
 
@@ -158,6 +174,15 @@ bool DeepStackFix::FixStoreRam(ghidra::PcodeOp* curOp)
 			fd->opSetOpcode(curOp, ghidra::CPUI_COPY);
 			return true;
 		}
+	}
+	else if (formula.is_const() && formula.decl().name().str() == "ESP") {
+		ghidra::Address stackVar(fd->getArch()->getStackSpace(), 0x0);
+		fd->newVarnodeOut(size, stackVar, curOp);
+		curOp->getOut()->setStackStore();
+		fd->opRemoveInput(curOp, 1);
+		fd->opRemoveInput(curOp, 0);
+		fd->opSetOpcode(curOp, ghidra::CPUI_COPY);
+		return true;
 	}
 	return false;
 }

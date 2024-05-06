@@ -355,6 +355,12 @@ public:
 	int BuildInstruction(ghidra::Funcdata& data) override;
 	void PrintRaw(std::ostream& ss) override;
 	void BuildX86Asm(triton::Context* ctx) override;
+	std::unique_ptr<VmpInstruction> MakeInstruction(VmpFlowBuildContext* ctx, VmpNode& input) override;
+	template <class Archive>
+	void serialize(Archive& ar)
+	{
+		ar(cereal::base_class<VmpInstruction>(this));
+	}
 public:
 	//VmJmpType jmpType;
 	std::vector<size_t> branchList;
@@ -369,6 +375,12 @@ public:
 	~VmpOpJmpConst() {};
 	void PrintRaw(std::ostream& ss) override;
 	int BuildInstruction(ghidra::Funcdata& data) override;
+	std::unique_ptr<VmpInstruction> MakeInstruction(VmpFlowBuildContext* ctx, VmpNode& input) override;
+	template <class Archive>
+	void serialize(Archive& ar)
+	{
+		ar(cereal::base_class<VmpInstruction>(this));
+	}
 public:
 	size_t targetAddr = 0x0;
 	bool isBuildJmp = false;
@@ -432,6 +444,12 @@ public:
 	int BuildInstruction(ghidra::Funcdata& data) override;
 	void PrintRaw(std::ostream& ss) override;
 	void BuildX86Asm(triton::Context* ctx) override;
+	std::unique_ptr<VmpInstruction> MakeInstruction(VmpFlowBuildContext* ctx, VmpNode& input) override;
+	template <class Archive>
+	void serialize(Archive& ar)
+	{
+		ar(cereal::base_class<VmpInstruction>(this));
+	}
 };
 
 //mov eax, dword ptr ds:[VSP + 4]
@@ -477,3 +495,6 @@ REGISTER_VMPINSTRUCTION(VmpOpShrd)
 REGISTER_VMPINSTRUCTION(VmpOpShld)
 REGISTER_VMPINSTRUCTION(VmpOpCpuid)
 REGISTER_VMPINSTRUCTION(VmpOpImul)
+REGISTER_VMPINSTRUCTION(VmpOpJmpConst)
+REGISTER_VMPINSTRUCTION(VmpOpJmp)
+REGISTER_VMPINSTRUCTION(VmpOpWriteVSP)

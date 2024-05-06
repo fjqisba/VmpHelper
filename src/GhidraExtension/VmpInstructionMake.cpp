@@ -170,3 +170,27 @@ std::unique_ptr<VmpInstruction> VmpOpImul::MakeInstruction(VmpFlowBuildContext* 
 	vOpImul->addr = input.readVmAddress(buildCtx->vmreg.reg_code);
 	return vOpImul;
 }
+
+std::unique_ptr<VmpInstruction> VmpOpWriteVSP::MakeInstruction(VmpFlowBuildContext* buildCtx, VmpNode& input)
+{
+	std::unique_ptr<VmpOpWriteVSP> vOpWriteVSP = std::make_unique<VmpOpWriteVSP>();
+	vOpWriteVSP->addr = input.readVmAddress(buildCtx->vmreg.reg_code);
+	return vOpWriteVSP;
+}
+
+std::unique_ptr<VmpInstruction> VmpOpJmpConst::MakeInstruction(VmpFlowBuildContext* buildCtx, VmpNode& input)
+{
+	if (!buildCtx->vmreg.isSelected) {
+		return nullptr;
+	}
+	std::unique_ptr<VmpOpJmpConst> vOpJmpConst = std::make_unique<VmpOpJmpConst>();
+	vOpJmpConst->addr = input.readVmAddress(buildCtx->vmreg.reg_code);
+	return vOpJmpConst;
+}
+
+std::unique_ptr<VmpInstruction> VmpOpJmp::MakeInstruction(VmpFlowBuildContext* buildCtx, VmpNode& input)
+{
+	std::unique_ptr<VmpOpJmp> vOpJmp = std::make_unique<VmpOpJmp>();
+	vOpJmp->addr = input.readVmAddress(buildCtx->vmreg.reg_code);
+	return vOpJmp;
+}
