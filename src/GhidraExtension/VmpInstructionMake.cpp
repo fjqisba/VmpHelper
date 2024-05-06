@@ -142,3 +142,31 @@ std::unique_ptr<VmpInstruction> VmpOpShl::MakeInstruction(VmpFlowBuildContext* b
 	vOpShl->opSize = opSize;
 	return vOpShl;
 }
+
+std::unique_ptr<VmpInstruction> VmpOpShrd::MakeInstruction(VmpFlowBuildContext* buildCtx, VmpNode& input)
+{
+	std::unique_ptr<VmpOpShrd> vOpShrd = std::make_unique<VmpOpShrd>();
+	vOpShrd->addr = input.readVmAddress(buildCtx->vmreg.reg_code);
+	return vOpShrd;
+}
+
+std::unique_ptr<VmpInstruction> VmpOpShld::MakeInstruction(VmpFlowBuildContext* buildCtx, VmpNode& input)
+{
+	std::unique_ptr<VmpOpShld> vOpShld = std::make_unique<VmpOpShld>();
+	vOpShld->addr = input.readVmAddress(buildCtx->vmreg.reg_code);
+	return vOpShld;
+}
+
+std::unique_ptr<VmpInstruction> VmpOpCpuid::MakeInstruction(VmpFlowBuildContext* buildCtx, VmpNode& input)
+{
+	std::unique_ptr<VmpOpCpuid> vOpCpuid = std::make_unique<VmpOpCpuid>();
+	vOpCpuid->addr = input.readVmAddress(buildCtx->vmreg.reg_code);
+	return vOpCpuid;
+}
+
+std::unique_ptr<VmpInstruction> VmpOpImul::MakeInstruction(VmpFlowBuildContext* buildCtx, VmpNode& input)
+{
+	std::unique_ptr<VmpOpImul> vOpImul = std::make_unique<VmpOpImul>();
+	vOpImul->addr = input.readVmAddress(buildCtx->vmreg.reg_code);
+	return vOpImul;
+}

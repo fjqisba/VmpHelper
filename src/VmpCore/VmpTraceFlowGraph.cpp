@@ -229,7 +229,11 @@ bool VmpTraceFlowGraph::addNormalLink(size_t fromAddr, size_t toAddr)
         //这个理论上是不可能的
         throw VmpTraceException("addNormalLink error");
     }
-    //说明有其它指令分割了A->B,忽略就行了
+    if (nextNodeIndex->index == 0x0) {
+        return true;
+    }
+    splitBlock(nextNodeIndex->vmNode, toAddr);
+    linkEdge(fromAddr, toAddr);
     return true;
 }
 

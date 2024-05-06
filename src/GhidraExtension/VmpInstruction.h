@@ -105,6 +105,12 @@ public:
 	~VmpOpCpuid() {};
 	void PrintRaw(std::ostream& ss) override;
 	int BuildInstruction(ghidra::Funcdata& data) override;
+	std::unique_ptr<VmpInstruction> MakeInstruction(VmpFlowBuildContext* ctx, VmpNode& input) override;
+	template <class Archive>
+	void serialize(Archive& ar)
+	{
+		ar(cereal::base_class<VmpInstruction>(this));
+	}
 };
 
 class VmpOpPopfd :public VmpInstruction
@@ -299,6 +305,12 @@ public:
 	~VmpOpShrd() {};
 	int BuildInstruction(ghidra::Funcdata& data) override;
 	void PrintRaw(std::ostream& ss) override;
+	std::unique_ptr<VmpInstruction> MakeInstruction(VmpFlowBuildContext* ctx, VmpNode& input) override;
+	template <class Archive>
+	void serialize(Archive& ar)
+	{
+		ar(cereal::base_class<VmpInstruction>(this));
+	}
 };
 
 class VmpOpShl : public VmpInstruction
@@ -327,6 +339,12 @@ public:
 	~VmpOpShld() {};
 	int BuildInstruction(ghidra::Funcdata& data) override;
 	void PrintRaw(std::ostream& ss) override;
+	std::unique_ptr<VmpInstruction> MakeInstruction(VmpFlowBuildContext* ctx, VmpNode& input) override;
+	template <class Archive>
+	void serialize(Archive& ar)
+	{
+		ar(cereal::base_class<VmpInstruction>(this));
+	}
 };
 
 class VmpOpJmp :public VmpInstruction
@@ -430,6 +448,12 @@ public:
 	VmpOpImul() { opType = VM_IMUL; };
 	~VmpOpImul() {};
 	void PrintRaw(std::ostream& ss) override;
+	std::unique_ptr<VmpInstruction> MakeInstruction(VmpFlowBuildContext* ctx, VmpNode& input) override;
+	template <class Archive>
+	void serialize(Archive& ar)
+	{
+		ar(cereal::base_class<VmpInstruction>(this));
+	}
 };
 
 
@@ -449,3 +473,7 @@ REGISTER_VMPINSTRUCTION(VmpOpNor)
 REGISTER_VMPINSTRUCTION(VmpOpNand)
 REGISTER_VMPINSTRUCTION(VmpOpShr)
 REGISTER_VMPINSTRUCTION(VmpOpShl)
+REGISTER_VMPINSTRUCTION(VmpOpShrd)
+REGISTER_VMPINSTRUCTION(VmpOpShld)
+REGISTER_VMPINSTRUCTION(VmpOpCpuid)
+REGISTER_VMPINSTRUCTION(VmpOpImul)
