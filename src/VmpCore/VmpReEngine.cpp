@@ -162,6 +162,7 @@ void VmpReEngine::PrintGraph(size_t startAddr)
 		VmpFunction* fd = makeFunction(startAddr);
 		fd->FollowVmp(startAddr);
 		fd->CreateGraph();
+		handlerFactory.SaveHandlerPattern();
 	}
 	catch (Exception& e) {
 		std::string what = e.what();

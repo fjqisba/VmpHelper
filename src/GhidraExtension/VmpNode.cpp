@@ -182,10 +182,11 @@ void ghidra::FlowInfo::generateVmpNodeOps(VmpNode* node)
     bool startbasic = true;
     bool isfallthru = false;
     bool emptyflag;
+    int4 step = 0x0;
     list<PcodeOp*>::const_iterator oiter;
-    for (unsigned int n = 0; n < node->addrList.size(); ++n) {
+    for (unsigned int n = 0; n < node->addrList.size() - 1; ++n) {
         ghidra::Address curaddr(glb->getDefaultCodeSpace(), node->addrList[n]);
-        int4 step = 0x0;
+        step = 0x0;
         beginProcessInstruction(oiter, emptyflag);
 		//再生成新的opcode
 		auto asmData = DisasmManager::Main().DecodeInstruction(curaddr.getOffset());
@@ -200,10 +201,6 @@ void ghidra::FlowInfo::generateVmpNodeOps(VmpNode* node)
 		else if (asmData->raw->id == X86_INS_JMP && asmData->raw->detail->x86.operands[0].type == X86_OP_REG) {
 			step = BuildJmpReg(data, curaddr, asmData->raw);
 		}
-        //jmp imm
-        else if (asmData->raw->id == X86_INS_JMP && asmData->raw->detail->x86.operands[0].type == X86_OP_IMM) {
-            step = BuildJmpImm(data, curaddr, asmData->raw->detail->x86.operands[0].imm);
-        }
 		//分支条件指令
 		else if (asmData->raw->id >= X86_INS_JAE && asmData->raw->id <= X86_INS_JS) {
             //不是最后一条指令
@@ -231,9 +228,45 @@ void ghidra::FlowInfo::generateVmpNodeOps(VmpNode* node)
 			}
         }
     }
-    
-    //判断有没有ret结尾
+    //最后一条指令需要特殊处理
     ghidra::Address endAddr(glb->getDefaultCodeSpace(), node->addrList[node->addrList.size() - 1]);
+    step = 0x0;
+	beginProcessInstruction(oiter, emptyflag);
+	auto asmData = DisasmManager::Main().DecodeInstruction(endAddr.getOffset());
+	if (DisasmManager::IsE8Call(asmData->raw)) {
+		step = BuildVmCall(data, endAddr);
+	}
+	else if (asmData->raw->id == X86_INS_JMP && asmData->raw->detail->x86.operands[0].type == X86_OP_IMM) {
+		step = BuildJmpImm(data, endAddr, asmData->raw->detail->x86.operands[0].imm);
+	}
+	else if (asmData->raw->id == X86_INS_POP && asmData->raw->detail->x86.operands[0].mem.base == X86_REG_ESP) {
+		step = BuildPopIns(data, endAddr, asmData->raw->detail->x86.operands[0].mem.disp + 0x4);
+	}
+    //暂时先这么处理吧
+	else if (asmData->raw->id >= X86_INS_JAE && asmData->raw->id <= X86_INS_JS) {
+        step = BuildJmpImm(data, endAddr, asmData->raw->address + asmData->raw->size);
+	}
+	else {
+		step = glb->translate->oneInstruction(emitter, endAddr);
+	}
+	if (step) {
+		VisitStat& stat(visited[endAddr]); // Mark that we visited this instruction
+		stat.size = step;		// Record size of instruction
+		//指向最新的节点
+		if (emptyflag) {
+			oiter = obank.beginDead();
+		}
+		else {
+			++oiter;
+		}
+		if (oiter != obank.endDead()) {
+			stat.seqnum = (*oiter)->getSeqNum();
+			data.opMarkStartInstruction(*oiter);
+			xrefControlFlow(oiter, startbasic, isfallthru, (FuncCallSpecs*)0);
+		}
+	}
+
+    //判断有没有ret结尾
     auto itEnd = std::prev(obank.endDead());
     if (itEnd != obank.endDead()) {
         if ((*itEnd)->code() != CPUI_RETURN) {
@@ -377,7 +410,7 @@ void ghidra::Funcdata::followVmpNode(VmpNode* node)
     flow.setMaximumInstructions(glb->max_instructions);
     flow.generateVmpNodeOps(node);
     buildReturnVal();
-#ifdef _DEBUG
+#ifdef DeveloperMode
     std::stringstream ss;
     printRaw(ss);
     std::string rawResult = ss.str();

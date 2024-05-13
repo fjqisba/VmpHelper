@@ -239,6 +239,10 @@ bool VmpTraceFlowGraph::addNormalLink(size_t fromAddr, size_t toAddr)
 
 bool VmpTraceFlowGraph::addLink(size_t fromAddr, size_t toAddr)
 {
+    //rep movsb
+    if (fromAddr == toAddr) {
+        return true;
+    }
     std::unique_ptr<RawInstruction> tmpIns = DisasmManager::Main().DecodeInstruction(fromAddr);
     if (!tmpIns) {
         return false;

@@ -552,6 +552,7 @@ bool VmpBlockBuilder::executeVmpOp(VmpNode& nodeInput,std::unique_ptr<VmpInstruc
 		flow.visited.insert(vmInst->addr);
 		curBlock = flow.createNewBlock(vmInst->addr, true);
 	}
+
 	curBlock->insList.push_back(std::move(inst));
 	switch (vmInst->opType)
 	{
