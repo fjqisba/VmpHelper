@@ -661,8 +661,14 @@ std::vector<size_t> VmpBranchAnalyzer::GuessVmpBranch()
 		retList.push_back(endAddr);
 		return retList;
 	}
-	retList = guessConditionalBranch(formula);
-	if (retList.size() == 2) {
+	auto guessList = guessConditionalBranch(formula);
+	if (guessList.size() == 2) {
+		return guessList;
+	}
+	formula = formula.simplify();
+	if (formula.is_numeral()) {
+		size_t endAddr = formula.as_uint64();
+		retList.push_back(endAddr);
 		return retList;
 	}
 	return retList;

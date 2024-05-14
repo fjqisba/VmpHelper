@@ -99,6 +99,7 @@ class VmpOpCopyStack :public VmpInstruction
 public:
 	VmpOpCopyStack() { opType = VM_COPYSTACK; };
 	~VmpOpCopyStack() {};
+	void PrintRaw(std::ostream& ss) override;
 	std::unique_ptr<VmpInstruction> MakeInstruction(VmpFlowBuildContext* ctx, VmpNode& input) override;
 	template <class Archive>
 	void serialize(Archive& ar)
@@ -524,7 +525,7 @@ public:
 class VmpOpMul :public VmpInstruction
 {
 public:
-	VmpOpMul() { opType = VM_IMUL; };
+	VmpOpMul() { opType = VM_MUL; };
 	~VmpOpMul() {};
 	void PrintRaw(std::ostream& ss) override;
 	int BuildInstruction(ghidra::Funcdata& data) override;

@@ -14,8 +14,6 @@
 #pragma optimize("", off) 
 #endif
 
-int VmpBlockBuilder::vmRegStartAddr = 0x0;
-
 size_t GetMemAccessSize(size_t addr)
 {
 	auto asmData = DisasmManager::Main().DecodeInstruction(addr);
@@ -431,6 +429,13 @@ bool FastCheckVmpEntry(size_t startAddr)
 	return true;
 }
 
+bool VmpBlockBuilder::executeVmCopyStack(VmpNode& nodeInput, VmpInstruction* inst)
+{
+	reg_context& endContext = nodeInput.contextList[nodeInput.contextList.size() - 1];
+	buildCtx->vm_esp_addr = endContext.ESP;
+	return true;
+}
+
 bool VmpBlockBuilder::executeVmInit(VmpNode& nodeInput, VmpOpInit* inst)
 {
 	VmpUnicorn unicornEngine;
@@ -440,6 +445,7 @@ bool VmpBlockBuilder::executeVmInit(VmpNode& nodeInput, VmpOpInit* inst)
 	newBuildTask->ctx = std::move(nextContext);
 	newBuildTask->btype = VmpFlowBuildContext::HANDLE_VMP_JMP;
 	newBuildTask->from_addr = inst->addr;
+	newBuildTask->vm_esp_addr = buildCtx->vm_esp_addr;
 	flow.anaQueue.push(std::move(newBuildTask));
 	buildCtx->status = VmpFlowBuildContext::FINISH_MATCH;
 	return true;
@@ -495,22 +501,12 @@ bool VmpBlockBuilder::executeVmJmpConst(VmpNode& nodeInput, VmpOpJmpConst* inst)
 	newBuildTask->ctx = std::move(nextContext);
 	newBuildTask->btype = VmpFlowBuildContext::HANDLE_VMP_JMP;
 	newBuildTask->from_addr = inst->addr;
+	newBuildTask->vm_esp_addr = buildCtx->vm_esp_addr;
 	flow.anaQueue.push(std::move(newBuildTask));
 	buildCtx->status = VmpFlowBuildContext::FINISH_MATCH;
 	return true;
 }
 
-bool isSaveContextOffset(int stackOffset)
-{
-	if (stackOffset >= 0 && stackOffset <= 0x28) {
-		return true;
-	}
-	stackOffset = stackOffset - VmpBlockBuilder::vmRegStartAddr;
-	if (stackOffset < 0) {
-		return false;
-	}
-	return true;
-}
 
 bool VmpBlockBuilder::updateVmReg(VmpNode& nodeInput, VmpInstruction* inst)
 {
@@ -541,6 +537,8 @@ bool VmpBlockBuilder::executeVmJmp(VmpNode& nodeInput, VmpOpJmp* inst)
 		newBuildTask->ctx = std::move(nextContext);
 		newBuildTask->btype = VmpFlowBuildContext::HANDLE_VMP_JMP;
 		newBuildTask->from_addr = inst->addr;
+		newBuildTask->vm_esp_addr = buildCtx->vm_esp_addr;
+
 		flow.anaQueue.push(std::move(newBuildTask));
 		buildCtx->status = VmpFlowBuildContext::FINISH_MATCH;
 		return true;
@@ -562,6 +560,7 @@ bool VmpBlockBuilder::executeVmJmp(VmpNode& nodeInput, VmpOpJmp* inst)
 		newTask1->ctx = unicornEngine.CopyCurrentUnicornContext();
 		newTask1->btype = VmpFlowBuildContext::HANDLE_VMP_JMP;
 		newTask1->from_addr = inst->addr;
+		newTask1->vm_esp_addr = buildCtx->vm_esp_addr;
 		flow.anaQueue.push(std::move(newTask1));
 
 		//模拟执行环境2
@@ -572,6 +571,7 @@ bool VmpBlockBuilder::executeVmJmp(VmpNode& nodeInput, VmpOpJmp* inst)
 		newTask2->ctx = unicornEngine.CopyCurrentUnicornContext();
 		newTask2->btype = VmpFlowBuildContext::HANDLE_VMP_JMP;
 		newTask2->from_addr = inst->addr;
+		newTask2->vm_esp_addr = buildCtx->vm_esp_addr;
 		flow.anaQueue.push(std::move(newTask2));
 		buildCtx->status = VmpFlowBuildContext::FINISH_MATCH;
 		return true;
@@ -617,6 +617,9 @@ bool VmpBlockBuilder::executeVmpOp(VmpNode& nodeInput,std::unique_ptr<VmpInstruc
 		break;
 	case VM_EXIT:
 		executeVmExit(nodeInput, vmInst);
+		break;
+	case VM_COPYSTACK:
+		executeVmCopyStack(nodeInput, vmInst);
 		break;
 	default:
 		break;
@@ -1131,7 +1134,7 @@ bool VmpBlockBuilder::updateVmRegOffset(ghidra::Funcdata* fd)
 			if (defOp->getIn(0)->isInput() && GhidraHelper::GetVarnodeRegName(defOp->getIn(0)) == "ESP") {
 				if (defOp->getIn(1)->isConstant()) {
 					int offset = defOp->getIn(1)->getOffset();
-					vmRegStartAddr = VmpUnicornContext::DefaultEsp() + offset;
+					buildCtx->vm_esp_addr = VmpUnicornContext::DefaultEsp() + offset;
 					return true;
 				}
 			}

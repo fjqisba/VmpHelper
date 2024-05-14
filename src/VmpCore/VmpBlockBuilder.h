@@ -79,9 +79,8 @@ private:
 	bool executeVmJmpConst(VmpNode& nodeInput, VmpOpJmpConst* inst);
 	bool updateVmReg(VmpNode& nodeInput, VmpInstruction* inst);
 	bool executeVmInit(VmpNode& nodeInput, VmpOpInit* inst);
+	bool executeVmCopyStack(VmpNode& nodeInput, VmpInstruction* inst);
 	bool executeVmExit(VmpNode& nodeInput, VmpInstruction* inst);
-public:
-	static int vmRegStartAddr;
 private:
 	VmpControlFlowBuilder& flow;
 	VmpBasicBlock* curBlock;

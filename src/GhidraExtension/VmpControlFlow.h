@@ -70,6 +70,8 @@ public:
 	VmAddress from_addr;
 	//Ä£Äâ×´Ì¬
 	VM_MATCH_STATUS status;
+	//vmĞéÄâ¶ÑÕ»µØÖ·
+	size_t vm_esp_addr;
 };
 
 class VmpControlFlowBuilder

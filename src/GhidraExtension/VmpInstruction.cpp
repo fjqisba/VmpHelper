@@ -34,6 +34,16 @@ void VmpInstruction::PrintRaw(std::ostream& ss)
 	ss << "\n";
 }
 
+void VmpOpCopyStack::PrintRaw(std::ostream& ss)
+{
+#ifdef DeveloperMode
+	printAddress(ss);
+	ss << "\t";
+	colorString(ss, "vCopyStack", SCOLOR_INSN);
+	ss << "\n";
+#endif
+}
+
 void VmpInstruction::printAddress(std::ostream& ss)
 {
 	colorAddr(ss, addr.vmdata, SCOLOR_DNUM);
