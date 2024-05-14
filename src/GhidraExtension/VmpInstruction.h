@@ -153,6 +153,12 @@ public:
 	~VmpOpPopfd() {};
 	void PrintRaw(std::ostream& ss) override;
 	int BuildInstruction(ghidra::Funcdata& data) override;
+	std::unique_ptr<VmpInstruction> MakeInstruction(VmpFlowBuildContext* ctx, VmpNode& input) override;
+	template <class Archive>
+	void serialize(Archive& ar)
+	{
+		ar(cereal::base_class<VmpInstruction>(this));
+	}
 };
 
 class VmpOpInit :public VmpInstruction
@@ -192,6 +198,7 @@ public:
 public:
 	size_t callAddr = 0x0;
 	size_t exitAddress = 0x0;
+	bool isLoad = false;
 };
 
 class VmpOpPopReg :public VmpInstruction
@@ -563,3 +570,4 @@ REGISTER_VMPINSTRUCTION(VmpOpCopyStack)
 REGISTER_VMPINSTRUCTION(VmpOpRdtsc)
 REGISTER_VMPINSTRUCTION(VmpOpDiv)
 REGISTER_VMPINSTRUCTION(VmpOpMul)
+REGISTER_VMPINSTRUCTION(VmpOpPopfd)

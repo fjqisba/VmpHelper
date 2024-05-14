@@ -433,6 +433,43 @@ bool RotateContextAnalyzer::UpdateRotateContext(VmpRotateContext& rotate_ctx, Vm
 	return true;
 }
 
+z3::expr VmpBranchAnalyzer::EvaluateLoadVarnode(z3::context& ctx, ghidra::PcodeOp* op, ghidra::Varnode* vn)
+{
+	//定位到原始op
+	std::list<ghidra::PcodeOp*>::iterator it = bb->endOp();
+	auto itBegin = bb->beginOp();
+	while (it != bb->beginOp()) {
+		--it;
+		ghidra::PcodeOp* curOp = *it;
+		if (curOp == op) {
+			break;
+		}
+	}
+	while (it != itBegin) {
+		--it;
+		ghidra::PcodeOp* curOp = *it;
+		if (curOp->code() != ghidra::CPUI_STORE) {
+			continue;
+		}
+		ghidra::Varnode* vStoreNode = curOp->getIn(1);
+		if (vStoreNode->getSpace() != vn->getSpace()) {
+			continue;
+		}
+		if (vStoreNode->getOffset() != vn->getOffset()) {
+			continue;
+		}
+		if (vStoreNode->getSize() != vn->getSize()) {
+			//To to do...
+		}
+		return EvaluateVarnode(ctx, curOp, curOp->getIn(2));
+	}
+	if (bLoaded) {
+		throw Exception("too much esp load");
+	}
+	bLoaded = true;
+	return EvaluateVarnode(ctx, op, vn);
+}
+
 z3::expr VmpBranchAnalyzer::EvalutaeStackVarnode(z3::context& ctx, ghidra::PcodeOp* op, ghidra::Varnode* vn)
 {
 	//定位到原始op
@@ -510,6 +547,8 @@ z3::expr VmpBranchAnalyzer::EvaluatePcodeOp(z3::context& ctx, ghidra::PcodeOp* d
 	case ghidra::CPUI_INT_RIGHT:
 		//一般是处理flag了
 		return ctx.bv_const("flag", 32);
+	case ghidra::CPUI_LOAD:
+		return EvaluateLoadVarnode(ctx, defOp, defOp->getIn(1));
 	default:
 		break;
 	}
@@ -663,17 +702,6 @@ z3::expr VmpExitCallAnalyzer::EvalutaeStackVarnode(z3::context& ctx, ghidra::Pco
 	return ctx.bv_val(0x0, 32);
 }
 
-size_t VmpExitCallAnalyzer::traceExitAddr(ghidra::Varnode* vNode)
-{
-	if (vNode->isConstant()) {
-		return vNode->getOffset();
-	}
-	ghidra::PcodeOp* defOp = vNode->getDef();
-	if (!defOp) {
-		return 0x0;
-	}
-	return 0x0;
-}
 
 size_t VmpExitCallAnalyzer::GuessExitCallAddr(ghidra::Funcdata* func)
 {

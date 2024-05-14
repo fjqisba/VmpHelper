@@ -32,7 +32,7 @@ std::unique_ptr<VmpInstruction> VmpOpPopReg::MakeInstruction(VmpFlowBuildContext
 			auto asmData = DisasmManager::Main().DecodeInstruction(tmpContext.EIP);
 			if (asmData->raw->id == X86_INS_MOV || asmData->raw->id == X86_INS_MOVZX || asmData->raw->id == X86_INS_MOVSX) {
 				cs_x86_op& op0 = asmData->raw->detail->x86.operands[0];
-				int offset = tmpContext.ReadMemReg(op0) - buildCtx->vm_esp_addr;
+				std::uint32_t offset = tmpContext.ReadReg(op0.mem.index);
 				vPopRegOp->vmRegOffset = VmpUnicornContext::DefaultEsp() + offset;
 				return vPopRegOp;
 			}
@@ -52,7 +52,7 @@ std::unique_ptr<VmpInstruction> VmpOpPushReg::MakeInstruction(VmpFlowBuildContex
 			auto asmData = DisasmManager::Main().DecodeInstruction(tmpContext.EIP);
 			cs_x86_op& op1 = asmData->raw->detail->x86.operands[1];
 			if (op1.type == X86_OP_MEM) {
-				int offset = tmpContext.ReadMemReg(op1) - buildCtx->vm_esp_addr;
+				std::uint32_t offset = tmpContext.ReadReg(op1.mem.index);
 				vPushRegOp->vmRegOffset = VmpUnicornContext::DefaultEsp() + offset;
 				return vPushRegOp;
 			}
@@ -223,4 +223,11 @@ std::unique_ptr<VmpInstruction> VmpOpMul::MakeInstruction(VmpFlowBuildContext* b
 	std::unique_ptr<VmpOpMul> vOpMul = std::make_unique<VmpOpMul>();
 	vOpMul->addr = input.readVmAddress(buildCtx->vmreg.reg_code);
 	return vOpMul;
+}
+
+std::unique_ptr<VmpInstruction> VmpOpPopfd::MakeInstruction(VmpFlowBuildContext* buildCtx, VmpNode& input)
+{
+	std::unique_ptr<VmpOpPopfd> vOpPopfd = std::make_unique<VmpOpPopfd>();
+	vOpPopfd->addr = input.readVmAddress(buildCtx->vmreg.reg_code);
+	return vOpPopfd;
 }

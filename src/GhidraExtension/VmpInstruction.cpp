@@ -127,8 +127,16 @@ void VmpOpExitCall::PrintRaw(std::ostream& ss)
 {
 	printAddress(ss);
 	ss << "\t";
-	colorString(ss, SCOLOR_INSN, [this, &ss]() {
-		ss << "vExitCall" << " 0x" << std::hex << callAddr;
+	colorString(ss, SCOLOR_INSN, [this, &ss]() 
+	{
+		ss << "vExitCall ";
+		if (isLoad) {
+			ss << "[";
+		}
+		ss << "0x" << std::hex << callAddr;
+		if (isLoad) {
+			ss << "]";
+		}
 	});
 	ss << "\n";
 }

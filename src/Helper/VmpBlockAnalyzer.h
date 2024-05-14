@@ -57,11 +57,14 @@ private:
 	std::vector<size_t> guessConditionalBranch(z3::expr& expr);
 private:
 	z3::expr EvaluatePcodeOp(z3::context& ctx, ghidra::PcodeOp* defOp);
+	z3::expr EvaluateLoadVarnode(z3::context& ctx, ghidra::PcodeOp* op, ghidra::Varnode* vn);
 	z3::expr EvaluateVarnode(z3::context& ctx, ghidra::PcodeOp* op, ghidra::Varnode* vn);
 	z3::expr EvalutaeStackVarnode(z3::context& ctx, ghidra::PcodeOp* op, ghidra::Varnode* vn);
 private:
 	ghidra::Funcdata* fd = nullptr;
 	ghidra::BlockBasic* bb = nullptr;
+public:
+	bool bLoaded = false;
 };
 
 class VmpExitCallAnalyzer
@@ -71,7 +74,6 @@ public:
 	size_t GuessExitCallAddr(ghidra::Funcdata* fd);
 private:
 	bool getEndStackOffset(int& outOffset);
-	size_t traceExitAddr(ghidra::Varnode* vn);
 	z3::expr EvaluatePcodeOp(z3::context& ctx, ghidra::PcodeOp* defOp);
 	z3::expr EvaluateVarnode(z3::context& ctx, ghidra::PcodeOp* op, ghidra::Varnode* vn);
 	z3::expr EvalutaeStackVarnode(z3::context& ctx, ghidra::PcodeOp* op, ghidra::Varnode* vn);

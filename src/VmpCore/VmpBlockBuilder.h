@@ -69,7 +69,7 @@ private:
 	std::unique_ptr<VmpInstruction> tryMatch_vJmpConst(ghidra::Funcdata* fd, VmpNode& nodeInput);
 	bool tryMatch_vCheckEsp(ghidra::Funcdata* fd, VmpNode& nodeInput);
 	bool tryMatch_vJunkCode(ghidra::Funcdata* fd, VmpNode& nodeInput);
-	bool tryMatch_vPopfd(ghidra::Funcdata* fd, VmpNode& nodeInput);
+	std::unique_ptr<VmpInstruction> tryMatch_vPopfd(ghidra::Funcdata* fd, VmpNode& nodeInput);
 	bool tryMatch_vExit(ghidra::Funcdata* fd, VmpNode& nodeInput);
 private:
 	bool updateVmRegOffset(ghidra::Funcdata* fd);

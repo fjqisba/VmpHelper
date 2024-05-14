@@ -324,19 +324,19 @@ std::unique_ptr<VmpInstruction> VmpBlockBuilder::tryMatch_Mul(ghidra::Funcdata* 
 	return nullptr;
 }
 
-bool VmpBlockBuilder::tryMatch_vPopfd(ghidra::Funcdata* fd, VmpNode& nodeInput)
+std::unique_ptr<VmpInstruction> VmpBlockBuilder::tryMatch_vPopfd(ghidra::Funcdata* fd, VmpNode& nodeInput)
 {
 	size_t storeCount = fd->obank.storelist.size();
 	size_t loadCount = fd->obank.loadlist.size();
 	if (storeCount != 0 || !loadCount) {
-		return false;
+		return nullptr;
 	}
 	auto itLoad = fd->obank.loadlist.begin();
 	ghidra::PcodeOp* loadOp1 = *itLoad++;
 	ghidra::Varnode* vLoadReg = loadOp1->getIn(1);
 	std::string loadRegName = fd->getArch()->translate->getRegisterName(vLoadReg->getSpace(), vLoadReg->getOffset(), vLoadReg->getSize());
 	if (loadRegName != buildCtx->vmreg.reg_stack) {
-		return false;
+		return nullptr;
 	}
 	auto itBegin = loadOp1->getOut()->beginDescend();
 	auto itEnd = loadOp1->getOut()->endDescend();
@@ -348,11 +348,10 @@ bool VmpBlockBuilder::tryMatch_vPopfd(ghidra::Funcdata* fd, VmpNode& nodeInput)
 		if (GhidraHelper::GetVarnodeRegName(useOp->getOut()) == "eflags") {
 			std::unique_ptr<VmpOpPopfd> vOpPopfd = std::make_unique<VmpOpPopfd>();
 			vOpPopfd->addr = nodeInput.readVmAddress(buildCtx->vmreg.reg_code);
-			executeVmpOp(nodeInput, std::move(vOpPopfd));
-			return true;
+			return vOpPopfd;
 		}
 	}
-	return false;
+	return nullptr;
 }
 
 std::unique_ptr<VmpInstruction> VmpBlockBuilder::tryMatch_vJmp(ghidra::Funcdata* fd, VmpNode& nodeInput)
@@ -402,6 +401,23 @@ std::unique_ptr<VmpInstruction> VmpBlockBuilder::tryMatch_vJmp(ghidra::Funcdata*
 	return nullptr;
 }
 
+bool isVmPushKey(VmpNode& input)
+{
+	if (input.addrList.size() != 0x2) {
+		return false;
+	}
+	auto asm1 = DisasmManager::Main().DecodeInstruction(input.addrList[0]);
+	if (asm1->raw->id != X86_INS_PUSH || asm1->raw->detail->x86.operands[0].type != X86_OP_IMM) {
+		return false;
+	}
+	auto asm2 = DisasmManager::Main().DecodeInstruction(input.addrList[1]);
+	if (!DisasmManager::IsE8Call(asm2->raw)) {
+		return false;
+	}
+	return true;
+}
+
+
 bool FastCheckVmpEntry(size_t startAddr)
 {
 	VmpTraceFlowGraph tfg;
@@ -411,6 +427,8 @@ bool FastCheckVmpEntry(size_t startAddr)
 	walker.StartWalk(*ctx, 0x1000);
 	tfg.AddTraceFlow(walker.GetTraceList());
 	tfg.MergeAllNodes();
+
+	//下面的代码和Execute_FIND_VM_INIT同步
 	if (walker.IsWalkToEnd()) {
 		return false;
 	}
@@ -418,15 +436,27 @@ bool FastCheckVmpEntry(size_t startAddr)
 	if (!nodeInput.addrList.size()) {
 		return false;
 	}
-	ghidra::Funcdata* fd = gArch->AnaVmpHandler(&nodeInput);
-	if (fd == nullptr) {
-		throw GhidraException("ana vmp handler error");
+	if (isVmPushKey(nodeInput)) {
+		walker.MoveToNext();
+		nodeInput.append(walker.GetNextNode());
 	}
-	auto storeContext = ExtractVmStoreContext(fd);
-	if (storeContext.size() != 11) {
-		return false;
+	for (unsigned int n = 0; n < 3; ++n) {
+		ghidra::Funcdata* fd = gArch->AnaVmpHandler(&nodeInput);
+		if (fd == nullptr) {
+			throw GhidraException("ana vmp handler error");
+		}
+		auto storeContext = ExtractVmStoreContext(fd);
+		if (storeContext.size() != 11) {
+			walker.MoveToNext();
+			if (walker.IsWalkToEnd()) {
+				return false;
+			}
+			nodeInput.append(walker.GetNextNode());
+			continue;
+		}
+		return true;
 	}
-	return true;
+	return false;
 }
 
 bool VmpBlockBuilder::executeVmCopyStack(VmpNode& nodeInput, VmpInstruction* inst)
@@ -469,6 +499,7 @@ bool VmpBlockBuilder::executeVmExit(VmpNode& nodeInput, VmpInstruction* inst)
 	size_t vmCallExit = exitCallAna.GuessExitCallAddr(fd);
 	if (vmCallExit && FastCheckVmpEntry(vmCallExit)) {
 		std::unique_ptr<VmpOpExitCall> vOpExitCall = std::make_unique<VmpOpExitCall>();
+		vOpExitCall->isLoad = branchAna.bLoaded;
 		vOpExitCall->addr = inst->addr;
 		vOpExitCall->callAddr = branchList[0];
 		curBlock->insList.push_back(std::move(vOpExitCall));
@@ -1050,6 +1081,10 @@ std::unique_ptr<VmpInstruction> VmpBlockBuilder::AnaVmpPattern(ghidra::Funcdata*
 	if (newPattern) {
 		return newPattern;
 	}
+	newPattern = tryMatch_vPopfd(fd, input);
+	if (newPattern) {
+		return newPattern;
+	}
 	return nullptr;
 }
 
@@ -1067,7 +1102,7 @@ bool VmpBlockBuilder::Execute_FINISH_VM_INIT()
 	Vmp3xHandlerFactory::VmpHandlerRange tmpRange(nodeInput.addrList[0], nodeInput.addrList[nodeInput.addrList.size() - 1]);
 	auto it = cache.handlerPatternMap.find(tmpRange);
 #ifdef DeveloperMode
-	if (nodeInput.addrList[0] == 0x00806e01) {
+	if (nodeInput.addrList[0] == 0x00430990) {
 		int a = 0;
 	}
 #endif
@@ -1092,9 +1127,6 @@ bool VmpBlockBuilder::Execute_FINISH_VM_INIT()
 		if (vmInstruction) {
 			executeVmpOp(nodeInput, std::move(vmInstruction));
 		}
-		return true;
-	}
-	if (tryMatch_vPopfd(fd, nodeInput)) {
 		return true;
 	}
 	if (tryMatch_vExit(fd, nodeInput)) {
@@ -1144,21 +1176,6 @@ bool VmpBlockBuilder::updateVmRegOffset(ghidra::Funcdata* fd)
 }
 
 
-bool isVmPushKey(VmpNode& input)
-{
-	if (input.addrList.size() != 0x2) {
-		return false;
-	}
-	auto asm1 = DisasmManager::Main().DecodeInstruction(input.addrList[0]);
-	if (asm1->raw->id != X86_INS_PUSH || asm1->raw->detail->x86.operands[0].type != X86_OP_IMM) {
-		return false;
-	}
-	auto asm2 = DisasmManager::Main().DecodeInstruction(input.addrList[1]);
-	if (!DisasmManager::IsE8Call(asm2->raw)) {
-		return false;
-	}
-	return true;
-}
 
 bool VmpBlockBuilder::Execute_FIND_VM_INIT()
 {
@@ -1173,7 +1190,7 @@ bool VmpBlockBuilder::Execute_FIND_VM_INIT()
 		walker.MoveToNext();
 		nodeInput.append(walker.GetNextNode());
 	}
-	for (unsigned int n = 0; n < 2; ++n) {
+	for (unsigned int n = 0; n < 3; ++n) {
 		ghidra::Funcdata* fd = flow.Arch()->AnaVmpHandler(&nodeInput);
 		if (fd == nullptr) {
 			throw GhidraException("ana vmp handler error");
@@ -1181,6 +1198,9 @@ bool VmpBlockBuilder::Execute_FIND_VM_INIT()
 		auto storeContext = ExtractVmStoreContext(fd);
 		if (storeContext.size() != 11) {
 			walker.MoveToNext();
+			if (walker.IsWalkToEnd()) {
+				return false;
+			}
 			nodeInput.append(walker.GetNextNode());
 			continue;
 		}
