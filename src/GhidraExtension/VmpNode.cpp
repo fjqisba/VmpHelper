@@ -52,6 +52,18 @@ int BuildJmpReg(ghidra::Funcdata& data, ghidra::Address& pc, cs_insn* raw)
     return 1;
 }
 
+int BuildFakeRet(ghidra::Funcdata& data, ghidra::Address& pc)
+{
+	auto regESP = data.getArch()->translate->getRegister("ESP");
+	//esp = esp + 0x4
+	ghidra::PcodeOp* opAdd = data.newOp(2, pc);
+	data.opSetOpcode(opAdd, ghidra::CPUI_INT_SUB);
+	data.newVarnodeOut(regESP.size, regESP.getAddr(), opAdd);
+	data.opSetInput(opAdd, data.newVarnode(regESP.size, regESP.space, regESP.offset), 0);
+	data.opSetInput(opAdd, data.newConstant(4, 0x4), 1);
+	return 1;
+}
+
 int BuildJmpImm(ghidra::Funcdata& data, ghidra::Address& pc, size_t jmpAddr)
 {
 	auto regEIP = data.getArch()->translate->getRegister("EIP");
@@ -184,7 +196,12 @@ void ghidra::FlowInfo::generateVmpNodeOps(VmpNode* node)
     bool emptyflag;
     int4 step = 0x0;
     list<PcodeOp*>::const_iterator oiter;
-    for (unsigned int n = 0; n < node->addrList.size() - 1; ++n) {
+    for (unsigned int n = 0; n < node->addrList.size(); ++n) {
+        //最后一条指令需要特殊处理
+        bool bEndIns = false;
+        if (n == node->addrList.size() - 1) {
+            bEndIns = true;
+        }
         ghidra::Address curaddr(glb->getDefaultCodeSpace(), node->addrList[n]);
         step = 0x0;
         beginProcessInstruction(oiter, emptyflag);
@@ -197,17 +214,21 @@ void ghidra::FlowInfo::generateVmpNodeOps(VmpNode* node)
 		else if (asmData->raw->id == X86_INS_POP && asmData->raw->detail->x86.operands[0].mem.base == X86_REG_ESP) {
 			step = BuildPopIns(data, curaddr, asmData->raw->detail->x86.operands[0].mem.disp + 0x4);
 		}
+        else if (asmData->raw->id == X86_INS_JMP && asmData->raw->detail->x86.operands[0].type == X86_OP_IMM && bEndIns) {
+			step = BuildJmpImm(data, curaddr, asmData->raw->detail->x86.operands[0].imm);
+		}
 		//jmp reg
 		else if (asmData->raw->id == X86_INS_JMP && asmData->raw->detail->x86.operands[0].type == X86_OP_REG) {
 			step = BuildJmpReg(data, curaddr, asmData->raw);
 		}
 		//分支条件指令
 		else if (asmData->raw->id >= X86_INS_JAE && asmData->raw->id <= X86_INS_JS) {
-            //不是最后一条指令
-            if (n != node->addrList.size() - 1) {
-                step = BuildJmpImm(data, curaddr, node->addrList[n + 1]);
-            }
-		}
+            //暂时就先这么处理
+            step = BuildJmpImm(data, curaddr, node->addrList[n + 1]);
+        }
+        else if (asmData->raw->id == X86_INS_RET && !bEndIns) {
+            step = BuildFakeRet(data, curaddr);
+        }
 		else {
 			step = glb->translate->oneInstruction(emitter, curaddr);
 		}
@@ -228,44 +249,8 @@ void ghidra::FlowInfo::generateVmpNodeOps(VmpNode* node)
 			}
         }
     }
-    //最后一条指令需要特殊处理
+   
     ghidra::Address endAddr(glb->getDefaultCodeSpace(), node->addrList[node->addrList.size() - 1]);
-    step = 0x0;
-	beginProcessInstruction(oiter, emptyflag);
-	auto asmData = DisasmManager::Main().DecodeInstruction(endAddr.getOffset());
-	if (DisasmManager::IsE8Call(asmData->raw)) {
-		step = BuildVmCall(data, endAddr);
-	}
-	else if (asmData->raw->id == X86_INS_JMP && asmData->raw->detail->x86.operands[0].type == X86_OP_IMM) {
-		step = BuildJmpImm(data, endAddr, asmData->raw->detail->x86.operands[0].imm);
-	}
-	else if (asmData->raw->id == X86_INS_POP && asmData->raw->detail->x86.operands[0].mem.base == X86_REG_ESP) {
-		step = BuildPopIns(data, endAddr, asmData->raw->detail->x86.operands[0].mem.disp + 0x4);
-	}
-    //暂时先这么处理吧
-	else if (asmData->raw->id >= X86_INS_JAE && asmData->raw->id <= X86_INS_JS) {
-        step = BuildJmpImm(data, endAddr, asmData->raw->address + asmData->raw->size);
-	}
-	else {
-		step = glb->translate->oneInstruction(emitter, endAddr);
-	}
-	if (step) {
-		VisitStat& stat(visited[endAddr]); // Mark that we visited this instruction
-		stat.size = step;		// Record size of instruction
-		//指向最新的节点
-		if (emptyflag) {
-			oiter = obank.beginDead();
-		}
-		else {
-			++oiter;
-		}
-		if (oiter != obank.endDead()) {
-			stat.seqnum = (*oiter)->getSeqNum();
-			data.opMarkStartInstruction(*oiter);
-			xrefControlFlow(oiter, startbasic, isfallthru, (FuncCallSpecs*)0);
-		}
-	}
-
     //判断有没有ret结尾
     auto itEnd = std::prev(obank.endDead());
     if (itEnd != obank.endDead()) {

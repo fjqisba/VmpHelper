@@ -184,7 +184,7 @@ ghidra::Funcdata* VmpArchitecture::AnaVmpBasicBlock(VmpBasicBlock* basicBlock)
 ghidra::Funcdata* VmpArchitecture::AnaVmpHandler(VmpNode* nodeInput)
 {
     //²âÊÔ´úÂë
-    if (nodeInput->addrList[0] == 0x45aa1f) {
+    if (nodeInput->addrList[0] == 0x0052c3df) {
         int a = 0;
     }
     ghidra::Address startAddr(getDefaultCodeSpace(), 0x0);

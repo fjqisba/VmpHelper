@@ -1093,23 +1093,28 @@ bool VmpBlockBuilder::Execute_FIND_VM_INIT()
 		walker.MoveToNext();
 		nodeInput.append(walker.GetNextNode());
 	}
-	ghidra::Funcdata* fd = flow.Arch()->AnaVmpHandler(&nodeInput);
-	if (fd == nullptr) {
-		throw GhidraException("ana vmp handler error");
+	for (unsigned int n = 0; n < 2; ++n) {
+		ghidra::Funcdata* fd = flow.Arch()->AnaVmpHandler(&nodeInput);
+		if (fd == nullptr) {
+			throw GhidraException("ana vmp handler error");
+		}
+		auto storeContext = ExtractVmStoreContext(fd);
+		if (storeContext.size() != 11) {
+			walker.MoveToNext();
+			nodeInput.append(walker.GetNextNode());
+			continue;
+		}
+		if (!updateVmRegOffset(fd)) {
+			return false;
+		}
+		std::unique_ptr<VmpOpInit> opInitVm = std::make_unique<VmpOpInit>();
+		opInitVm->storeContext = storeContext;
+		opInitVm->addr = VmAddress(nodeInput.addrList[0], nodeInput.addrList[0]);
+		executeVmpOp(nodeInput, std::move(opInitVm));
+		walker.MoveToNext();
+		return true;
 	}
-	auto storeContext = ExtractVmStoreContext(fd);
-	if (storeContext.size() != 11) {
-		return false;
-	}
-	if (!updateVmRegOffset(fd)) {
-		return false;
-	}
-	std::unique_ptr<VmpOpInit> opInitVm = std::make_unique<VmpOpInit>();
-	opInitVm->storeContext = storeContext;
-	opInitVm->addr = VmAddress(nodeInput.addrList[0], nodeInput.addrList[0]);
-	executeVmpOp(nodeInput, std::move(opInitVm));
-	walker.MoveToNext();
-	return true;
+	return false;
 }
 
 std::unique_ptr<VmpInstruction> VmpBlockBuilder::tryMatch_vWriteVsp(ghidra::Funcdata* fd, VmpNode& nodeInput)
