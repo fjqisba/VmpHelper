@@ -89,10 +89,7 @@ bool Vmp3xHandlerFactory::LoadHandlerPattern()
 void VmpReEngine::MarkVmpEntry(size_t startAddr)
 {
 	IDAWrapper::set_cmt(startAddr, "vmp entry", false);
-	func_t* anyFunc = get_func(startAddr);
-	if (anyFunc) {
-		clearFunction(anyFunc->start_ea);
-	}
+	clearAllFunction();
 }
 
 void VmpReEngine::Decompile(size_t startAddr)
@@ -116,6 +113,19 @@ void VmpReEngine::Decompile(size_t startAddr)
 	msg("%s\n", srcResult.c_str());
 }
 
+void VmpReEngine::clearAllFunction()
+{
+	for (auto it = funcCache.begin(); it != funcCache.end(); ++it) {
+		qstring graphTitle;
+		graphTitle.sprnt("vmp_%a", it->get()->startAddr);
+		TWidget* widget = find_widget(graphTitle.c_str());
+		if (widget) {
+			close_widget(widget, 0x0);
+		}
+	}
+	funcCache.clear();
+}
+
 void VmpReEngine::clearFunction(size_t startAddr)
 {
 	auto it = std::find_if(funcCache.begin(), funcCache.end(),
@@ -123,6 +133,12 @@ void VmpReEngine::clearFunction(size_t startAddr)
 			return func->startAddr == startAddr;
 	});
 	if (it != funcCache.end()) {
+		qstring graphTitle;
+		graphTitle.sprnt("vmp_%a", it->get()->startAddr);
+		TWidget* widget = find_widget(graphTitle.c_str());
+		if (widget) {
+			close_widget(widget, 0x0);
+		}
 		funcCache.erase(it);
 	}
 }

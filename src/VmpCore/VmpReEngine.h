@@ -62,6 +62,7 @@ public:
 private:
 	VmpFunction* makeFunction(size_t startAddr);
 	void clearFunction(size_t startAddr);
+	void clearAllFunction();
 private:
 	VmpArchitecture* arch = nullptr;
 	Vmp3xHandlerFactory handlerFactory;

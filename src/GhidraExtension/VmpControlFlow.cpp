@@ -190,8 +190,17 @@ void VmpControlFlowBuilder::fallthruNormal(VmpFlowBuildContext& task)
 		if (isNormalTerminalInstruction(curIns)) {
 			break;
 		}
+		else if (curIns->raw->id == X86_INS_JMP && curIns->raw->detail->x86.operands[0].type == X86_OP_IMM) {
+			linkBlockEdge(curIns->raw->address, curIns->raw->detail->x86.operands[0].imm);
+			addNormalBuildTask(curIns->raw->detail->x86.operands[0].imm);
+			break;
+		}
 		else if (DisasmManager::IsBranchInstruction(curIns->raw)) {
-			//To do...
+			linkBlockEdge(curIns->raw->address, curIns->raw->detail->x86.operands[0].imm);
+			addNormalBuildTask(curIns->raw->detail->x86.operands[0].imm);
+			linkBlockEdge(curIns->raw->address, curIns->raw->address + curIns->raw->size);
+			addNormalBuildTask(curIns->raw->address + curIns->raw->size);
+			break;
 		}
 		else {
 			curAddr = curAddr + curIns->raw->size;

@@ -112,7 +112,11 @@ VmpNode VmpBlockWalker::GetNextNode()
 {
 	VmpNode retNode;
 	size_t curAddr = unicorn.traceList[idx].EIP;
-	retNode.addrList = tfg.nodeMap[curAddr].addrList;
+	VmpTraceFlowNodeIndex& nodeIdx = tfg.instructionToNodeMap[curAddr];
+	if (!nodeIdx.vmNode) {
+		return retNode;
+	}
+	retNode.addrList.assign(nodeIdx.vmNode->addrList.begin() + nodeIdx.index, nodeIdx.vmNode->addrList.end());
 	for (unsigned int n = 0; n < retNode.addrList.size(); ++n) {
 		retNode.contextList.push_back(unicorn.traceList[idx + n]);
 	}
