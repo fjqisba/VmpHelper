@@ -17,6 +17,7 @@ enum VmpOpType
 	VM_PUSH_REG,
 	VM_CHECK_ESP,
 	VM_ADD,
+	VM_DIV,
 	VM_NOR,
 	VM_NAND,
 	VM_SHR,
@@ -29,8 +30,10 @@ enum VmpOpType
 	VM_WRITE_MEM,
 	VM_PUSH_VSP,
 	VM_WRITE_VSP,
+	VM_MUL,
 	VM_IMUL,
 	VM_CPUID,
+	VM_RDTSC,
 	VM_POPFD,
 	VM_EXIT_CALL,
 	VM_COPYSTACK,
@@ -117,6 +120,21 @@ class VmpOpCpuid :public VmpInstruction
 public:
 	VmpOpCpuid() { opType = VM_CPUID; };
 	~VmpOpCpuid() {};
+	void PrintRaw(std::ostream& ss) override;
+	int BuildInstruction(ghidra::Funcdata& data) override;
+	std::unique_ptr<VmpInstruction> MakeInstruction(VmpFlowBuildContext* ctx, VmpNode& input) override;
+	template <class Archive>
+	void serialize(Archive& ar)
+	{
+		ar(cereal::base_class<VmpInstruction>(this));
+	}
+};
+
+class VmpOpRdtsc :public VmpInstruction
+{
+public:
+	VmpOpRdtsc() { opType = VM_RDTSC; };
+	~VmpOpRdtsc() {};
 	void PrintRaw(std::ostream& ss) override;
 	int BuildInstruction(ghidra::Funcdata& data) override;
 	std::unique_ptr<VmpInstruction> MakeInstruction(VmpFlowBuildContext* ctx, VmpNode& input) override;
@@ -256,6 +274,21 @@ public:
 	void PrintRaw(std::ostream& ss) override;
 	int BuildInstruction(ghidra::Funcdata& data) override;
 	void BuildX86Asm(triton::Context* ctx) override;
+	std::unique_ptr<VmpInstruction> MakeInstruction(VmpFlowBuildContext* ctx, VmpNode& input) override;
+	template <class Archive>
+	void serialize(Archive& ar)
+	{
+		ar(cereal::base_class<VmpInstruction>(this));
+	}
+};
+
+class VmpOpDiv : public VmpInstruction
+{
+public:
+	VmpOpDiv() { opType = VM_DIV; };
+	~VmpOpDiv() {};
+	void PrintRaw(std::ostream& ss) override;
+	int BuildInstruction(ghidra::Funcdata& data) override;
 	std::unique_ptr<VmpInstruction> MakeInstruction(VmpFlowBuildContext* ctx, VmpNode& input) override;
 	template <class Archive>
 	void serialize(Archive& ar)
@@ -488,7 +521,20 @@ public:
 	}
 };
 
-
+class VmpOpMul :public VmpInstruction
+{
+public:
+	VmpOpMul() { opType = VM_IMUL; };
+	~VmpOpMul() {};
+	void PrintRaw(std::ostream& ss) override;
+	int BuildInstruction(ghidra::Funcdata& data) override;
+	std::unique_ptr<VmpInstruction> MakeInstruction(VmpFlowBuildContext* ctx, VmpNode& input) override;
+	template <class Archive>
+	void serialize(Archive& ar)
+	{
+		ar(cereal::base_class<VmpInstruction>(this));
+	}
+};
 
 #define REGISTER_VMPINSTRUCTION(TYPE) \
     CEREAL_REGISTER_TYPE(TYPE) \
@@ -513,3 +559,6 @@ REGISTER_VMPINSTRUCTION(VmpOpJmpConst)
 REGISTER_VMPINSTRUCTION(VmpOpJmp)
 REGISTER_VMPINSTRUCTION(VmpOpWriteVSP)
 REGISTER_VMPINSTRUCTION(VmpOpCopyStack)
+REGISTER_VMPINSTRUCTION(VmpOpRdtsc)
+REGISTER_VMPINSTRUCTION(VmpOpDiv)
+REGISTER_VMPINSTRUCTION(VmpOpMul)

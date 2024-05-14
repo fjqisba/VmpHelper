@@ -199,3 +199,24 @@ std::unique_ptr<VmpInstruction> VmpOpCopyStack::MakeInstruction(VmpFlowBuildCont
 {
 	return nullptr;
 }
+
+std::unique_ptr<VmpInstruction> VmpOpRdtsc::MakeInstruction(VmpFlowBuildContext* buildCtx, VmpNode& input)
+{
+	std::unique_ptr<VmpOpRdtsc> vOpRdtsc = std::make_unique<VmpOpRdtsc>();
+	vOpRdtsc->addr = input.readVmAddress(buildCtx->vmreg.reg_code);
+	return vOpRdtsc;
+}
+
+std::unique_ptr<VmpInstruction> VmpOpDiv::MakeInstruction(VmpFlowBuildContext* buildCtx, VmpNode& input)
+{
+	std::unique_ptr<VmpOpDiv> vOpDiv = std::make_unique<VmpOpDiv>();
+	vOpDiv->addr = input.readVmAddress(buildCtx->vmreg.reg_code);
+	return vOpDiv;
+}
+
+std::unique_ptr<VmpInstruction> VmpOpMul::MakeInstruction(VmpFlowBuildContext* buildCtx, VmpNode& input)
+{
+	std::unique_ptr<VmpOpMul> vOpMul = std::make_unique<VmpOpMul>();
+	vOpMul->addr = input.readVmAddress(buildCtx->vmreg.reg_code);
+	return vOpMul;
+}

@@ -54,6 +54,7 @@ private:
 	std::unique_ptr<VmpInstruction> AnaVmpPattern(ghidra::Funcdata* fd,VmpNode& nodeInput);
 	std::unique_ptr<VmpInstruction> tryMatch_vPopReg(ghidra::Funcdata* fd, VmpNode& nodeInput);
 	std::unique_ptr<VmpInstruction> tryMatch_vCpuid(ghidra::Funcdata* fd, VmpNode& nodeInput);
+	std::unique_ptr<VmpInstruction> tryMatch_vRdtsc(ghidra::Funcdata* fd, VmpNode& nodeInput);
 	std::unique_ptr<VmpInstruction> tryMatch_vPushImm(ghidra::Funcdata* fd, VmpNode& nodeInput);
 	std::unique_ptr<VmpInstruction> tryMatch_vPushReg(ghidra::Funcdata* fd, VmpNode& nodeInput);
 	std::unique_ptr<VmpInstruction> tryMatch_vLogicalOp(ghidra::Funcdata* fd, VmpNode& nodeInput);
@@ -61,6 +62,7 @@ private:
 	std::unique_ptr<VmpInstruction> tryMatch_vMemAccess(ghidra::Funcdata* fd, VmpNode& nodeInput);
 	std::unique_ptr<VmpInstruction> tryMatch_vJmp(ghidra::Funcdata* fd, VmpNode& nodeInput);
 	std::unique_ptr<VmpInstruction> tryMatch_Mul(ghidra::Funcdata* fd, VmpNode& nodeInput);
+	std::unique_ptr<VmpInstruction> tryMatch_Div(ghidra::Funcdata* fd, VmpNode& nodeInput);
 	std::unique_ptr<VmpInstruction> tryMatch_vPushVsp(ghidra::Funcdata* fd, VmpNode& nodeInput);
 	std::unique_ptr<VmpInstruction> tryMatch_vWriteVsp(ghidra::Funcdata* fd, VmpNode& nodeInput);
 	std::unique_ptr<VmpInstruction> tryMatch_vCopyStack(ghidra::Funcdata* fd, VmpNode& nodeInput);

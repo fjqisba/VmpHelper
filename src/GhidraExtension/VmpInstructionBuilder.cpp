@@ -908,10 +908,34 @@ int VmpOpCpuid::BuildInstruction(ghidra::Funcdata& data)
 
 	//esp = esp - 0xC
 	ghidra::PcodeOp* opSub = data.newOp(2, pc);
-	data.opSetOpcode(opSub, ghidra::CPUI_INT_ADD);
+	data.opSetOpcode(opSub, ghidra::CPUI_INT_SUB);
 	data.newVarnodeOut(regESP.size, regESP.getAddr(), opSub);
 	data.opSetInput(opSub, data.newVarnode(regESP.size, regESP.space, regESP.offset), 0);
 	data.opSetInput(opSub, data.newConstant(4, 0xC), 1);
+
+	return 0x1;
+}
+
+//rdtsc
+//VSP = VSP - 0x8
+//mov [VSP+0], edx
+//mov [VSP+4], eax
+
+int VmpOpRdtsc::BuildInstruction(ghidra::Funcdata& data)
+{
+	auto regEIP = data.getArch()->translate->getRegister("EIP");
+	auto regESP = data.getArch()->translate->getRegister("ESP");
+
+	ghidra::Address pc = ghidra::Address(data.getArch()->getDefaultCodeSpace(), addr.vmdata);
+
+	//VSP = VSP - 0x8
+	ghidra::PcodeOp* opSub = data.newOp(2, pc);
+	data.opSetOpcode(opSub, ghidra::CPUI_INT_SUB);
+	data.newVarnodeOut(regESP.size, regESP.getAddr(), opSub);
+	data.opSetInput(opSub, data.newVarnode(regESP.size, regESP.space, regESP.offset), 0);
+	data.opSetInput(opSub, data.newConstant(4, 0x8), 1);
+
+	//To do...
 
 	return 0x1;
 }
@@ -965,6 +989,47 @@ int VmpOpShrd::BuildInstruction(ghidra::Funcdata& data)
 	data.newVarnodeOut(regESP.size, regESP.getAddr(), opAdd);
 	data.opSetInput(opAdd, data.newVarnode(regESP.size, regESP.space, regESP.offset), 0);
 	data.opSetInput(opAdd, data.newConstant(4, 0x2), 1);
+
+	return 0x1;
+}
+
+//mov eax,dword ptr ss:[VSP+0x4]
+//mov edx,dword ptr ss:[VSP]
+//mov ecx,dword ptr ss:[VSP+0x8]
+//div ecx
+//mov dword ptr ss:[VSP+0x4],edx
+//mov dword ptr ss:[VSP+0x8],eax
+//pushfd
+//pop dword ptr ss:[VSP]
+
+int VmpOpDiv::BuildInstruction(ghidra::Funcdata& data)
+{
+	//To do...
+
+	return 0x1;
+}
+
+//mov eax,dword ptr ss:[VSP+0x4]
+//mov edx,dword ptr ss:[VSP]
+//lea ebp,dword ptr ss:[VSP-0x4]
+//mul edx
+//mov dword ptr ss:[VSP+0x4],edx
+//mov dword ptr ss:[VSP+0x8],eax
+//pushfd
+//pop dword ptr ss:[VSP]
+
+int VmpOpMul::BuildInstruction(ghidra::Funcdata& data)
+{
+	auto regESP = data.getArch()->translate->getRegister("ESP");
+	ghidra::Address pc = ghidra::Address(data.getArch()->getDefaultCodeSpace(), addr.vmdata);
+
+	//To do...
+	//VSP = VSP - 0x4
+	ghidra::PcodeOp* opSub = data.newOp(2, pc);
+	data.opSetOpcode(opSub, ghidra::CPUI_INT_SUB);
+	data.newVarnodeOut(regESP.size, regESP.getAddr(), opSub);
+	data.opSetInput(opSub, data.newVarnode(regESP.size, regESP.space, regESP.offset), 0);
+	data.opSetInput(opSub, data.newConstant(4, 0x4), 1);
 
 	return 0x1;
 }

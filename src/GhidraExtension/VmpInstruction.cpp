@@ -228,6 +228,14 @@ void VmpOpCpuid::PrintRaw(std::ostream& ss)
 	ss << "\n";
 }
 
+void VmpOpRdtsc::PrintRaw(std::ostream& ss)
+{
+	printAddress(ss);
+	ss << "\t";
+	colorString(ss, "vRdtsc", SCOLOR_INSN);
+	ss << "\n";
+}
+
 void VmpOpPopfd::PrintRaw(std::ostream& ss)
 {
 	printAddress(ss);
@@ -249,5 +257,21 @@ void VmpOpShld::PrintRaw(std::ostream& ss)
 	printAddress(ss);
 	ss << "\t";
 	colorString(ss, "vShld", SCOLOR_INSN);
+	ss << "\n";
+}
+
+void VmpOpDiv::PrintRaw(std::ostream& ss)
+{
+	printAddress(ss);
+	ss << "\t";
+	colorString(ss, "vDiv", SCOLOR_INSN);
+	ss << "\n";
+}
+
+void VmpOpMul::PrintRaw(std::ostream& ss)
+{
+	printAddress(ss);
+	ss << "\t";
+	colorString(ss, "vMul", SCOLOR_INSN);
 	ss << "\n";
 }
