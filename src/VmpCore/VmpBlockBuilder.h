@@ -63,6 +63,7 @@ private:
 	std::unique_ptr<VmpInstruction> tryMatch_Mul(ghidra::Funcdata* fd, VmpNode& nodeInput);
 	std::unique_ptr<VmpInstruction> tryMatch_vPushVsp(ghidra::Funcdata* fd, VmpNode& nodeInput);
 	std::unique_ptr<VmpInstruction> tryMatch_vWriteVsp(ghidra::Funcdata* fd, VmpNode& nodeInput);
+	std::unique_ptr<VmpInstruction> tryMatch_vCopyStack(ghidra::Funcdata* fd, VmpNode& nodeInput);
 	std::unique_ptr<VmpInstruction> tryMatch_vJmpConst(ghidra::Funcdata* fd, VmpNode& nodeInput);
 	bool tryMatch_vCheckEsp(ghidra::Funcdata* fd, VmpNode& nodeInput);
 	bool tryMatch_vJunkCode(ghidra::Funcdata* fd, VmpNode& nodeInput);

@@ -194,3 +194,8 @@ std::unique_ptr<VmpInstruction> VmpOpJmp::MakeInstruction(VmpFlowBuildContext* b
 	vOpJmp->addr = input.readVmAddress(buildCtx->vmreg.reg_code);
 	return vOpJmp;
 }
+
+std::unique_ptr<VmpInstruction> VmpOpCopyStack::MakeInstruction(VmpFlowBuildContext* ctx, VmpNode& input)
+{
+	return nullptr;
+}

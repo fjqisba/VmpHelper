@@ -117,10 +117,18 @@ VmpNode VmpBlockWalker::GetNextNode()
 		return retNode;
 	}
 	retNode.addrList.assign(nodeIdx.vmNode->addrList.begin() + nodeIdx.index, nodeIdx.vmNode->addrList.end());
-	for (unsigned int n = 0; n < retNode.addrList.size(); ++n) {
+	size_t lastEip = 0x0;
+	unsigned int contextSize = retNode.addrList.size();
+	for (int n = 0; n < contextSize; n++) {
+		if (lastEip == unicorn.traceList[idx + n].EIP) {
+			contextSize++;
+		}
+		else {
+			lastEip = unicorn.traceList[idx + n].EIP;
+		}
 		retNode.contextList.push_back(unicorn.traceList[idx + n]);
 	}
-	curNodeSize = retNode.addrList.size();
+	curNodeSize = retNode.contextList.size();
 	return retNode;
 }
 
@@ -970,6 +978,10 @@ std::unique_ptr<VmpInstruction> VmpBlockBuilder::AnaVmpPattern(ghidra::Funcdata*
 	if (newPattern) {
 		return newPattern;
 	}
+	newPattern = tryMatch_vCopyStack(fd, input);
+	if (newPattern) {
+		return newPattern;
+	}
 	return nullptr;
 }
 
@@ -1115,6 +1127,42 @@ bool VmpBlockBuilder::Execute_FIND_VM_INIT()
 		return true;
 	}
 	return false;
+}
+
+std::unique_ptr<VmpInstruction> VmpBlockBuilder::tryMatch_vCopyStack(ghidra::Funcdata* fd, VmpNode& nodeInput)
+{
+	size_t storeCount = fd->obank.storelist.size();
+	size_t loadCount = fd->obank.loadlist.size();
+	if (storeCount < 4 || loadCount < 4) {
+		return nullptr;
+	}
+	auto itStore = fd->obank.storelist.begin();
+	bool bSaveEsi = false;
+	bool bSaveEdi = false;
+	bool bRepMov = false;
+	while (itStore != fd->obank.storelist.end()) {
+		ghidra::PcodeOp* storeOp = *itStore++;
+		auto asmData = DisasmManager::Main().DecodeInstruction(storeOp->getAddr().getOffset());
+		if (asmData->raw->id == X86_INS_PUSH && asmData->raw->detail->x86.operands[0].type == X86_OP_REG) {
+			if (asmData->raw->detail->x86.operands[0].reg == X86_REG_ESI) {
+				bSaveEsi = true;
+				continue;
+			}
+			if (asmData->raw->detail->x86.operands[0].reg == X86_REG_EDI) {
+				bSaveEdi = true;
+				continue;
+			}
+		}
+		if (asmData->raw->id == X86_INS_MOVSB) {
+			bRepMov = true;
+			continue;
+		}
+	}
+	if (bSaveEsi && bSaveEdi && bRepMov) {
+		std::unique_ptr<VmpOpCopyStack> vOpCopyStack = std::make_unique<VmpOpCopyStack>();
+		return vOpCopyStack;
+	}
+	return nullptr;
 }
 
 std::unique_ptr<VmpInstruction> VmpBlockBuilder::tryMatch_vWriteVsp(ghidra::Funcdata* fd, VmpNode& nodeInput)

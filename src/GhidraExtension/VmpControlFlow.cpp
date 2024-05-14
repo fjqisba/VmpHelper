@@ -162,7 +162,6 @@ void VmpControlFlowBuilder::fallthruNormal(VmpFlowBuildContext& task)
 		return;
 	}
 	visited.insert(task.start_addr);
-
 	size_t curAddr = task.start_addr.raw;
 	VmpBasicBlock* curBasicBlock = nullptr;
 	while (true) {

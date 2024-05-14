@@ -33,6 +33,7 @@ enum VmpOpType
 	VM_CPUID,
 	VM_POPFD,
 	VM_EXIT_CALL,
+	VM_COPYSTACK,
 	USER_CONNECT,
 };
 
@@ -88,6 +89,19 @@ public:
 	void PrintRaw(std::ostream& ss) override {};
 public:
 	size_t connectAddr = 0x0;
+};
+
+class VmpOpCopyStack :public VmpInstruction
+{
+public:
+	VmpOpCopyStack() { opType = VM_COPYSTACK; };
+	~VmpOpCopyStack() {};
+	std::unique_ptr<VmpInstruction> MakeInstruction(VmpFlowBuildContext* ctx, VmpNode& input) override;
+	template <class Archive>
+	void serialize(Archive& ar)
+	{
+		ar(cereal::base_class<VmpInstruction>(this));
+	}
 };
 
 class VmpOpUnknown :public VmpInstruction
@@ -498,3 +512,4 @@ REGISTER_VMPINSTRUCTION(VmpOpImul)
 REGISTER_VMPINSTRUCTION(VmpOpJmpConst)
 REGISTER_VMPINSTRUCTION(VmpOpJmp)
 REGISTER_VMPINSTRUCTION(VmpOpWriteVSP)
+REGISTER_VMPINSTRUCTION(VmpOpCopyStack)
