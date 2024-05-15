@@ -1,6 +1,7 @@
 #pragma once
 #include "VmpInstruction.h"
 #include "../GhidraExtension/VmpNode.h"
+#include "../GhidraExtension/VmpArch.h"
 #include "../GhidraExtension/VmpControlFlow.h"
 #include "../Manager/exceptions.h"
 
@@ -230,4 +231,14 @@ std::unique_ptr<VmpInstruction> VmpOpPopfd::MakeInstruction(VmpFlowBuildContext*
 	std::unique_ptr<VmpOpPopfd> vOpPopfd = std::make_unique<VmpOpPopfd>();
 	vOpPopfd->addr = input.readVmAddress(buildCtx->vmreg.reg_code);
 	return vOpPopfd;
+}
+
+std::unique_ptr<VmpInstruction> VmpOpExit::MakeInstruction(VmpFlowBuildContext* buildCtx, VmpNode& input)
+{
+	std::unique_ptr<VmpOpExit> vOpExit = std::make_unique<VmpOpExit>();
+	vOpExit->addr = input.readVmAddress(buildCtx->vmreg.reg_code);
+	for (unsigned int n = 0; n < exitData.size(); ++n) {
+		vOpExit->exitContext.push_back(gArch->translate->getRegister(exitData[n]));
+	}
+	return vOpExit;
 }

@@ -70,7 +70,7 @@ private:
 	bool tryMatch_vCheckEsp(ghidra::Funcdata* fd, VmpNode& nodeInput);
 	bool tryMatch_vJunkCode(ghidra::Funcdata* fd, VmpNode& nodeInput);
 	std::unique_ptr<VmpInstruction> tryMatch_vPopfd(ghidra::Funcdata* fd, VmpNode& nodeInput);
-	bool tryMatch_vExit(ghidra::Funcdata* fd, VmpNode& nodeInput);
+	std::unique_ptr<VmpInstruction> tryMatch_vExit(ghidra::Funcdata* fd, VmpNode& nodeInput);
 private:
 	bool updateVmRegOffset(ghidra::Funcdata* fd);
 	//执行每条op指令
@@ -81,6 +81,8 @@ private:
 	bool executeVmInit(VmpNode& nodeInput, VmpOpInit* inst);
 	bool executeVmCopyStack(VmpNode& nodeInput, VmpInstruction* inst);
 	bool executeVmExit(VmpNode& nodeInput, VmpInstruction* inst);
+
+	std::unique_ptr<VmpUnicornContext> prepareJmpContext(VmpNode& nodeInput, size_t jmpAddr);
 private:
 	VmpControlFlowBuilder& flow;
 	VmpBasicBlock* curBlock;

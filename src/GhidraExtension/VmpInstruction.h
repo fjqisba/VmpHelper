@@ -182,10 +182,18 @@ public:
 	int BuildInstruction(ghidra::Funcdata& data) override;
 	void PrintRaw(std::ostream& ss) override;
 	void BuildX86Asm(triton::Context* ctx) override;
+	std::unique_ptr<VmpInstruction> MakeInstruction(VmpFlowBuildContext* ctx, VmpNode& input) override;
+	template <class Archive>
+	void serialize(Archive& ar)
+	{
+		ar(cereal::base_class<VmpInstruction>(this), exitData);
+	}
 public:
 	//ÍË³öµÄ¼Ä´æÆ÷
 	std::vector<ghidra::VarnodeData> exitContext;
 	size_t exitAddress = 0x0;
+public:
+	std::vector<std::string> exitData;
 };
 
 class VmpOpExitCall : public VmpInstruction
@@ -571,3 +579,4 @@ REGISTER_VMPINSTRUCTION(VmpOpRdtsc)
 REGISTER_VMPINSTRUCTION(VmpOpDiv)
 REGISTER_VMPINSTRUCTION(VmpOpMul)
 REGISTER_VMPINSTRUCTION(VmpOpPopfd)
+REGISTER_VMPINSTRUCTION(VmpOpExit)

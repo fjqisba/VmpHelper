@@ -461,8 +461,8 @@ bool FastCheckVmpEntry(size_t startAddr)
 
 bool VmpBlockBuilder::executeVmCopyStack(VmpNode& nodeInput, VmpInstruction* inst)
 {
-	reg_context& endContext = nodeInput.contextList[nodeInput.contextList.size() - 1];
-	buildCtx->vm_esp_addr = endContext.ESP;
+	/*reg_context& endContext = nodeInput.contextList[nodeInput.contextList.size() - 1];
+	buildCtx->vm_esp_addr = endContext.ESP;*/
 	return true;
 }
 
@@ -475,7 +475,6 @@ bool VmpBlockBuilder::executeVmInit(VmpNode& nodeInput, VmpOpInit* inst)
 	newBuildTask->ctx = std::move(nextContext);
 	newBuildTask->btype = VmpFlowBuildContext::HANDLE_VMP_JMP;
 	newBuildTask->from_addr = inst->addr;
-	newBuildTask->vm_esp_addr = buildCtx->vm_esp_addr;
 	flow.anaQueue.push(std::move(newBuildTask));
 	buildCtx->status = VmpFlowBuildContext::FINISH_MATCH;
 	return true;
@@ -532,7 +531,6 @@ bool VmpBlockBuilder::executeVmJmpConst(VmpNode& nodeInput, VmpOpJmpConst* inst)
 	newBuildTask->ctx = std::move(nextContext);
 	newBuildTask->btype = VmpFlowBuildContext::HANDLE_VMP_JMP;
 	newBuildTask->from_addr = inst->addr;
-	newBuildTask->vm_esp_addr = buildCtx->vm_esp_addr;
 	flow.anaQueue.push(std::move(newBuildTask));
 	buildCtx->status = VmpFlowBuildContext::FINISH_MATCH;
 	return true;
@@ -554,6 +552,16 @@ bool VmpBlockBuilder::updateVmReg(VmpNode& nodeInput, VmpInstruction* inst)
 	return true;
 }
 
+std::unique_ptr<VmpUnicornContext> VmpBlockBuilder::prepareJmpContext(VmpNode& nodeInput, size_t jmpAddr)
+{
+	VmpUnicorn unicornEngine;
+	auto newCtx = VmpUnicornContext::DefaultContext();
+	newCtx->context = nodeInput.contextList[0];
+	newCtx->FixVmJmpVal(buildCtx->vmreg.reg_stack, jmpAddr);
+	unicornEngine.StartVmpTrace(*newCtx, nodeInput.addrList.size() + 1);
+	return unicornEngine.CopyCurrentUnicornContext();
+}
+
 bool VmpBlockBuilder::executeVmJmp(VmpNode& nodeInput, VmpOpJmp* inst)
 {
 	VmpUnicorn unicornEngine;
@@ -561,51 +569,12 @@ bool VmpBlockBuilder::executeVmJmp(VmpNode& nodeInput, VmpOpJmp* inst)
 	ghidra::Funcdata* fd = flow.Arch()->AnaVmpBasicBlock(curBlock);
 	VmpBranchAnalyzer branchAna(fd);
 	std::vector<size_t> branchList = branchAna.GuessVmpBranch();
-	if (branchList.size() == 1) {
-		unicornEngine.StartVmpTrace(*buildCtx->ctx, walker.CurrentIndex() + nodeInput.addrList.size() + 1);
-		auto nextContext = unicornEngine.CopyCurrentUnicornContext();
+	for (unsigned int n = 0; n < branchList.size(); ++n) {
 		auto newBuildTask = std::make_unique<VmpFlowBuildContext>();
-		newBuildTask->ctx = std::move(nextContext);
+		newBuildTask->ctx = prepareJmpContext(nodeInput, branchList[n]);
 		newBuildTask->btype = VmpFlowBuildContext::HANDLE_VMP_JMP;
 		newBuildTask->from_addr = inst->addr;
-		newBuildTask->vm_esp_addr = buildCtx->vm_esp_addr;
-
 		flow.anaQueue.push(std::move(newBuildTask));
-		buildCtx->status = VmpFlowBuildContext::FINISH_MATCH;
-		return true;
-	}
-	else if (branchList.size() == 2) {
-
-		//先运行到执行vmJmp之前
-		unicornEngine.StartVmpTrace(*buildCtx->ctx, walker.CurrentIndex() + 1);
-
-		//拷贝出两份环境
-		auto nextContext1 = unicornEngine.CopyCurrentUnicornContext();
-		auto nextContext2 = unicornEngine.CopyCurrentUnicornContext();
-
-		//模拟执行环境1
-		nextContext1->ChangeVmJmpVal(buildCtx->vmreg.reg_stack, branchList[0]);
-		unicornEngine.StartVmpTrace(*nextContext1, nodeInput.addrList.size() + 1);
-
-		auto newTask1 = std::make_unique<VmpFlowBuildContext>();
-		newTask1->ctx = unicornEngine.CopyCurrentUnicornContext();
-		newTask1->btype = VmpFlowBuildContext::HANDLE_VMP_JMP;
-		newTask1->from_addr = inst->addr;
-		newTask1->vm_esp_addr = buildCtx->vm_esp_addr;
-		flow.anaQueue.push(std::move(newTask1));
-
-		//模拟执行环境2
-		nextContext2->ChangeVmJmpVal(buildCtx->vmreg.reg_stack, branchList[1]);
-		unicornEngine.StartVmpTrace(*nextContext2, nodeInput.addrList.size() + 1);
-
-		auto newTask2 = std::make_unique<VmpFlowBuildContext>();
-		newTask2->ctx = unicornEngine.CopyCurrentUnicornContext();
-		newTask2->btype = VmpFlowBuildContext::HANDLE_VMP_JMP;
-		newTask2->from_addr = inst->addr;
-		newTask2->vm_esp_addr = buildCtx->vm_esp_addr;
-		flow.anaQueue.push(std::move(newTask2));
-		buildCtx->status = VmpFlowBuildContext::FINISH_MATCH;
-		return true;
 	}
 	buildCtx->status = VmpFlowBuildContext::FINISH_MATCH;
 	return true;
@@ -1085,6 +1054,10 @@ std::unique_ptr<VmpInstruction> VmpBlockBuilder::AnaVmpPattern(ghidra::Funcdata*
 	if (newPattern) {
 		return newPattern;
 	}
+	newPattern = tryMatch_vExit(fd, input);
+	if (newPattern) {
+		return newPattern;
+	}
 	return nullptr;
 }
 
@@ -1102,7 +1075,7 @@ bool VmpBlockBuilder::Execute_FINISH_VM_INIT()
 	Vmp3xHandlerFactory::VmpHandlerRange tmpRange(nodeInput.addrList[0], nodeInput.addrList[nodeInput.addrList.size() - 1]);
 	auto it = cache.handlerPatternMap.find(tmpRange);
 #ifdef DeveloperMode
-	if (nodeInput.addrList[0] == 0x00430990) {
+	if (nodeInput.addrList[0] == 0x0045e0fe) {
 		int a = 0;
 	}
 #endif
@@ -1127,9 +1100,6 @@ bool VmpBlockBuilder::Execute_FINISH_VM_INIT()
 		if (vmInstruction) {
 			executeVmpOp(nodeInput, std::move(vmInstruction));
 		}
-		return true;
-	}
-	if (tryMatch_vExit(fd, nodeInput)) {
 		return true;
 	}
 	if (tryMatch_vCheckEsp(fd, nodeInput)) {
@@ -1166,7 +1136,7 @@ bool VmpBlockBuilder::updateVmRegOffset(ghidra::Funcdata* fd)
 			if (defOp->getIn(0)->isInput() && GhidraHelper::GetVarnodeRegName(defOp->getIn(0)) == "ESP") {
 				if (defOp->getIn(1)->isConstant()) {
 					int offset = defOp->getIn(1)->getOffset();
-					buildCtx->vm_esp_addr = VmpUnicornContext::DefaultEsp() + offset;
+					//buildCtx->vm_esp_addr = VmpUnicornContext::DefaultEsp() + offset;
 					return true;
 				}
 			}
@@ -1204,9 +1174,9 @@ bool VmpBlockBuilder::Execute_FIND_VM_INIT()
 			nodeInput.append(walker.GetNextNode());
 			continue;
 		}
-		if (!updateVmRegOffset(fd)) {
-			return false;
-		}
+		//if (!updateVmRegOffset(fd)) {
+		//	return false;
+		//}
 		std::unique_ptr<VmpOpInit> opInitVm = std::make_unique<VmpOpInit>();
 		opInitVm->storeContext = storeContext;
 		opInitVm->addr = VmAddress(nodeInput.addrList[0], nodeInput.addrList[0]);
@@ -1312,12 +1282,12 @@ std::unique_ptr<VmpInstruction> VmpBlockBuilder::tryMatch_vPushVsp(ghidra::Funcd
 	return vOpPushVSP;
 }
 
-bool VmpBlockBuilder::tryMatch_vExit(ghidra::Funcdata* fd, VmpNode& nodeInput)
+std::unique_ptr<VmpInstruction> VmpBlockBuilder::tryMatch_vExit(ghidra::Funcdata* fd, VmpNode& nodeInput)
 {
 	size_t storeCount = fd->obank.storelist.size();
 	size_t loadCount = fd->obank.loadlist.size();
 	if (loadCount < 7) {
-		return false;
+		return nullptr;
 	}
 	std::map<int, ghidra::VarnodeData> exitContextMap;
 	ghidra::PcodeOp* retOp = fd->getFirstReturnOp();
@@ -1357,25 +1327,28 @@ bool VmpBlockBuilder::tryMatch_vExit(ghidra::Funcdata* fd, VmpNode& nodeInput)
 		}
 	}
 	std::unique_ptr<VmpOpExit> vOpExit = std::make_unique<VmpOpExit>();
-	vOpExit->addr = nodeInput.readVmAddress(buildCtx->vmreg.reg_code);
 	int base = 0x0;
 	for (unsigned int n = 0; n < 10; ++n) {
 		auto it = exitContextMap.find(base);
 		if (it == exitContextMap.end()) {
-			return false;
+			return nullptr;
 		}
 		else {
-			vOpExit->exitContext.push_back(it->second);
+			vOpExit->exitData.push_back(fd->getArch()->translate->getRegisterName(it->second.space, it->second.offset, it->second.size));
 		}
 		base = base + 1;
 	}
-	executeVmpOp(nodeInput,std::move(vOpExit));
-	return true;
+	return vOpExit;
 }
 
 
 bool VmpBlockBuilder::BuildVmpBlock(VmpFlowBuildContext* ctx)
 {
+#ifdef DeveloperMode
+	if (ctx->start_addr.raw == 0x0045e0fe) {
+		int a = 0;
+	}
+#endif
 	buildCtx = ctx;
 	if (buildCtx->ctx == nullptr) {
 		buildCtx->ctx = VmpUnicornContext::DefaultContext();

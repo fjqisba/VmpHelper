@@ -220,12 +220,64 @@ std::unique_ptr<VmpUnicornContext> VmpUnicornContext::DefaultContext()
     return retContext;
 }
 
-void VmpUnicornContext::ChangeVmJmpVal(const std::string& reg_stack, size_t newVal)
+void VmpUnicornContext::FixVmJmpVal(const std::string& reg_stack, size_t newVal)
+{
+    size_t newVspVal = context.ESP + 0xC0;
+    if (reg_stack == "EAX") {
+        context.EAX = newVspVal;
+    }
+    else if (reg_stack == "EBX") {
+		context.EBX = newVspVal;
+	}
+	else if (reg_stack == "ECX") {
+		context.ECX = newVspVal;
+	}
+	else if (reg_stack == "EDX") {
+		context.EDX = newVspVal;
+	}
+	else if (reg_stack == "EBP") {
+		context.EBP = newVspVal;
+	}
+	else if (reg_stack == "ESI") {
+		context.ESI = newVspVal;
+	}
+	else if (reg_stack == "EDI") {
+		context.EDI = newVspVal;
+	}
+    SetVmJmpVal(reg_stack, newVal);
+}
+
+void VmpUnicornContext::SetVmJmpVal(const std::string& reg_stack, size_t newVal)
 {
     size_t vmStack = context.ReadReg(reg_stack);
     int stackOffset = vmStack - stackCodeBase;
 	if (stackOffset >= 0 && stackOffset < 0x10000) {
 		*(unsigned int*)&stackBuffer[stackOffset] = newVal;
+	}
+}
+
+void VmpUnicornContext::SetVmCodeVal(const std::string& reg_code, size_t newVal)
+{
+    if (reg_code == "EAX") {
+        context.EAX = newVal;
+    }
+    else if (reg_code == "EBX") {
+		context.EBX = newVal;
+    }
+    else if (reg_code == "ECX") {
+		context.ECX = newVal;
+	}
+	else if (reg_code == "EDX") {
+		context.EDX = newVal;
+	}
+	else if (reg_code == "EBP") {
+		context.EBP = newVal;
+	}
+	else if (reg_code == "ESI") {
+		context.ESI = newVal;
+	}
+	else if (reg_code == "EDI") {
+		context.EDI = newVal;
 	}
 }
 

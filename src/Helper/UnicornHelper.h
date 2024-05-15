@@ -31,7 +31,9 @@ class VmpUnicornContext
 public:
     static std::unique_ptr<VmpUnicornContext> DefaultContext();
     static size_t DefaultEsp();
-    void ChangeVmJmpVal(const std::string& reg_stack, size_t newVal);
+    void SetVmJmpVal(const std::string& reg_stack, size_t newVal);
+	void FixVmJmpVal(const std::string& reg_stack, size_t newVal);
+    void SetVmCodeVal(const std::string& reg_code, size_t newVal);
 public:
     reg_context context;
     size_t stackCodeBase;

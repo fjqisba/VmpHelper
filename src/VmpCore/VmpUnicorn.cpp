@@ -4,6 +4,10 @@
 #include "../Manager/SectionManager.h"
 #include "../Common/Public.h"
 
+#ifdef DeveloperMode
+#pragma optimize("", off) 
+#endif
+
 VmpUnicorn::VmpUnicorn()
 {
 
@@ -240,3 +244,7 @@ bool VmpUnicorn::init()
     uc_hook_add(uc, &hook_mem, hookType, cb_hook_mem, this, 0x0, 0xFFFFFFFF);
     return true;
 }
+
+#ifdef DeveloperMode
+#pragma optimize("", on) 
+#endif
