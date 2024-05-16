@@ -156,6 +156,16 @@ bool isNormalTerminalInstruction(RawInstruction* data)
 	return false;
 }
 
+void VmpControlFlowBuilder::addNextTask(size_t fromAddr, size_t nextAddr)
+{
+	if (IDAWrapper::isVmpEntry(nextAddr)) {
+		addVmpEntryBuildTask(fromAddr, nextAddr);
+	}
+	else {
+		addNormalBuildTask(nextAddr);
+	}
+}
+
 void VmpControlFlowBuilder::fallthruNormal(VmpFlowBuildContext& task)
 {
 	if (visited.count(task.start_addr)) {
@@ -191,14 +201,14 @@ void VmpControlFlowBuilder::fallthruNormal(VmpFlowBuildContext& task)
 		}
 		else if (curIns->raw->id == X86_INS_JMP && curIns->raw->detail->x86.operands[0].type == X86_OP_IMM) {
 			linkBlockEdge(curIns->raw->address, curIns->raw->detail->x86.operands[0].imm);
-			addNormalBuildTask(curIns->raw->detail->x86.operands[0].imm);
+			addNextTask(curIns->raw->address, curIns->raw->detail->x86.operands[0].imm);
 			break;
 		}
 		else if (DisasmManager::IsBranchInstruction(curIns->raw)) {
 			linkBlockEdge(curIns->raw->address, curIns->raw->detail->x86.operands[0].imm);
-			addNormalBuildTask(curIns->raw->detail->x86.operands[0].imm);
+			addNextTask(curIns->raw->address, curIns->raw->detail->x86.operands[0].imm);
 			linkBlockEdge(curIns->raw->address, curIns->raw->address + curIns->raw->size);
-			addNormalBuildTask(curIns->raw->address + curIns->raw->size);
+			addNextTask(curIns->raw->address, curIns->raw->address + curIns->raw->size);
 			break;
 		}
 		else {
@@ -350,6 +360,67 @@ void VmpControlFlowBuilder::buildEdges()
 			edgeBlock->inBlocks.push_back(basicBlock);
 		}
 	}
+}
+
+bool VmpControlFlow::checkMerge(VmpBasicBlock* bb)
+{
+	//条件1, 指向子节点的边只有1条
+	if (bb->inBlocks.size() != 1) {
+		return false;
+	}
+	//拿到指向该节点的父节点
+	VmpBasicBlock* fatherBlock = bb->inBlocks[0];
+	//条件2,父节点指向的边也只有1条
+	if (fatherBlock->outBlocks.size() != 1) {
+		return false;
+	}
+	//条件三,子节点不能指向父节点
+	for (const auto& eBlock : bb->outBlocks) {
+		if (eBlock == fatherBlock) {
+			return false;
+		}
+	}
+	//子节点地址移到父节点
+	for (unsigned int n = 0; n < bb->insList.size(); ++n) {
+		fatherBlock->insList.push_back(std::move(bb->insList[n]));
+	}
+	//处理边结算
+	fatherBlock->outBlocks = bb->outBlocks;
+	for (const auto& eBlock : bb->outBlocks) {
+		for (unsigned int n = 0; n < eBlock->inBlocks.size(); ++n) {
+			if (eBlock->inBlocks[n] == bb) {
+				eBlock->inBlocks[n] = fatherBlock;
+				break;
+			}
+		}
+	}
+	return true;
+}
+
+void VmpControlFlow::MergeNodes()
+{
+	//已确定无法合并的节点
+	std::set<VmAddress> badNodeList;
+	bool bUpdateNode;
+	do
+	{
+		bUpdateNode = false;
+		std::map<VmAddress, VmpBasicBlock>::iterator it = blocksMap.begin();
+		while (it != blocksMap.end()) {
+			VmAddress nodeAddr = it->first;
+			if (badNodeList.count(nodeAddr)) {
+				it++;
+				continue;
+			}
+			if (checkMerge(&it->second)) {
+				bUpdateNode = true;
+				it = blocksMap.erase(it);
+				continue;
+			}
+			badNodeList.insert(nodeAddr);
+			it++;
+		}
+	} while (bUpdateNode);
 }
 
 #ifdef DeveloperMode

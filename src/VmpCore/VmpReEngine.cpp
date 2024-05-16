@@ -113,6 +113,18 @@ void VmpReEngine::Decompile(size_t startAddr)
 	msg("%s\n", srcResult.c_str());
 }
 
+void VmpReEngine::Decompile_IDA(size_t startAddr)
+{
+	auto it = std::find_if(funcCache.begin(), funcCache.end(),
+		[startAddr](const std::unique_ptr<VmpFunction>& func) {
+			return func->startAddr == startAddr;
+		});
+	if (it == funcCache.end()) {
+		return;
+	}
+	//VmpFunction* fd = it->get();
+}
+
 void VmpReEngine::clearAllFunction()
 {
 	for (auto it = funcCache.begin(); it != funcCache.end(); ++it) {
@@ -177,6 +189,7 @@ void VmpReEngine::PrintGraph(size_t startAddr)
 	try {
 		VmpFunction* fd = makeFunction(startAddr);
 		fd->FollowVmp(startAddr);
+		fd->cfg.MergeNodes();
 		fd->CreateGraph();
 		handlerFactory.SaveHandlerPattern();
 	}

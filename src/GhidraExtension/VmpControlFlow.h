@@ -88,6 +88,9 @@ private:
 	Vmp3xHandlerFactory& HandlerCache();
 	void fallthruVmp(VmpFlowBuildContext& task);
 	void fallthruNormal(VmpFlowBuildContext& task);
+
+	void addNextTask(size_t fromAddr, size_t nextAddr);
+
 	void linkBlockEdge(VmAddress from, VmAddress to);
 	void buildEdges();
 	void buildFinalFunction();
@@ -156,6 +159,9 @@ public:
 	VmpControlFlow();
 	~VmpControlFlow();
 	VmpBasicBlock* StartBlock() { return startBlock; };
+	void MergeNodes();
+private:
+	bool checkMerge(VmpBasicBlock* bb);
 protected:
 	VmpBasicBlock* startBlock;
 public:

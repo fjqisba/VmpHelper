@@ -608,7 +608,9 @@ bool VmpExitCallAnalyzer::getEndStackOffset(int& outOffset)
 	catch (Exception& ex) {
 		return false;
 	}
-	formula = formula.simplify();
+	z3::params params(ctx);
+	params.set("bv_not_simpl", true);
+	formula = formula.simplify(params);
 	std::string ss2 = formula.to_string();
 	if (formula.is_app() && formula.decl().decl_kind() == Z3_OP_BADD) {
 		z3::expr arg1 = formula.arg(0);

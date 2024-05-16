@@ -6,6 +6,7 @@
 #define ACTION_MarkVmpEntry "Revampire::MarkVmpEntry"
 #define ACTION_VMP350		"Revampire::VMP350"
 #define ACTION_DECOMPILE    "Revampire::Decompile"
+#define ACTION_DECOMPILE_IDA    "Revampire::DecompileIDA"
 
 #ifdef DeveloperMode
 #pragma optimize("", off) 
@@ -27,6 +28,13 @@ int MenuRevampire::activate(action_activation_ctx_t* ctx)
 		qstring strStartAddr = ctx->widget_title.substr(4);
 		size_t startAddr = std::stoull(strStartAddr.c_str(), 0, 16);
 		VmpReEngine::Instance().Decompile(startAddr);
+		return 0x0;
+	}
+	if (actionName == ACTION_DECOMPILE_IDA) {
+		qstring strStartAddr = ctx->widget_title.substr(4);
+		size_t startAddr = std::stoull(strStartAddr.c_str(), 0, 16);
+		VmpReEngine::Instance().Decompile_IDA(startAddr);
+		return 0x0;
 	}
 	return 0x0;
 }
@@ -49,6 +57,11 @@ ida,nullptr,nullptr,0,ADF_OT_PLUGMOD };
 sizeof(action_desc_t),ACTION_DECOMPILE,"Decompile",this,
 ida,nullptr,nullptr,0,ADF_OT_PLUGMOD };
 	register_action(actDecompileVmp);
+
+	const action_desc_t actDecompileIDA = {
+sizeof(action_desc_t),ACTION_DECOMPILE_IDA,"Decompile_IDA",this,
+ida,nullptr,nullptr,0,ADF_OT_PLUGMOD };
+	register_action(actDecompileIDA);
 }
 
 MenuRevampire::~MenuRevampire()
@@ -56,6 +69,7 @@ MenuRevampire::~MenuRevampire()
 	unregister_action(ACTION_VMP350);
 	unregister_action(ACTION_MarkVmpEntry);
 	unregister_action(ACTION_DECOMPILE);
+	unregister_action(ACTION_DECOMPILE_IDA);
 }
 
 void MenuRevampire::AttachMainMenu(TWidget* view, TPopupMenu* p)
@@ -67,6 +81,7 @@ void MenuRevampire::AttachMainMenu(TWidget* view, TPopupMenu* p)
 void MenuRevampire::AttachGraphMenu(TWidget* view, TPopupMenu* p)
 {
 	attach_action_to_popup(view, p, ACTION_DECOMPILE, "", SETMENU_INS);
+	attach_action_to_popup(view, p, ACTION_DECOMPILE_IDA, "", SETMENU_INS);
 }
 
 action_state_t idaapi MenuRevampire::update(action_update_ctx_t* ctx)

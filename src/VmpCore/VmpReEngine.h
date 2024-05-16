@@ -57,6 +57,7 @@ public:
 	void PrintGraph(size_t startAddr);
 	void MarkVmpEntry(size_t startAddr);
 	void Decompile(size_t startAddr);
+	void Decompile_IDA(size_t startAddr);
 	VmpArchitecture* Arch();
 	Vmp3xHandlerFactory& HandlerCache();
 private:
