@@ -588,33 +588,39 @@ bool VmpExitCallAnalyzer::getEndStackOffset(int& outOffset)
 	if (!retOp) {
 		return false;
 	}
+	ghidra::PcodeOp* defOp = nullptr;
 	for (unsigned int n = 0; n < retOp->numInput(); ++n) {
 		ghidra::Varnode* vn = retOp->getIn(n);
 		std::string retRegName = fd->getArch()->translate->getRegisterName(vn->getSpace(), vn->getOffset(), vn->getSize());
 		if (retRegName != "ESP") {
 			continue;
 		}
-		ghidra::PcodeOp* defOp = vn->getDef();
-		if (!defOp) {
-			continue;
+		defOp = vn->getDef();
+	}
+	if (!defOp) {
+		return false;
+	}
+	z3::context ctx;
+	z3::expr formula(ctx);
+	try {
+		formula = EvaluatePcodeOp(ctx, defOp);
+	}
+	catch (Exception& ex) {
+		return false;
+	}
+	formula = formula.simplify();
+	std::string ss2 = formula.to_string();
+	if (formula.is_app() && formula.decl().decl_kind() == Z3_OP_BADD) {
+		z3::expr arg1 = formula.arg(0);
+		z3::expr arg2 = formula.arg(1);
+		if (arg1.is_numeral() && arg2.decl().name().str() == "ESP") {
+			outOffset = arg1.as_int64();
+			return true;
 		}
-		if (defOp->code() == ghidra::CPUI_COPY) {
-			ghidra::Varnode* vn = defOp->getIn(0);
-			std::string regName = fd->getArch()->translate->getRegisterName(vn->getSpace(), vn->getOffset(), vn->getSize());
-			if (vn->isInput() && regName == "ESP") {
-				outOffset = 0x0;
-				return true;
-			}
-		}
-		else if (defOp->code() == ghidra::CPUI_INT_ADD) {
-			ghidra::Varnode* v0 = defOp->getIn(0);
-			ghidra::Varnode* v1 = defOp->getIn(1);
-			std::string regName = fd->getArch()->translate->getRegisterName(v0->getSpace(), v0->getOffset(), v0->getSize());
-			if (v0->isInput() && regName == "ESP" && v1->isConstant()) {
-				outOffset = v1->getOffset();
-				return true;
-			}
-		}
+	}
+	else if (formula.is_const() && formula.decl().name().str() == "ESP") {
+		outOffset = 0x0;
+		return true;
 	}
 	return false;
 }

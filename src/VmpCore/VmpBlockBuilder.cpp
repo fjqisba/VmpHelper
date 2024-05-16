@@ -1075,7 +1075,7 @@ bool VmpBlockBuilder::Execute_FINISH_VM_INIT()
 	Vmp3xHandlerFactory::VmpHandlerRange tmpRange(nodeInput.addrList[0], nodeInput.addrList[nodeInput.addrList.size() - 1]);
 	auto it = cache.handlerPatternMap.find(tmpRange);
 #ifdef DeveloperMode
-	if (nodeInput.addrList[0] == 0x0045e0fe) {
+	if (nodeInput.addrList[0] == 0x005dc7d0) {
 		int a = 0;
 	}
 #endif

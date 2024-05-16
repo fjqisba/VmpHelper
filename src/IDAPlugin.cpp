@@ -100,7 +100,7 @@ ssize_t PluginUI_Callback(void* ud, int notification_code, va_list va)
 
 IDAPlugin::IDAPlugin() :gMenu_Revampire(this)
 {
-    msg("[Revampire] plugin 0.2 loaded\n");
+    msg("[Revampire] plugin 0.21 loaded\n");
     msg("[Revampire] https://github.com/fjqisba/VmpHelper\n");
     hook_to_notification_point(HT_UI, PluginUI_Callback, this);
 }
