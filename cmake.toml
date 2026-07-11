@@ -1,0 +1,89 @@
+[project]
+name = "Revampire"
+languages = ["C", "CXX"]
+
+cmake-after = """
+if (MSVC)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MT")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MT")
+	# Statically compile runtime
+	string(REGEX REPLACE "/MD" "/MT" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+	string(REGEX REPLACE "/MD" "/MT" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+	string(REGEX REPLACE "/MD" "/MT" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+	string(REGEX REPLACE "/MD" "/MT" CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
+	message(NOTICE "Building in MT mode")
+endif(MSVC)
+"""
+
+[fetch-content.capstone]
+git = "https://github.com/capstone-engine/capstone"
+tag = "5.0.1"
+
+[vcpkg]
+version = "2024.03.25"
+packages = ["keystone","unicorn","z3"]
+
+[find-package]
+z3 = {}
+
+[variables]
+CMAKE_CXX_COMPILER = "cl"
+CMAKE_C_COMPILER = "cl"
+
+VCPKG_TARGET_TRIPLET = "x64-windows-static"
+
+CMAKE_CONFIGURATION_TYPES = "Release;RelWithDebInfo"
+LLVM_USE_CRT_RELEASE = "MT"
+LLVM_USE_CRT_RELWITHDEBINFO = "MT"
+
+[target.Revampire]
+type = "shared"
+sources = [
+	"src/*.cpp", 
+	"src/Ghidra/*.cc",
+	"src/GhidraExtension/*.cpp",
+	"src/Common/*.cpp",
+	"src/Helper/*.cpp",
+	"src/Manager/*.cpp",
+	"src/VmpCore/*.cpp",
+]
+
+headers = [
+	"src/*.h", 
+	"src/Ghidra/*.h",
+	"src/Ghidra/*.hh",
+	"src/GhidraExtension/*.h",
+	"src/Common/*.h",
+	"src/Helper/*.h",
+	"src/Manager/*.h",
+	"src/VmpCore/*.h",
+]
+
+compile-definitions = ["_WINDOWS","_CRT_SECURE_NO_WARNINGS","USE_STANDARD_FILE_FUNCTIONS"]
+include-directories = ["${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/include","IDA83_SDK/include","include"]
+link-directories = ["${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/lib","IDA83_SDK/lib/x64_win_vc_32_pro"]
+link-libraries = ["capstone::capstone" , "keystone" , "unicorn", "libz3","ida"]
+
+cmake-after = """
+set_property(TARGET Revampire PROPERTY
+  MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+"""
+
+
+[options]
+CAPSTONE_BPF_SUPPORT = false
+CAPSTONE_EVM_SUPPORT = false
+CAPSTONE_MIPS_SUPPORT = false
+CAPSTONE_BUILD_STATIC_RUNTIME = true
+CAPSTONE_M680X_SUPPORT = false
+CAPSTONE_M68K_SUPPORT = false
+CAPSTONE_MOS65XX_SUPPORT = false
+CAPSTONE_PPC_SUPPORT = false
+CAPSTONE_RISCV_SUPPORT = false
+CAPSTONE_SH_SUPPORT = false
+CAPSTONE_SPARC_SUPPORT = false
+CAPSTONE_SYSZ_SUPPORT = false
+CAPSTONE_TMS320C64X_SUPPORT = false
+CAPSTONE_TRICORE_SUPPORT = false
+CAPSTONE_WASM_SUPPORT = false
+CAPSTONE_XCORE_SUPPORT = false
